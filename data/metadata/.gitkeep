@@ -1,0 +1,4 @@
+# Metadata and ground truth storage directory
+# - ground_truth_entities.json
+# - ground_truth_graph.json
+# - cross_case_scenarios.json

@@ -1,0 +1,4 @@
+# Raw data storage directory
+# - fir_reports/ (.txt, .json)
+# - cdr/ (.csv)
+# - financial/ (.csv)
