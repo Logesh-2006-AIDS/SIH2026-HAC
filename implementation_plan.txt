@@ -1,0 +1,159 @@
+================================================================================
+  SIH 2026 — SIH26189: AI-POWERED CRIMINAL NETWORK ANALYSIS PLATFORM
+  PROJECT: House-targaryen--2026
+  IMPLEMENTATION PLAN & ROADMAP
+================================================================================
+
+OVERVIEW:
+This document outlines the step-by-step technical implementation roadmap for 
+building the AI-Powered Criminal Network Analysis Platform for law-enforcement 
+investigators.
+
+--------------------------------------------------------------------------------
+PHASE 1: PROJECT SCAFFOLDING & ENVIRONMENT SETUP
+--------------------------------------------------------------------------------
+Goal: Establish project architecture, virtual environments, database services, 
+and dependencies.
+
+1.1 Repository Structure Setup
+    - Create backend/ directory (FastAPI, Python)
+    - Create frontend/ directory (React.js, Cytoscape.js)
+    - Create data/ directory with synthetic crime records (FIRs, CDRs, Financial logs)
+    - Create docker/ configuration files and docker-compose.yml
+
+1.2 Backend Environment & Dependencies
+    - Python 3.10+ virtual environment
+    - Core dependencies: fastapi, uvicorn, neo4j, psycopg2-binary, sqlalchemy, 
+      pydantic, spacy, sentence-transformers, networkx, python-jose, passlib
+
+1.3 Database Setup
+    - Neo4j graph database instance (Docker container)
+    - PostgreSQL database instance (Docker container)
+    - Database migration & schema setup scripts
+
+--------------------------------------------------------------------------------
+PHASE 2: SYNTHETIC DATA GENERATION & INGESTION PIPELINE
+--------------------------------------------------------------------------------
+Goal: Create realistic synthetic datasets and build the ingestion system.
+
+2.1 Synthetic Dataset Design
+    - Generate synthetic FIRs (unstructured text reports)
+    - Generate CDR (Call Detail Record) CSVs (Caller, Receiver, Timestamp, Duration, Cell Tower)
+    - Generate financial transaction logs (Sender, Receiver, Amount, Bank/Account, Date)
+    - Multi-case scenario mapping (overlapping suspects, phone numbers, shell companies)
+
+2.2 Ingestion Engine
+    - Multi-format ingestion parsers (CSV, JSON, Plain text FIRs/reports)
+    - Input validation, text normalization, and deduplication
+    - Storage of raw ingestion payloads in PostgreSQL with audit timestamps
+
+--------------------------------------------------------------------------------
+PHASE 3: AI & NLP PROCESSING PIPELINE
+--------------------------------------------------------------------------------
+Goal: Extract entities, extract relations, and perform entity resolution.
+
+3.1 Named Entity Recognition (NER)
+    - Integrate spaCy / fine-tuned transformer pipeline for legal & crime entities:
+      * Person, Organization, Case, Location, Vehicle, Phone Number, Date, Event, Financial Acc
+    - Custom regex/pattern matchers for structured entities (Phone numbers, Vehicle plates, Account IDs)
+
+3.2 Relationship Extraction (RE)
+    - Extract semantic triples: (Subject Entity) -> [Relationship Predicate] -> (Object Entity)
+    - Supported relations: communicates_with, associated_with, involved_in, located_at, owns, transfer_to
+
+3.3 Entity Resolution & Record Linkage
+    - Sentence-transformers / TF-IDF + Cosine similarity for fuzzy entity matching
+    - Candidate match generation (e.g. "Ravi Kumar" vs "R. Kumar" vs "Ravi K.")
+    - Staging matches in PostgreSQL as "Pending Human Verification"
+
+--------------------------------------------------------------------------------
+PHASE 4: KNOWLEDGE GRAPH & ANALYTICS ENGINE
+--------------------------------------------------------------------------------
+Goal: Construct the Neo4j Knowledge Graph and run graph algorithms.
+
+4.1 Graph Construction & Indexing
+    - Populate Neo4j nodes (Person, Org, Phone, Case, Location, etc.)
+    - Populate directed, weighted edges with metadata (source case, confidence, timestamp)
+    - Create Neo4j indexes (Node labels, full-text indexes, property indexes)
+
+4.2 Centrality & Key Player Identification
+    - Degree Centrality: Identify high-activity hubs (frequent communicators)
+    - Betweenness Centrality: Identify key bridge entities / intermediaries between gangs or cases
+
+4.3 Community Detection & Subgroup Discovery
+    - Louvain / Leiden community detection algorithm
+    - Cluster partition and sub-network tagging
+
+4.4 Shortest Path & Connection Tracing
+    - BFS / Dijkstra shortest path finder between any two specified entities
+    - Multi-hop path explanation with edge-level reasoning
+
+4.5 Link Prediction Engine
+    - Uncover hidden links using Jaccard Similarity, Common Neighbors, and Adamic-Adar scores
+    - Cross-case connection detection (entities appearing across distinct cases)
+
+--------------------------------------------------------------------------------
+PHASE 5: FASTAPI BACKEND & SECURITY LAYER
+--------------------------------------------------------------------------------
+Goal: Build robust REST and WebSocket APIs with RBAC and explainability endpoints.
+
+5.1 Security, Authentication & RBAC
+    - JWT authentication with secure password hashing (bcrypt)
+    - Role-Based Access Control: Admin, Investigator, Analyst, Viewer
+    - Tamper-evident audit logging for all search, view, and verification operations
+
+5.2 Graph & Query APIs
+    - GET /api/graph/subgraph (filtered by case, entity type, confidence, date range)
+    - GET /api/graph/entity/{id}/details (entity metadata, connections, evidence source)
+    - GET /api/graph/path?source={id}&target={id} (shortest path analysis)
+    - GET /api/graph/centrality (ranked influential entities)
+    - GET /api/graph/communities (detected clusters)
+
+5.3 Lead Management & Human-in-the-Loop APIs
+    - GET /api/leads/pending (AI-suggested link predictions and resolved entities)
+    - POST /api/leads/{id}/verify (Accept, Reject, Edit, Merge with investigator remarks)
+    - GET /api/leads/cross-case (prioritized cross-case connectors)
+
+5.4 Explainability & Search Engine
+    - Natural language query / keyword search across entities and cases
+    - Evidence builder providing source references, confidence formulas, and path explanations
+
+--------------------------------------------------------------------------------
+PHASE 6: FRONTEND INVESTIGATOR WORKBENCH (REACT.JS)
+--------------------------------------------------------------------------------
+Goal: Deliver an interactive, modern, high-performance UI with graph visualization.
+
+6.1 Interactive Graph Canvas (Cytoscape.js)
+    - Color-coded node taxonomy (Person=Blue, Phone=Cyan, Org=Orange, Case=Gold, Location=Red)
+    - Interactive pan, zoom, drag, expand node on click, and highlight connected subgraphs
+    - Layout toggles: Force-directed (CoSE / FCose), Concentric, Breadth-First, Circular
+
+6.2 Investigation Control Panels
+    - Dynamic Filters: Filter by Case ID, Date Range, Confidence Score, Relationship Type
+    - Entity Details Inspector: Side drawer showing properties, source evidence, centralities
+    - Path Finder Modal: Select two entities to highlight shortest chain of connections
+
+6.3 Cross-Case & Lead Verification Center
+    - Visual comparison view between two or more cases
+    - Lead Verification Workbench: Accept / Reject / Merge AI suggestions
+    - Audit Trail & Case Report Export view
+
+--------------------------------------------------------------------------------
+PHASE 7: TESTING, VALIDATION & DOCKER DEPLOYMENT
+--------------------------------------------------------------------------------
+Goal: Validate algorithm accuracy, security constraints, and containerize the stack.
+
+7.1 End-to-End Testing
+    - Test synthetic data pipeline through ingestion, extraction, graph creation, and UI
+    - Verify link prediction confidence calculations and explainability outputs
+    - RBAC access control validation tests
+
+7.2 Dockerization & Orchestration
+    - Multi-stage Dockerfiles for Backend and Frontend
+    - Complete docker-compose.yml orchestrating:
+      * FastAPI backend
+      * React frontend
+      * Neo4j DB
+      * PostgreSQL DB
+      * Redis cache
+================================================================================
