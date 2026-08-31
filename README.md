@@ -172,3 +172,126 @@ House-targaryen--2026/
 - **Synthetic Data**: Developed and tested purely with synthetic, fictitious crime datasets.
 - **Investigator Sovereignty**: AI provides suggestions; only human investigators make decisions.
 - **Audit Trails**: Every query, lead review, and entity merge is logged for transparency and legal accountability.
+
+
+
+RUN THIS PROJECT
+
+Based on your uploaded **SIH26189 project roadmap and README**, your stack is **FastAPI + React + Neo4j + PostgreSQL + Redis**, with Docker Compose planned for running the complete system.  
+
+### 🚀 Run the project
+
+Open **PowerShell** in your project root (`House-targaryen--2026`).
+
+**1. Check Docker**
+
+```powershell
+docker --version
+docker compose version
+```
+
+**2. Start all services**
+
+```powershell
+docker compose up --build
+```
+
+Your `docker-compose.yml` is designed to orchestrate the backend, frontend, Neo4j, PostgreSQL and Redis services. 
+
+### 🔹 If you want to run in background
+
+```powershell
+docker compose up --build -d
+```
+
+Check containers:
+
+```powershell
+docker compose ps
+```
+
+View logs:
+
+```powershell
+docker compose logs -f
+```
+
+### 🔹 Stop the project
+
+```powershell
+docker compose down
+```
+
+If you also want to remove the database volumes:
+
+```powershell
+docker compose down -v
+```
+
+⚠️ **Don't use `-v` if you want to preserve your Neo4j/PostgreSQL data.**
+
+---
+
+### 🐍 Run backend separately
+
+If you are **not using Docker for the backend**, according to the roadmap you need Python 3.10+ and the backend dependencies such as FastAPI, Uvicorn, Neo4j, PostgreSQL, spaCy, sentence-transformers, etc. 
+
+```powershell
+cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Then:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+Usually the API will be available at:
+
+```text
+http://localhost:8000
+```
+
+Swagger API documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+### ⚛️ Run frontend separately
+
+Open **another PowerShell**:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Then open the URL shown by Vite, usually:
+
+```text
+http://localhost:5173
+```
+
+### ✅ Recommended for your SIH demo
+
+If your project files are already implemented according to the uploaded structure, the easiest command sequence is:
+
+```powershell
+cd House-targaryen--2026
+docker compose up --build
+```
+
+Then, in another terminal:
+
+```powershell
+docker compose ps
+```
+
+Your architecture is intended to process synthetic FIR/CDR/financial data → NLP extraction → entity resolution → Neo4j knowledge graph → graph analysis → investigator UI. 
+
+**If `docker compose up --build` gives an error, send me the full terminal error. I can give you the exact command/fix for your project.**
