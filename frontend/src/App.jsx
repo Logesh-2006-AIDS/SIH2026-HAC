@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
+import GraphCanvas from './components/GraphCanvas';
+import GraphControls from './components/GraphControls';
+import EntityInspector from './components/EntityInspector';
+import CrossCasePanel from './components/CrossCasePanel';
+import LeadVerification from './components/LeadVerification';
 import { 
   Network, 
   Share2, 
@@ -10,25 +16,92 @@ import {
   Database,
   ArrowRight,
   Sparkles,
-  Search
+  Search,
+  CheckCircle2,
+  FolderArchive
 } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Knowledge Graph State
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
+  const [isLoadingGraph, setIsLoadingGraph] = useState(false);
+  const [selectedCase, setSelectedCase] = useState('');
+  const [layoutName, setLayoutName] = useState('cose');
+  const [selectedEntity, setSelectedEntity] = useState(null);
+  const [highlightedPath, setHighlightedPath] = useState([]);
+  const [pathMessage, setPathMessage] = useState('');
 
-  const stats = [
-    { label: 'Total Tracked Entities', value: '1,420', change: '+12 today', icon: Users, color: '#6366f1' },
-    { label: 'Extracted Relationships', value: '3,890', change: '+45 verified', icon: Share2, color: '#06b6d4' },
-    { label: 'Cross-Case Connectors', value: '18', change: '4 high priority', icon: GitBranch, color: '#f59e0b' },
-    { label: 'Pending AI Leads', value: '7', change: 'Requires review', icon: ShieldAlert, color: '#ec4899' },
-  ];
+  // Fetch Subgraph from FastAPI Backend
+  const fetchSubgraph = async (caseId = '') => {
+    setIsLoadingGraph(true);
+    try {
+      const url = caseId ? `/api/v1/graph/subgraph?case_id=${caseId}` : '/api/v1/graph/subgraph';
+      const res = await axios.get(url);
+      if (res.data?.success) {
+        setNodes(res.data.data.nodes || []);
+        setEdges(res.data.data.edges || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch subgraph:', err);
+    } finally {
+      setIsLoadingGraph(false);
+    }
+  };
 
-  const recentCases = [
-    { id: 'FIR-2025-ND-101', title: 'North District Extortion & Armed Robbery Syndicate', entities: 34, status: 'Active Lead' },
-    { id: 'FIR-2025-ND-102', title: 'Metro Crypto Laundering & Darknet Exchange', entities: 52, status: 'Under Review' },
-    { id: 'FIR-2025-ND-105', title: 'Commercial Hawala Shell Operations (Apex Logistics)', entities: 29, status: 'Cross-Linked' },
-  ];
+  // Find Shortest Path
+  const handleFindPath = async (sourceId, targetId) => {
+    setIsLoadingGraph(true);
+    try {
+      const res = await axios.get(`/api/v1/graph/shortest-path?source_id=${sourceId}&target_id=${targetId}`);
+      if (res.data?.success && res.data.data.path) {
+        setHighlightedPath(res.data.data.path);
+        setPathMessage(`Discovered path: ${res.data.data.path.join(' ➔ ')} (Weight: ${res.data.data.weight})`);
+      } else {
+        setPathMessage('No direct path found between the selected entities.');
+      }
+    } catch (err) {
+      console.error('Shortest path discovery failed:', err);
+      setPathMessage('Shortest path calculation failed.');
+    } finally {
+      setIsLoadingGraph(false);
+    }
+  };
+
+  // Seed / Re-sync Neo4j
+  const handleSeedGraph = async () => {
+    setIsLoadingGraph(true);
+    try {
+      const res = await axios.post('/api/v1/graph/seed');
+      if (res.data?.success) {
+        await fetchSubgraph(selectedCase);
+      }
+    } catch (err) {
+      console.error('Seed graph failed:', err);
+    } finally {
+      setIsLoadingGraph(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSubgraph(selectedCase);
+  }, [selectedCase]);
+
+  // Extract persons for the pathfinder dropdown
+  const suspectList = nodes
+    .filter((n) => n.id && (n.name || n.role || n.id.startsWith('P')))
+    .map((n) => ({ id: n.id, name: n.name || n.id }));
+
+  const handleFocusEntity = (entityId) => {
+    setActiveTab('dashboard');
+    const match = nodes.find((n) => n.id === entityId || n.number === entityId);
+    if (match) {
+      setSelectedEntity(match);
+    }
+  };
 
   return (
     <div className="app-container">
@@ -38,176 +111,133 @@ export default function App() {
         <Header />
         
         <main className="content-area">
-          {/* Welcome & Search Bar */}
-          <div style={{ marginBottom: '1.75rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#ffffff' }}>
-                  Investigation Command Center
-                </h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                  Analyze multi-source intelligence, trace suspect connections, and verify AI-generated network links.
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Entity Search Box */}
-            <div className="glass-panel" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Search size={20} color="#818cf8" />
-              <input
-                type="text"
-                placeholder="Search suspect name, phone number, vehicle plate (e.g. DL-01-AB-1234), or case ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: '#ffffff',
-                  fontSize: '0.9rem',
-                  fontFamily: 'inherit'
+          {/* TAB 1: GRAPH & NETWORK OVERVIEW */}
+          {activeTab === 'dashboard' && (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '0.75rem' }}>
+              {/* Controls bar */}
+              <GraphControls
+                selectedCase={selectedCase}
+                onSelectCase={setSelectedCase}
+                layoutName={layoutName}
+                onSelectLayout={setLayoutName}
+                onFindPath={handleFindPath}
+                onSeedGraph={handleSeedGraph}
+                onClearPath={() => {
+                  setHighlightedPath([]);
+                  setPathMessage('');
                 }}
+                hasActivePath={highlightedPath.length > 0}
+                suspects={suspectList}
               />
-              <button className="btn-primary" style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }}>
-                <Sparkles size={16} />
-                <span>Deep Graph Search</span>
-              </button>
-            </div>
-          </div>
 
-          {/* Key Metrics Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '1rem',
-            marginBottom: '1.75rem'
-          }}>
-            {stats.map((st, idx) => {
-              const Icon = st.icon;
-              return (
-                <div key={idx} className="glass-panel" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                      {st.label}
-                    </span>
-                    <div style={{
-                      padding: '0.4rem',
-                      borderRadius: 8,
-                      background: `${st.color}20`,
-                      color: st.color
-                    }}>
-                      <Icon size={18} />
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
-                    {st.value}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: st.color, fontWeight: 500 }}>
-                    {st.change}
-                  </div>
+              {/* Path Notification Alert */}
+              {pathMessage && (
+                <div
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '8px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    color: '#fbbf24',
+                    fontSize: '0.82rem',
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <Sparkles size={16} />
+                  <span>{pathMessage}</span>
                 </div>
-              );
-            })}
-          </div>
+              )}
 
-          {/* Two-Column Investigation Insights */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.25rem' }}>
-            {/* Active Cross-Case Intelligence Alert */}
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <GitBranch size={20} color="#f59e0b" />
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>Active Cross-Case Intelligence Matches</h3>
-                </div>
-                <span className="badge badge-lead">Requires Investigator Action</span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{
-                  padding: '1rem',
-                  borderRadius: 8,
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                      <strong style={{ color: '#60a5fa', fontSize: '0.9rem' }}>Apex Global Logistics Pvt Ltd</strong>
-                      <span className="badge" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd' }}>Shared Entity</span>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-                      Common front organization identified across <strong>FIR-2025-ND-101</strong> (Extortion) and <strong>FIR-2025-ND-105</strong> (Hawala).
-                    </p>
-                  </div>
-                  <button className="btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
-                    <span>Inspect Graph</span>
-                    <ArrowRight size={14} />
-                  </button>
+              {/* Graph Visualizer + Side Inspector */}
+              <div style={{ display: 'flex', gap: '1rem', flex: 1, minHeight: '520px', height: 'calc(100vh - 210px)' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <GraphCanvas
+                    nodes={nodes}
+                    edges={edges}
+                    selectedEntity={selectedEntity}
+                    onSelectEntity={setSelectedEntity}
+                    highlightedPath={highlightedPath}
+                    layoutName={layoutName}
+                    isLoading={isLoadingGraph}
+                  />
                 </div>
 
-                <div style={{
-                  padding: '1rem',
-                  borderRadius: 8,
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                      <strong style={{ color: '#34d399', fontSize: '0.9rem' }}>+91-98765-43210 (Burner Phone)</strong>
-                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7' }}>High CDR Overlap</span>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-                      14 voice calls exchanged between Case 102 (Cyber Fraud) ringleader and Case 103 (Arms Supply).
-                    </p>
-                  </div>
-                  <button className="btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
-                    <span>Inspect Graph</span>
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
+                {/* Side Inspector Drawer */}
+                {selectedEntity && (
+                  <EntityInspector
+                    entity={selectedEntity}
+                    onClose={() => setSelectedEntity(null)}
+                    onSetAsPathSource={(id) => {
+                      // Trigger path finding with a default target
+                      handleFindPath(id, 'P004');
+                    }}
+                  />
+                )}
               </div>
             </div>
+          )}
 
-            {/* Recent Cases Column */}
+          {/* TAB 2: CROSS-CASE INTELLIGENCE */}
+          {activeTab === 'crosscase' && (
+            <CrossCasePanel onFocusEntity={handleFocusEntity} />
+          )}
+
+          {/* TAB 3: LEAD VERIFICATION WORKBENCH */}
+          {activeTab === 'verification' && (
+            <LeadVerification />
+          )}
+
+          {/* TAB 4: CASE MASTER RECORDS */}
+          {activeTab === 'cases' && (
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <Database size={18} color="#818cf8" />
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>Active Case Files</h3>
+                <FolderArchive size={20} color="#818cf8" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Master Case Dossiers</h3>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {recentCases.map((cs) => (
-                  <div key={cs.id} style={{
-                    padding: '0.75rem',
-                    borderRadius: 8,
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#818cf8', fontWeight: 600 }}>
-                        {cs.id}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                {[
+                  { id: '101', title: 'Armed Robbery & Extortion Syndicate', date: '15/04/2025', ps: 'Crime Branch, North District, Delhi', suspects: 'Ravi Kumar, Vikram Singh, Meena Sharma' },
+                  { id: '102', title: 'Cyber Phishing & Crypto Laundering Ring', date: '28/05/2025', ps: 'Cyber Crime Branch, Delhi Police', suspects: 'Vikram Singh, Aarav Mehta, Sanjay Gupta' },
+                  { id: '103', title: 'Illicit Firearms Transit (NH-58 Interception)', date: '10/06/2025', ps: 'Special Crime Branch, UP Police (Meerut)', suspects: 'Suresh Yadav, Manish Tiwari, Burner Contact' },
+                  { id: '104', title: 'Inter-State Luxury Vehicle Theft Ring', date: '22/06/2025', ps: 'Auto Crime Cell, Mumbai Police', suspects: 'Priya Nair, Rohit Patel' },
+                  { id: '105', title: 'Commercial Hawala & Shell Company Layering', date: '05/07/2025', ps: 'Economic Offences Wing / ED', suspects: 'Deepak Srivastava, Ravi Kumar, Aarav Mehta' },
+                ].map((c) => (
+                  <div key={c.id} style={{ padding: '1.25rem', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: '#818cf8', fontWeight: 600, fontSize: '0.85rem' }}>
+                        FIR No. {c.id}/2025
                       </span>
-                      <span className="badge badge-healthy" style={{ fontSize: '0.65rem' }}>
-                        {cs.status}
-                      </span>
+                      <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{c.date}</span>
                     </div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#e5e7eb', marginBottom: '0.35rem' }}>
-                      {cs.title}
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff', marginBottom: '0.35rem' }}>{c.title}</h4>
+                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', marginBottom: '0.5rem' }}>{c.ps}</p>
+                    <div style={{ fontSize: '0.75rem', color: '#d1d5db', marginBottom: '0.75rem' }}>
+                      <strong>Key Accused:</strong> {c.suspects}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>
-                      {cs.entities} entities extracted in Knowledge Graph
-                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedCase(c.id);
+                        setActiveTab('dashboard');
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                    >
+                      <span>Explore Case Subgraph</span>
+                      <ArrowRight size={13} />
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          )}
+
+          {/* TAB 5: CENTRALITY & CLUSTERS */}
+          {activeTab === 'analytics' && (
+            <CrossCasePanel onFocusEntity={handleFocusEntity} />
+          )}
         </main>
       </div>
     </div>
