@@ -1,0 +1,43 @@
+[
+  {
+    "ref": "INF/2025/ND/007",
+    "date": "10/04/2025",
+    "type": "Human Intelligence",
+    "source_reliability": "B2 (Reliable / Probably True)",
+    "case_ids": [
+      "101"
+    ],
+    "content": "Source reports that 'Ravan' (Ravi Kumar) held a planning meeting with Vicky (Vikram Singh) and two others at a dhaba near Rohini Sector 7 on 10/04/2025 at 19:00 hrs. A black Fortuner was spotted outside (Plate: DL-01-AB-1234). Topic of meeting: planned robbery at a jewellery shop in Karol Bagh within 3 days."
+  },
+  {
+    "ref": "INF/2025/UP/014",
+    "date": "05/06/2025",
+    "type": "Electronic Intelligence",
+    "source_reliability": "A1 (Completely Reliable / Confirmed)",
+    "case_ids": [
+      "103"
+    ],
+    "content": "Intercepted communication on +91-94221-11111 (Suresh Yadav) references a consignment of 'machinery' being transported on NH-58. Contact with unknown number (+91-98110-99999) confirmed at 03/06/2025, 23:45 hrs. CROSS-NOTE: Same +91-98110-99999 is flagged in Case 102 (Cyber Fraud)."
+  },
+  {
+    "ref": "INF/2025/EOW/021",
+    "date": "28/06/2025",
+    "type": "Financial Intelligence",
+    "source_reliability": "B1 (Reliable / Confirmed)",
+    "case_ids": [
+      "105",
+      "101"
+    ],
+    "content": "Bank examination of Apex Global Logistics Pvt Ltd reveals 417 transactions totalling Rs. 22 Crore with no genuine business invoices. Directors are frontmen for Ravi Kumar alias Ravan (primary accused in Case 101). Deepak Srivastava (Shroff Money Services) is the hawala operator routing proceeds offshore."
+  },
+  {
+    "ref": "INF/2025/MH/009",
+    "date": "18/06/2025",
+    "type": "Human Intelligence",
+    "source_reliability": "C2 (Fairly Reliable / Possibly True)",
+    "case_ids": [
+      "104"
+    ],
+    "content": "Priya Nair (Koramangala, Bengaluru) is believed to be the head of an inter-state vehicle cloning ring. She is in contact with Rohit Patel (Ahmedabad) who arranges delivery of cloned vehicles to buyers in NCR and Gujarat. Luxe Motor Exports appears to be a front entity."
+  }
+]

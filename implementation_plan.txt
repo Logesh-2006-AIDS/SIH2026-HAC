@@ -50,21 +50,58 @@ Goal: Create realistic synthetic datasets and build the ingestion system.
 --------------------------------------------------------------------------------
 PHASE 3: AI & NLP PROCESSING PIPELINE
 --------------------------------------------------------------------------------
-Goal: Extract entities, extract relations, and perform entity resolution.
+Goal: Extract entities, extract relations, perform entity resolution, and generate 
+evidence-aware explainable scores.
 
-3.1 Named Entity Recognition (NER)
-    - Integrate spaCy / fine-tuned transformer pipeline for legal & crime entities:
-      * Person, Organization, Case, Location, Vehicle, Phone Number, Date, Event, Financial Acc
-    - Custom regex/pattern matchers for structured entities (Phone numbers, Vehicle plates, Account IDs)
+3.1 Text Preprocessing & Cleaning Pipeline (backend/app/nlp/preprocessor.py)
+    - Unicode normalization and legal text cleaning (FIR, BNS, IPC, CDR acronyms)
+    - Document structure parsing (FIR headers, accused statements, seized property lists)
+    - Sentence tokenization, custom legal stopwords, and noise filtering
 
-3.2 Relationship Extraction (RE)
-    - Extract semantic triples: (Subject Entity) -> [Relationship Predicate] -> (Object Entity)
-    - Supported relations: communicates_with, associated_with, involved_in, located_at, owns, transfer_to
+3.2 Named Entity Recognition (NER) Engine (backend/app/nlp/ner.py)
+    - Rule-based regex pattern matchers (backend/app/nlp/patterns.py):
+      * Phone numbers (Indian formats: +91-XXXXX-XXXXX, 098XXXXXXXX)
+      * Vehicle plates (Indian RTO: DL-01-AB-1234, MH12CD5678)
+      * Financial accounts (9-18 digit account numbers, IFSC codes, UPI IDs)
+      * Case / FIR numbers (FIR No. 101/2025 PS Crime Branch)
+      * Dates & Timestamps (DD/MM/YYYY, ISO-8601)
+    - Statistical / Transformer-based NER (spaCy en_core_web_sm / Hugging Face):
+      * Person (suspects, victims, associates, aliases like "Ravi @ Ravan")
+      * Organization (gangs, shell companies, front businesses)
+      * Location (incident spots, hideouts, addresses, cell tower zones)
+      * Event (meetings, extortion calls, transactions, robberies)
+    - Entity deduplication, boundary validation, and confidence score calculation
 
-3.3 Entity Resolution & Record Linkage
-    - Sentence-transformers / TF-IDF + Cosine similarity for fuzzy entity matching
-    - Candidate match generation (e.g. "Ravi Kumar" vs "R. Kumar" vs "Ravi K.")
-    - Staging matches in PostgreSQL as "Pending Human Verification"
+3.3 Relationship Extraction (RE) Engine (backend/app/nlp/relationship_extractor.py)
+    - Semantic triple extraction: (Subject Entity) -> [PREDICATE] -> (Object Entity)
+    - Dependency parser tree traversal & rule-based pattern matching:
+      * COMMUNICATES_WITH (calls, SMS, meetings, messages)
+      * ASSOCIATED_WITH (gang associate, partner, syndicate member)
+      * INVOLVED_IN (accused in FIR, suspect in case, witness)
+      * LOCATED_AT (resident at, hideout at, cell tower ping)
+      * OWNS (vehicle owner, phone subscriber, account holder)
+      * FINANCIAL_TRANSFER_TO (NEFT, UPI, Hawala payment, cash handover)
+      * APPEARED_IN (mentioned in surveillance report, informant tip)
+    - Evidence anchoring: Attach source document ID, sentence offset, and excerpt 
+      to every extracted relationship edge.
+
+3.4 Entity Resolution & Record Linkage Engine (backend/app/nlp/entity_resolution.py)
+    - Multi-tiered similarity matching for fuzzy aliases:
+      * String & phonetic similarity: Jaro-Winkler, Levenshtein, Double Metaphone
+      * Semantic embeddings: sentence-transformers (all-MiniLM-L6-v2) cosine similarity
+      * Contextual overlap: Shared phone numbers, shared addresses, co-occurring cases
+    - Candidate match generation (e.g., "Ravi Kumar" vs "R. Kumar" vs "Ravi K.")
+    - Staging candidate matches in PostgreSQL for Human-in-the-Loop investigator review
+
+3.5 Explainability & Confidence Scoring (backend/app/nlp/explainability.py)
+    - Multi-factor scoring formula:
+      Score = w1 * SemanticSim + w2 * PhoneticSim + w3 * ContextualOverlap
+    - Evidence rationale generator (human-readable explanation of why entities/links match)
+
+3.6 Pipeline Orchestrator & Benchmarking (backend/app/nlp/pipeline.py)
+    - End-to-end pipeline: raw text -> cleaned text -> entities -> triples -> resolved entities
+    - Automated benchmarking against ground truth data (Precision, Recall, F1 score)
+
 
 --------------------------------------------------------------------------------
 PHASE 4: KNOWLEDGE GRAPH & ANALYTICS ENGINE

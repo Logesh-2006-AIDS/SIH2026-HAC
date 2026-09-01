@@ -1,7 +1,7 @@
 import logging
 from app.db.postgres import Base, engine
 from app.db.neo4j_client import Neo4jClient
-from app.models import User, Case, AuditLog  # noqa: F401
+from app.models import User, Case, AuditLog, DataSource, DataSourceType, IngestStatus, RawEntity, PendingResolution  # noqa: F401
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

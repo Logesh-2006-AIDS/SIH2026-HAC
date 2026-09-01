@@ -1,0 +1,34 @@
+FIRST INFORMATION REPORT
+Case No.: FIR No. 104/2025
+Police Station: Maharashtra Auto Crime Cell, Mumbai
+Date & Time of Report: 22/06/2025, 16:00 hrs
+Applicable Sections: BNS Sec. 303(2) (Theft), 317(2) (Cheating); MV Act 1988
+
+INCIDENT SUMMARY:
+Investigation into a syndicate that steals luxury vehicles (SUVs and sedans) across Delhi-NCR,
+clones registration plates, and sells at deflated prices through Luxe Motor Exports Pvt Ltd,
+a shell firm registered in Mumbai operating at Andheri East.
+
+ACCUSED PERSONS:
+1. Priya Nair alias "P. Nair"
+   Address: Koramangala, Bengaluru, Karnataka
+   Mobile: +91-81111-55555
+   Role: Syndicate head; manages buyer network and forged documents
+
+2. Rohit Patel alias "Rohit P." alias "R. Patel"
+   Address: Satellite Area, Ahmedabad, Gujarat
+   Mobile: +91-96000-12345
+   Role: Vehicle delivery coordinator; handles inter-state transport and document forgery
+
+VEHICLES RECOVERED (Stolen + Cloned):
+1. Honda City (White), Original Plate: MH-12-CD-5678 — reported stolen 10/04/2025, Andheri East
+2. Ford Endeavour (Grey), Registration: HR-26-EF-3456 — stolen Gurgaon, 18/03/2025
+
+FRONT COMPANY:
+Luxe Motor Exports Pvt Ltd (Reg No: U50400MH2020PTC987654)
+Registered Address: Andheri East, Mumbai
+Directors (suspected frontmen): Priya Nair, Rohit Patel
+
+EVIDENCE:
+- VIN chassis number database cross-reference (cloned plates detected)
+- 28 sale deeds with forged buyer signatures

@@ -1,0 +1,44 @@
+FIRST INFORMATION REPORT
+Case No.: FIR No. 102/2025
+Police Station: Cyber Crime Branch, Delhi Police
+Date & Time of Report: 28/05/2025, 15:00 hrs
+Applicable Sections: IT Act Sections 66C, 66D; BNS Section 318(Cheating); PMLA 2002
+
+INCIDENT SUMMARY:
+An international cyber fraud operation defrauded over 1,200 victims of a total of Rs. 4.8 Crore
+through phishing portals impersonating Government payment portals (NEFT/UPI). The proceeds were
+layered through DarkNet Crypto Exchange Services (DCES) and converted to Tether (USDT).
+
+ACCUSED PERSONS:
+1. Vikram Singh alias "V. Singh" alias "Vicky"
+   Address: Flat 3B, MG Road, Gurgaon, Haryana
+   Mobile: +91-98765-32100, +91-98765-32101
+   Role: Technical mastermind; operated phishing servers, coordinated money mules
+
+2. Aarav Mehta alias "AJ Mehta"
+   Address: Bandra West, Mumbai, Maharashtra
+   Mobile: +91-99300-67890, +91-99300-67891
+   Role: Crypto wallet handler; converted INR to USDT via DCES
+
+3. Sanjay Gupta alias "Sanju" (s/o Naresh Gupta)
+   Address: Salt Lake, Kolkata, WB
+   Mobile: +91-91234-56780
+   Role: Money mule coordinator; controlled bank accounts used to receive victim transfers
+
+UNIDENTIFIED CALLER (Burner Phone):
+A critical unregistered number +91-98110-99999 (Burner Phone) communicated with both Vikram Singh
+and Aarav Mehta via 22 encrypted calls/SMS between 01/05/2025 and 25/05/2025.
+Identity of burner phone subscriber remains UNKNOWN — pending verification.
+
+FINANCIAL TRACE:
+- Victim funds received in Account No. 202030303040404 (HDFC0002345, HDFC) — Vikram Singh
+- Crypto conversion via DCES: ~Rs. 3.2 Crore converted to 47,000 USDT
+- INR layering via: Account No. 112233445566778 (ICICI Bank) — Aarav Mehta
+
+NOTE: Account No. 112233445566778 (ICICI) also appears in Case 105 (Hawala operations).
+This constitutes a potential CROSS-CASE financial link requiring verification.
+
+EVIDENCE:
+- Digital forensics: Phishing server logs (IP: 185.220.101.x, Tor exit node)
+- Bank transaction records: 1,847 fraudulent NEFT entries
+- Crypto blockchain trace: USDT Wallet 0xABCD...EF12 linked to DCES

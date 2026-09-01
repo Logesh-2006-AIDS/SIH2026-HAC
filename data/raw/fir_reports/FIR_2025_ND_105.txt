@@ -1,0 +1,53 @@
+FIRST INFORMATION REPORT
+Case No.: FIR No. 105/2025
+Police Station: Economic Offences Wing, Delhi Police / Enforcement Directorate
+Date & Time of Report: 05/07/2025, 10:00 hrs
+Applicable Sections: PMLA 2002 Sec. 3, 4; FEMA; BNS Sec. 316
+
+INCIDENT SUMMARY:
+ED investigation reveals a large-scale Hawala money laundering operation processing
+approximately Rs. 22 Crore between January 2025 and June 2025 through Shroff Money Services
+(SMS Hawala, Pahar Ganj, New Delhi) and multiple shell accounts of Apex Global Logistics Pvt Ltd.
+
+ACCUSED PERSONS:
+1. Ravi Kumar alias "Ravan" (s/o Ramesh Kumar)
+   Address: C-14, Sector 7, Rohini, New Delhi
+   Mobile: +91-98110-44501
+   Role: Beneficial owner of Apex Global Logistics Pvt Ltd shell company;
+         laundered extortion proceeds from FIR 101/2025 through Apex and SMS Hawala.
+   NOTE: Ravi Kumar is the PRIMARY ACCUSED in FIR 101/2025 (Extortion).
+
+2. Deepak Srivastava alias "D. Srivastava"
+   Address: Civil Lines, Allahabad, UP
+   Mobile: +91-76543-21000
+   Role: Hawala broker; managed informal fund transfers through Shroff Money Services
+
+3. Aarav Mehta alias "AJ Mehta"
+   Address: Bandra West, Mumbai, Maharashtra
+   Mobile: +91-99300-67890
+   Role: Receiving end of laundered crypto proceeds from Case 102; converted back to INR
+   via Apex Logistics accounts.
+   NOTE: Aarav Mehta is also accused in FIR 102/2025 (Cyber Fraud).
+
+4. Rohit Patel alias "R. Patel"
+   Address: Satellite Area, Ahmedabad, Gujarat
+   Mobile: +91-96000-12345
+   Role: Financial intermediary; laundered vehicle theft proceeds via SMS Hawala.
+   NOTE: Rohit Patel also appears in FIR 104/2025 (Vehicle Theft).
+
+CROSS-CASE FINANCIAL NEXUS — APEX GLOBAL LOGISTICS PVT LTD:
+Bank Account No. 606060606060606 (Apex Global Logistics Pvt Ltd, Kotak Bank) appears in:
+  - FIR 101/2025 — Extortion proceeds routing
+  - FIR 105/2025 — Hawala layering
+This constitutes a HIGH-CONFIDENCE cross-case link and the entity is flagged for deep graph analysis.
+
+FINANCIAL TRANSACTIONS:
+- Total Rs. 22 Crore routed through 417 transactions (NEFT, RTGS, Cash deposits)
+- Account No. 998877665544332 (PNB) — Deepak Srivastava: Rs. 6.4 Crore received
+- Account No. 112233445566778 (ICICI) — Aarav Mehta: Rs. 4.2 Crore (appears in Case 102 also)
+- Account No. 556677889900112 (Axis) — Rohit Patel: Rs. 3.8 Crore
+
+EVIDENCE:
+- Banking transaction statements (417 transactions)
+- Hawala ledger seized from Shroff Money Services premises on 01/07/2025
+- Statement of informant (Ref: INF/2025/EOW/021)

@@ -1,0 +1,509 @@
+{
+  "persons": [
+    {
+      "id": "P001",
+      "name": "Ravi Kumar",
+      "aliases": [
+        "Ravan",
+        "R. Kumar",
+        "Ravi K."
+      ],
+      "phone": "+91-98110-44501",
+      "phone2": "+91-98110-44502",
+      "address": "C-14, Sector 7, Rohini, New Delhi",
+      "role": "Suspect",
+      "cases": [
+        "101",
+        "105"
+      ]
+    },
+    {
+      "id": "P002",
+      "name": "Vikram Singh",
+      "aliases": [
+        "Vicky",
+        "Vikram S.",
+        "V. Singh"
+      ],
+      "phone": "+91-98765-32100",
+      "phone2": "+91-98765-32101",
+      "address": "Flat 3B, MG Road, Gurgaon, Haryana",
+      "role": "Suspect",
+      "cases": [
+        "101",
+        "102",
+        "103"
+      ]
+    },
+    {
+      "id": "P003",
+      "name": "Meena Sharma",
+      "aliases": [
+        "Meena S.",
+        "M. Sharma"
+      ],
+      "phone": "+91-70011-12345",
+      "phone2": null,
+      "address": "12, Karol Bagh, New Delhi",
+      "role": "Suspect",
+      "cases": [
+        "101"
+      ]
+    },
+    {
+      "id": "P004",
+      "name": "Aarav Mehta",
+      "aliases": [
+        "AJ Mehta",
+        "Aarav M."
+      ],
+      "phone": "+91-99300-67890",
+      "phone2": "+91-99300-67891",
+      "address": "Bandra West, Mumbai, Maharashtra",
+      "role": "Suspect",
+      "cases": [
+        "102",
+        "105"
+      ]
+    },
+    {
+      "id": "P005",
+      "name": "Suresh Yadav",
+      "aliases": [
+        "Suresh Y.",
+        "S. Yadav"
+      ],
+      "phone": "+91-94221-11111",
+      "phone2": null,
+      "address": "Gomti Nagar, Lucknow, UP",
+      "role": "Suspect",
+      "cases": [
+        "103"
+      ]
+    },
+    {
+      "id": "P006",
+      "name": "Priya Nair",
+      "aliases": [
+        "Priya N.",
+        "P. Nair"
+      ],
+      "phone": "+91-81111-55555",
+      "phone2": null,
+      "address": "Koramangala, Bengaluru, Karnataka",
+      "role": "Suspect",
+      "cases": [
+        "104"
+      ]
+    },
+    {
+      "id": "P007",
+      "name": "Deepak Srivastava",
+      "aliases": [
+        "Deepak S.",
+        "D. Srivastava"
+      ],
+      "phone": "+91-76543-21000",
+      "phone2": null,
+      "address": "Civil Lines, Allahabad, UP",
+      "role": "Suspect",
+      "cases": [
+        "105"
+      ]
+    },
+    {
+      "id": "P008",
+      "name": "Manish Tiwari",
+      "aliases": [
+        "Manu",
+        "M. Tiwari"
+      ],
+      "phone": "+91-87654-32100",
+      "phone2": null,
+      "address": "Shyamnagar, Kanpur, UP",
+      "role": "Associate",
+      "cases": [
+        "101",
+        "103"
+      ]
+    },
+    {
+      "id": "P009",
+      "name": "Sanjay Gupta",
+      "aliases": [
+        "Sanju",
+        "S. Gupta",
+        "Sanjay G."
+      ],
+      "phone": "+91-91234-56780",
+      "phone2": null,
+      "address": "Salt Lake, Kolkata, WB",
+      "role": "Associate",
+      "cases": [
+        "102"
+      ]
+    },
+    {
+      "id": "P010",
+      "name": "Rohit Patel",
+      "aliases": [
+        "Rohit P.",
+        "R. Patel"
+      ],
+      "phone": "+91-96000-12345",
+      "phone2": null,
+      "address": "Satellite Area, Ahmedabad, Gujarat",
+      "role": "Associate",
+      "cases": [
+        "104",
+        "105"
+      ]
+    },
+    {
+      "id": "P011",
+      "name": "Unknown (Burner)",
+      "aliases": [
+        "Caller X",
+        "Unknown Suspect"
+      ],
+      "phone": "+91-98110-99999",
+      "phone2": null,
+      "address": "Unknown",
+      "role": "Unknown",
+      "cases": [
+        "102",
+        "103"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "id": "O001",
+      "name": "Apex Global Logistics Pvt Ltd",
+      "alias": "Apex Logistics",
+      "reg": "U74120DL2018PTC123456",
+      "address": "Plot 45, Okhla Industrial Area, Phase II, New Delhi",
+      "type": "Shell Company / Front Business",
+      "cases": [
+        "101",
+        "105"
+      ]
+    },
+    {
+      "id": "O002",
+      "name": "DarkNet Crypto Exchange Services",
+      "alias": "DCES",
+      "reg": "N/A (Unregistered)",
+      "address": "Online (Tor-accessible)",
+      "type": "Illicit Crypto Exchange",
+      "cases": [
+        "102"
+      ]
+    },
+    {
+      "id": "O003",
+      "name": "North Star Arms Traders",
+      "alias": "NSAT",
+      "reg": "N/A (Illicit)",
+      "address": "Meerut, UP (Mobile Base)",
+      "type": "Illicit Arms Syndicate",
+      "cases": [
+        "103"
+      ]
+    },
+    {
+      "id": "O004",
+      "name": "Luxe Motor Exports Pvt Ltd",
+      "alias": "Luxe Motors",
+      "reg": "U50400MH2020PTC987654",
+      "address": "Andheri East, Mumbai",
+      "type": "Vehicle Theft Front",
+      "cases": [
+        "104"
+      ]
+    },
+    {
+      "id": "O005",
+      "name": "Shroff Money Services",
+      "alias": "SMS Hawala",
+      "reg": "N/A (Unregistered Hawala)",
+      "address": "Pahar Ganj, New Delhi",
+      "type": "Hawala Operator",
+      "cases": [
+        "105"
+      ]
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "V001",
+      "plate": "DL-01-AB-1234",
+      "type": "SUV",
+      "model": "Toyota Fortuner",
+      "color": "Black",
+      "cases": [
+        "101"
+      ]
+    },
+    {
+      "id": "V002",
+      "plate": "MH-12-CD-5678",
+      "type": "Sedan",
+      "model": "Honda City",
+      "color": "White",
+      "cases": [
+        "104"
+      ]
+    },
+    {
+      "id": "V003",
+      "plate": "UP-32-GH-9012",
+      "type": "Truck",
+      "model": "Tata Ace",
+      "color": "Blue",
+      "cases": [
+        "103"
+      ]
+    },
+    {
+      "id": "V004",
+      "plate": "HR-26-EF-3456",
+      "type": "SUV",
+      "model": "Ford Endeavour",
+      "color": "Grey",
+      "cases": [
+        "104"
+      ]
+    },
+    {
+      "id": "V005",
+      "plate": "DL-05-XY-7890",
+      "type": "Bike",
+      "model": "Pulsar 220",
+      "color": "Red",
+      "cases": [
+        "101",
+        "103"
+      ]
+    }
+  ],
+  "locations": [
+    {
+      "id": "L001",
+      "name": "Rohini, New Delhi",
+      "lat": 28.7041,
+      "lon": 77.1025,
+      "cases": [
+        "101"
+      ]
+    },
+    {
+      "id": "L002",
+      "name": "Karol Bagh, New Delhi",
+      "lat": 28.6511,
+      "lon": 77.1907,
+      "cases": [
+        "101",
+        "105"
+      ]
+    },
+    {
+      "id": "L003",
+      "name": "Bandra West, Mumbai",
+      "lat": 19.0596,
+      "lon": 72.8295,
+      "cases": [
+        "102"
+      ]
+    },
+    {
+      "id": "L004",
+      "name": "Okhla Industrial Area, Delhi",
+      "lat": 28.5355,
+      "lon": 77.271,
+      "cases": [
+        "101",
+        "105"
+      ]
+    },
+    {
+      "id": "L005",
+      "name": "Meerut, Uttar Pradesh",
+      "lat": 28.9845,
+      "lon": 77.7064,
+      "cases": [
+        "103"
+      ]
+    },
+    {
+      "id": "L006",
+      "name": "Andheri East, Mumbai",
+      "lat": 19.1136,
+      "lon": 72.8697,
+      "cases": [
+        "104"
+      ]
+    },
+    {
+      "id": "L007",
+      "name": "Pahar Ganj, New Delhi",
+      "lat": 28.6432,
+      "lon": 77.212,
+      "cases": [
+        "105"
+      ]
+    },
+    {
+      "id": "L008",
+      "name": "Salt Lake City, Kolkata",
+      "lat": 22.5726,
+      "lon": 88.3639,
+      "cases": [
+        "102"
+      ]
+    }
+  ],
+  "financial_accounts": [
+    {
+      "id": "A001",
+      "number": "303040404050505",
+      "ifsc": "SBIN0001234",
+      "bank": "State Bank of India",
+      "holder_id": "P001",
+      "cases": [
+        "101"
+      ]
+    },
+    {
+      "id": "A002",
+      "number": "202030303040404",
+      "ifsc": "HDFC0002345",
+      "bank": "HDFC Bank",
+      "holder_id": "P002",
+      "cases": [
+        "101",
+        "102"
+      ]
+    },
+    {
+      "id": "A003",
+      "number": "112233445566778",
+      "ifsc": "ICIC0003456",
+      "bank": "ICICI Bank",
+      "holder_id": "P004",
+      "cases": [
+        "102",
+        "105"
+      ]
+    },
+    {
+      "id": "A004",
+      "number": "998877665544332",
+      "ifsc": "PUNB0004567",
+      "bank": "Punjab National Bank",
+      "holder_id": "P007",
+      "cases": [
+        "105"
+      ]
+    },
+    {
+      "id": "A005",
+      "number": "556677889900112",
+      "ifsc": "AXIS0005678",
+      "bank": "Axis Bank",
+      "holder_id": "P010",
+      "cases": [
+        "105"
+      ]
+    },
+    {
+      "id": "A006",
+      "number": "777666555444333",
+      "ifsc": "KKBK0006789",
+      "bank": "Kotak Mahindra Bank",
+      "holder_id": "O001",
+      "cases": [
+        "101",
+        "105"
+      ]
+    }
+  ],
+  "phone_numbers": [
+    {
+      "number": "+91-98110-44501",
+      "person_id": "P001",
+      "registered": true
+    },
+    {
+      "number": "+91-98765-32100",
+      "person_id": "P002",
+      "registered": true
+    },
+    {
+      "number": "+91-70011-12345",
+      "person_id": "P003",
+      "registered": true
+    },
+    {
+      "number": "+91-99300-67890",
+      "person_id": "P004",
+      "registered": true
+    },
+    {
+      "number": "+91-94221-11111",
+      "person_id": "P005",
+      "registered": true
+    },
+    {
+      "number": "+91-81111-55555",
+      "person_id": "P006",
+      "registered": true
+    },
+    {
+      "number": "+91-76543-21000",
+      "person_id": "P007",
+      "registered": true
+    },
+    {
+      "number": "+91-87654-32100",
+      "person_id": "P008",
+      "registered": true
+    },
+    {
+      "number": "+91-91234-56780",
+      "person_id": "P009",
+      "registered": true
+    },
+    {
+      "number": "+91-96000-12345",
+      "person_id": "P010",
+      "registered": true
+    },
+    {
+      "number": "+91-98110-99999",
+      "person_id": "P011",
+      "registered": true
+    },
+    {
+      "number": "+91-98110-44502",
+      "person_id": "P001",
+      "registered": true
+    },
+    {
+      "number": "+91-98765-32101",
+      "person_id": "P002",
+      "registered": true
+    },
+    {
+      "number": "+91-99300-67891",
+      "person_id": "P004",
+      "registered": true
+    },
+    {
+      "number": "+91-98110-99999",
+      "person_id": null,
+      "registered": false,
+      "note": "Unregistered burner phone — cross-case connector (102, 103)"
+    }
+  ]
+}

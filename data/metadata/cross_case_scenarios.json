@@ -1,0 +1,77 @@
+[
+  {
+    "scenario_id": "XC-001",
+    "title": "Shared Shell Company: Apex Global Logistics Pvt Ltd",
+    "description": "Apex Global Logistics Pvt Ltd (O001) is the financial conduit appearing in both FIR 101/2025 (Extortion) and FIR 105/2025 (Hawala). Ravi Kumar (P001) is the beneficial owner operating both criminal activities through the same front company.",
+    "case_ids": [
+      "101",
+      "105"
+    ],
+    "shared_entities": [
+      "O001",
+      "P001",
+      "A006"
+    ],
+    "priority": "HIGH",
+    "algorithm_hint": "Common Neighbors / Shared Node Detection"
+  },
+  {
+    "scenario_id": "XC-002",
+    "title": "Burner Phone Bridge: +91-98110-99999 connecting Cyber Fraud and Arms Smuggling",
+    "description": "An unregistered burner phone (+91-98110-99999) communicated with Vikram Singh (P002, Case 102 mastermind) and Suresh Yadav (P005, Case 103 arms coordinator). This constitutes a hidden cross-case connector between two seemingly unrelated crimes.",
+    "case_ids": [
+      "102",
+      "103"
+    ],
+    "shared_entities": [
+      "P011"
+    ],
+    "priority": "HIGH",
+    "algorithm_hint": "Common Neighbors via Phone Entity / Betweenness Centrality"
+  },
+  {
+    "scenario_id": "XC-003",
+    "title": "Vikram Singh: High-Betweenness Bridge Node across Cases 101-102-103",
+    "description": "Vikram Singh (P002) appears as an active participant in Cases 101, 102, and 103. Graph analysis shows he is the critical bridge connecting extortion, cyber fraud, and arms networks — indicating possible role as a central coordinator or fixer.",
+    "case_ids": [
+      "101",
+      "102",
+      "103"
+    ],
+    "shared_entities": [
+      "P002"
+    ],
+    "priority": "CRITICAL",
+    "algorithm_hint": "Betweenness Centrality — P002 expected to rank #1"
+  },
+  {
+    "scenario_id": "XC-004",
+    "title": "Aarav Mehta: Shared Financial Account across Cases 102 & 105",
+    "description": "Account No. 112233445566778 (ICICI, Aarav Mehta / P004) appears in FIR 102/2025 as a crypto layering account AND in FIR 105/2025 as a hawala receiving account. This is a direct financial cross-case link.",
+    "case_ids": [
+      "102",
+      "105"
+    ],
+    "shared_entities": [
+      "P004",
+      "A003"
+    ],
+    "priority": "HIGH",
+    "algorithm_hint": "Shared Account Node / Path Analysis"
+  },
+  {
+    "scenario_id": "XC-005",
+    "title": "Rohit Patel: Vehicle Theft proceeds laundered via Hawala (Cases 104 & 105)",
+    "description": "Rohit Patel (P010) appears in Case 104 (Vehicle Theft) and Case 105 (Hawala). Financial records show vehicle theft proceeds were routed through Shroff Money Services (O005) — connecting the auto crime cell to the hawala network.",
+    "case_ids": [
+      "104",
+      "105"
+    ],
+    "shared_entities": [
+      "P010",
+      "O005"
+    ],
+    "priority": "MEDIUM",
+    "algorithm_hint": "Common Neighbors / Shared Transaction Trace"
+  }
+]

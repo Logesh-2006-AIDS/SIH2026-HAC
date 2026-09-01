@@ -1,0 +1,391 @@
+{
+  "nodes": [
+    {
+      "id": "P001",
+      "name": "Ravi Kumar",
+      "aliases": [
+        "Ravan",
+        "R. Kumar",
+        "Ravi K."
+      ],
+      "phone": "+91-98110-44501",
+      "phone2": "+91-98110-44502",
+      "address": "C-14, Sector 7, Rohini, New Delhi",
+      "role": "Suspect",
+      "cases": [
+        "101",
+        "105"
+      ]
+    },
+    {
+      "id": "P002",
+      "name": "Vikram Singh",
+      "aliases": [
+        "Vicky",
+        "Vikram S.",
+        "V. Singh"
+      ],
+      "phone": "+91-98765-32100",
+      "phone2": "+91-98765-32101",
+      "address": "Flat 3B, MG Road, Gurgaon, Haryana",
+      "role": "Suspect",
+      "cases": [
+        "101",
+        "102",
+        "103"
+      ]
+    },
+    {
+      "id": "P003",
+      "name": "Meena Sharma",
+      "aliases": [
+        "Meena S.",
+        "M. Sharma"
+      ],
+      "phone": "+91-70011-12345",
+      "phone2": null,
+      "address": "12, Karol Bagh, New Delhi",
+      "role": "Suspect",
+      "cases": [
+        "101"
+      ]
+    },
+    {
+      "id": "P004",
+      "name": "Aarav Mehta",
+      "aliases": [
+        "AJ Mehta",
+        "Aarav M."
+      ],
+      "phone": "+91-99300-67890",
+      "phone2": "+91-99300-67891",
+      "address": "Bandra West, Mumbai, Maharashtra",
+      "role": "Suspect",
+      "cases": [
+        "102",
+        "105"
+      ]
+    },
+    {
+      "id": "P005",
+      "name": "Suresh Yadav",
+      "aliases": [
+        "Suresh Y.",
+        "S. Yadav"
+      ],
+      "phone": "+91-94221-11111",
+      "phone2": null,
+      "address": "Gomti Nagar, Lucknow, UP",
+      "role": "Suspect",
+      "cases": [
+        "103"
+      ]
+    },
+    {
+      "id": "P006",
+      "name": "Priya Nair",
+      "aliases": [
+        "Priya N.",
+        "P. Nair"
+      ],
+      "phone": "+91-81111-55555",
+      "phone2": null,
+      "address": "Koramangala, Bengaluru, Karnataka",
+      "role": "Suspect",
+      "cases": [
+        "104"
+      ]
+    },
+    {
+      "id": "P007",
+      "name": "Deepak Srivastava",
+      "aliases": [
+        "Deepak S.",
+        "D. Srivastava"
+      ],
+      "phone": "+91-76543-21000",
+      "phone2": null,
+      "address": "Civil Lines, Allahabad, UP",
+      "role": "Suspect",
+      "cases": [
+        "105"
+      ]
+    },
+    {
+      "id": "P008",
+      "name": "Manish Tiwari",
+      "aliases": [
+        "Manu",
+        "M. Tiwari"
+      ],
+      "phone": "+91-87654-32100",
+      "phone2": null,
+      "address": "Shyamnagar, Kanpur, UP",
+      "role": "Associate",
+      "cases": [
+        "101",
+        "103"
+      ]
+    },
+    {
+      "id": "P009",
+      "name": "Sanjay Gupta",
+      "aliases": [
+        "Sanju",
+        "S. Gupta",
+        "Sanjay G."
+      ],
+      "phone": "+91-91234-56780",
+      "phone2": null,
+      "address": "Salt Lake, Kolkata, WB",
+      "role": "Associate",
+      "cases": [
+        "102"
+      ]
+    },
+    {
+      "id": "P010",
+      "name": "Rohit Patel",
+      "aliases": [
+        "Rohit P.",
+        "R. Patel"
+      ],
+      "phone": "+91-96000-12345",
+      "phone2": null,
+      "address": "Satellite Area, Ahmedabad, Gujarat",
+      "role": "Associate",
+      "cases": [
+        "104",
+        "105"
+      ]
+    },
+    {
+      "id": "P011",
+      "name": "Unknown (Burner)",
+      "aliases": [
+        "Caller X",
+        "Unknown Suspect"
+      ],
+      "phone": "+91-98110-99999",
+      "phone2": null,
+      "address": "Unknown",
+      "role": "Unknown",
+      "cases": [
+        "102",
+        "103"
+      ]
+    },
+    {
+      "id": "O001",
+      "name": "Apex Global Logistics Pvt Ltd",
+      "alias": "Apex Logistics",
+      "reg": "U74120DL2018PTC123456",
+      "address": "Plot 45, Okhla Industrial Area, Phase II, New Delhi",
+      "type": "Shell Company / Front Business",
+      "cases": [
+        "101",
+        "105"
+      ]
+    },
+    {
+      "id": "O002",
+      "name": "DarkNet Crypto Exchange Services",
+      "alias": "DCES",
+      "reg": "N/A (Unregistered)",
+      "address": "Online (Tor-accessible)",
+      "type": "Illicit Crypto Exchange",
+      "cases": [
+        "102"
+      ]
+    },
+    {
+      "id": "O003",
+      "name": "North Star Arms Traders",
+      "alias": "NSAT",
+      "reg": "N/A (Illicit)",
+      "address": "Meerut, UP (Mobile Base)",
+      "type": "Illicit Arms Syndicate",
+      "cases": [
+        "103"
+      ]
+    },
+    {
+      "id": "O004",
+      "name": "Luxe Motor Exports Pvt Ltd",
+      "alias": "Luxe Motors",
+      "reg": "U50400MH2020PTC987654",
+      "address": "Andheri East, Mumbai",
+      "type": "Vehicle Theft Front",
+      "cases": [
+        "104"
+      ]
+    },
+    {
+      "id": "O005",
+      "name": "Shroff Money Services",
+      "alias": "SMS Hawala",
+      "reg": "N/A (Unregistered Hawala)",
+      "address": "Pahar Ganj, New Delhi",
+      "type": "Hawala Operator",
+      "cases": [
+        "105"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from_id": "P001",
+      "to_id": "P002",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "101",
+      "confidence": 0.97
+    },
+    {
+      "from_id": "P001",
+      "to_id": "P003",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "101",
+      "confidence": 0.92
+    },
+    {
+      "from_id": "P001",
+      "to_id": "P008",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "101",
+      "confidence": 0.88
+    },
+    {
+      "from_id": "P002",
+      "to_id": "P004",
+      "relation": "COMMUNICATES_WITH",
+      "source_case": "102",
+      "confidence": 0.95
+    },
+    {
+      "from_id": "P002",
+      "to_id": "P009",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "102",
+      "confidence": 0.85
+    },
+    {
+      "from_id": "P011",
+      "to_id": "P002",
+      "relation": "COMMUNICATES_WITH",
+      "source_case": "102",
+      "confidence": 0.93
+    },
+    {
+      "from_id": "P011",
+      "to_id": "P005",
+      "relation": "COMMUNICATES_WITH",
+      "source_case": "103",
+      "confidence": 0.91
+    },
+    {
+      "from_id": "P005",
+      "to_id": "P008",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "103",
+      "confidence": 0.87
+    },
+    {
+      "from_id": "P006",
+      "to_id": "P010",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "104",
+      "confidence": 0.9
+    },
+    {
+      "from_id": "P001",
+      "to_id": "P007",
+      "relation": "FINANCIAL_TRANSFER_TO",
+      "source_case": "105",
+      "confidence": 0.96
+    },
+    {
+      "from_id": "P004",
+      "to_id": "P007",
+      "relation": "FINANCIAL_TRANSFER_TO",
+      "source_case": "105",
+      "confidence": 0.94
+    },
+    {
+      "from_id": "P010",
+      "to_id": "P007",
+      "relation": "FINANCIAL_TRANSFER_TO",
+      "source_case": "105",
+      "confidence": 0.89
+    },
+    {
+      "from_id": "P001",
+      "to_id": "O001",
+      "relation": "OWNS",
+      "source_case": "105",
+      "confidence": 0.98
+    },
+    {
+      "from_id": "P004",
+      "to_id": "O002",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "102",
+      "confidence": 0.88
+    },
+    {
+      "from_id": "P005",
+      "to_id": "O003",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "103",
+      "confidence": 0.9
+    },
+    {
+      "from_id": "P006",
+      "to_id": "O004",
+      "relation": "OWNS",
+      "source_case": "104",
+      "confidence": 0.92
+    },
+    {
+      "from_id": "P007",
+      "to_id": "O005",
+      "relation": "ASSOCIATED_WITH",
+      "source_case": "105",
+      "confidence": 0.95
+    },
+    {
+      "from_id": "O001",
+      "to_id": "L004",
+      "relation": "LOCATED_AT",
+      "source_case": "101",
+      "confidence": 1.0
+    },
+    {
+      "from_id": "P001",
+      "to_id": "V001",
+      "relation": "OWNS",
+      "source_case": "101",
+      "confidence": 0.85
+    },
+    {
+      "from_id": "P002",
+      "to_id": "V001",
+      "relation": "APPEARED_IN",
+      "source_case": "101",
+      "confidence": 0.8
+    },
+    {
+      "from_id": "P001",
+      "to_id": "L001",
+      "relation": "LOCATED_AT",
+      "source_case": "101",
+      "confidence": 1.0
+    },
+    {
+      "from_id": "P004",
+      "to_id": "L003",
+      "relation": "LOCATED_AT",
+      "source_case": "102",
+      "confidence": 1.0
+    }
+  ]
+}
