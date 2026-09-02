@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import GraphCanvas from './components/GraphCanvas';
 import GraphControls from './components/GraphControls';
 import EntityInspector from './components/EntityInspector';
+import BackgroundNetwork from './components/BackgroundNetwork';
 
 // Rewritten & New Components
 import AICopilot from './components/AICopilot';
@@ -116,6 +117,7 @@ export default function App() {
 
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+      <BackgroundNetwork />
       <Header 
         currentRole={currentRole}
         setCurrentRole={setCurrentRole}
@@ -125,10 +127,10 @@ export default function App() {
         setSearchQuery={setSearchQuery}
       />
       
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', zIndex: 1 }}>
         <Sidebar currentRole={currentRole} activeTab={activeTab} setActiveTab={setActiveTab} />
         
-        <main style={{ flex: 1, display: 'flex', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+        <main key={activeTab} className="animate-fade-in" style={{ flex: 1, display: 'flex', overflow: 'hidden', background: 'transparent' }}>
           {/* Main Network Visualizer Workspace */}
           {(activeTab === 'dashboard' || activeTab === 'network') && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>

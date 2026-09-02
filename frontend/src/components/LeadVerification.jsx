@@ -49,75 +49,82 @@ export default function LeadVerification() {
   const pendingCount = leads.filter(l => l.status === 'PENDING').length;
 
   return (
-    <div style={{ flex: 1, height: '100%', padding: '1.5rem', overflowY: 'auto', background: 'var(--bg-primary)', color: '#f8fafc' }}>
+    <div className="animate-fade-in" style={{ flex: 1, height: '100%', padding: '1.75rem', overflowY: 'auto', background: 'transparent', color: '#F1EBDD' }}>
       {/* Top Banner */}
-      <div className="glass-panel" style={{
-        padding: '1.25rem 1.5rem', marginBottom: '1.5rem',
+      <div className="forensic-panel" style={{
+        padding: '1.35rem 1.75rem', marginBottom: '1.75rem',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
-        border: '1px solid rgba(16, 185, 129, 0.3)',
+        background: 'linear-gradient(135deg, rgba(217, 170, 61, 0.15) 0%, rgba(94, 159, 104, 0.15) 100%)',
+        border: '1px solid rgba(94, 159, 104, 0.35)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <ShieldCheck size={22} color="#10b981" />
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.3rem' }}>
+            <ShieldCheck size={24} color="#5E9F68" />
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F1EBDD' }}>
               Human-in-the-Loop Lead Verification Workbench
             </h2>
           </div>
-          <p style={{ color: '#d1d5db', fontSize: '0.85rem' }}>
-            Law enforcement verification queue. Review, confirm, or reject AI-predicted entity merges with evidentiary justification.
+          <p style={{ color: '#A6B0AA', fontSize: '0.86rem' }}>
+            Law enforcement verification queue. Confirm or reject AI-predicted entity merges with evidentiary justification.
           </p>
         </div>
-        <button onClick={fetchLeads} className="btn-primary" style={{ padding: '0.4rem 0.85rem', fontSize: '0.82rem' }}>
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+        <button onClick={fetchLeads} className="btn-primary" style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}>
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh Queue
         </button>
       </div>
 
-      {/* Leads Table */}
-      <div className="glass-panel" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Sparkles size={18} color="#818cf8" />
-            <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Pending Entity Resolutions & Link Suggestions</h3>
+      {/* Leads Queue */}
+      <div className="forensic-panel" style={{ padding: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <Sparkles size={19} color="#D9AA3D" />
+            <h3 style={{ fontSize: '1.02rem', fontWeight: 800 }}>Pending Entity Resolutions & Link Suggestions</h3>
           </div>
           <span className="badge badge-lead">{pendingCount} Pending Officer Review</span>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Loading verification queue from database...</div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#A6B0AA', fontSize: '0.9rem' }}>
+            <div className="animate-spin" style={{ width: 22, height: 22, border: '3px solid rgba(217,170,61,0.3)', borderTopColor: '#D9AA3D', borderRadius: '50%', margin: '0 auto 0.75rem' }} />
+            Loading verification queue...
+          </div>
         ) : leads.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-            <AlertTriangle size={24} style={{ marginBottom: '0.5rem' }} />
-            <div>No pending leads in the verification queue. Upload more investigation data to generate leads.</div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#6C7A73' }}>
+            <AlertTriangle size={26} style={{ marginBottom: '0.5rem' }} />
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F1EBDD' }}>No pending leads in the verification queue</div>
+            <div style={{ fontSize: '0.8rem', color: '#A6B0AA', marginTop: '0.2rem' }}>Upload additional investigation files to populate verification leads.</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {leads.map((lead) => {
               const isPending = lead.status === 'PENDING';
               return (
-                <div key={lead.id} style={{
-                  padding: '1.25rem', borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: lead.status === 'APPROVED' ? '1px solid rgba(16, 185, 129, 0.4)'
-                    : lead.status === 'REJECTED' ? '1px solid rgba(239, 68, 68, 0.4)'
-                    : '1px solid var(--border-color)',
-                  display: 'flex', flexDirection: 'column', gap: '0.75rem',
+                <div key={lead.id} className="evidence-card animate-slide-up" style={{
+                  padding: '1.35rem',
+                  border: lead.status === 'APPROVED' ? '2px solid #5E9F68'
+                    : lead.status === 'REJECTED' ? '2px solid #C92A2A'
+                    : '1px solid rgba(180, 160, 100, 0.4)',
+                  display: 'flex', flexDirection: 'column', gap: '0.85rem',
+                  position: 'relative',
                 }}>
+                  <div className="pin-detail" style={{ top: '-7px' }} />
+
                   {/* Header row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#818cf8', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#24251F', fontWeight: 800 }}>
                         {lead.id || `LEAD-${lead.id}`}
                       </span>
-                      <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc' }}>
+                      <span className="badge" style={{ background: 'rgba(214, 40, 40, 0.15)', color: '#900', border: '1px solid rgba(214, 40, 40, 0.3)', fontWeight: 800 }}>
                         {lead.match_type || lead.matchType || 'Entity Resolution'}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>AI Match Confidence:</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <span style={{ fontSize: '0.82rem', color: '#54564B', fontWeight: 700 }}>AI Match Confidence:</span>
                       <span style={{
-                        fontWeight: 700, fontSize: '0.9rem',
-                        color: (lead.similarity || lead.confidence || 0) >= 0.95 ? '#34d399' : '#fbbf24',
+                        fontWeight: 800, fontSize: '0.95rem',
+                        color: (lead.similarity || lead.confidence || 0) >= 0.95 ? '#1b5e20' : '#b78103',
                       }}>
                         {Math.round((lead.similarity || lead.confidence || 0.9) * 100)}%
                       </span>
@@ -127,58 +134,55 @@ export default function LeadVerification() {
                   {/* Compared Entities */}
                   <div style={{
                     display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-                    gap: '1rem', alignItems: 'center',
-                    background: 'rgba(0, 0, 0, 0.2)', padding: '0.75rem 1rem', borderRadius: '8px',
+                    gap: '1.25rem', alignItems: 'center',
+                    background: 'rgba(255, 255, 255, 0.5)', padding: '0.85rem 1.15rem', borderRadius: '8px',
+                    border: '1px solid rgba(0, 0, 0, 0.12)',
                   }}>
-                    <div style={{ color: '#60a5fa', fontWeight: 600, fontSize: '0.88rem' }}>
+                    <div style={{ color: '#24251F', fontWeight: 800, fontSize: '0.92rem' }}>
                       {lead.entity_a || lead.entityA || 'Entity A'}
                     </div>
-                    <div style={{ color: '#9ca3af', fontSize: '0.8rem', fontWeight: 700 }}>⟷</div>
-                    <div style={{ color: '#34d399', fontWeight: 600, fontSize: '0.88rem' }}>
+                    <div style={{ color: '#D62828', fontSize: '0.85rem', fontWeight: 800 }}>⟷</div>
+                    <div style={{ color: '#24251F', fontWeight: 800, fontSize: '0.92rem' }}>
                       {lead.entity_b || lead.entityB || 'Entity B'}
                     </div>
                   </div>
 
                   {/* Evidence Citation */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', fontSize: '0.8rem', color: '#9ca3af' }}>
-                    <FileText size={14} color="#f59e0b" style={{ marginTop: '0.15rem' }} />
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#24251F' }}>
+                    <FileText size={15} color="#D62828" style={{ marginTop: '0.15rem' }} />
                     <span><strong>Supporting Evidence:</strong> {lead.evidence || 'Awaiting evidence correlation'}</span>
                   </div>
 
                   {/* Action Controls */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, maxWidth: '400px' }}>
-                      <MessageSquare size={15} color="#6b7280" />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.65rem', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flex: 1, maxWidth: '420px' }}>
+                      <MessageSquare size={16} color="#54564B" />
                       <input type="text"
                         placeholder="Investigator remarks / reference note..."
                         value={remarks[lead.id] || ''}
                         onChange={(e) => setRemarks({ ...remarks, [lead.id]: e.target.value })}
                         disabled={!isPending}
                         style={{
-                          width: '100%', background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid var(--border-color)', borderRadius: '6px',
-                          padding: '0.35rem 0.65rem', color: '#ffffff', fontSize: '0.8rem', outline: 'none',
+                          width: '100%', background: 'rgba(255, 255, 255, 0.6)',
+                          border: '1px solid rgba(0, 0, 0, 0.18)', borderRadius: '8px',
+                          padding: '0.45rem 0.75rem', color: '#24251F', fontSize: '0.83rem', outline: 'none', fontWeight: 600,
                         }} />
                     </div>
 
                     {isPending ? (
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', gap: '0.6rem' }}>
                         <button onClick={() => handleAction(lead.id, 'APPROVED')} className="btn-primary"
-                          style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: '0.35rem 0.85rem', fontSize: '0.8rem' }}>
-                          <CheckCircle2 size={15} /><span>Approve & Merge</span>
+                          style={{ background: 'linear-gradient(135deg, #5E9F68 0%, #3e7546 100%)', color: '#fff', padding: '0.45rem 0.95rem', fontSize: '0.82rem' }}>
+                          <CheckCircle2 size={16} /><span>Approve & Merge</span>
                         </button>
-                        <button onClick={() => handleAction(lead.id, 'REJECTED')}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                            color: '#f87171', borderRadius: '8px', padding: '0.35rem 0.75rem', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', fontWeight: 600,
-                          }}>
-                          <XCircle size={15} /><span>Reject</span>
+                        <button onClick={() => handleAction(lead.id, 'REJECTED')} className="btn-red"
+                          style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}>
+                          <XCircle size={16} /><span>Reject</span>
                         </button>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className={`badge ${lead.status === 'APPROVED' ? 'badge-healthy' : 'badge-danger'}`}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                        <span className={`badge ${lead.status === 'APPROVED' ? 'badge-verified' : 'badge-danger'}`}>
                           {lead.status} at {lead.verified_at || lead.verifiedAt || 'just now'}
                         </span>
                       </div>

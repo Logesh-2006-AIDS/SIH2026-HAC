@@ -3,7 +3,6 @@ import {
   Filter, 
   Layers, 
   Route, 
-  RotateCcw, 
   Database, 
   Sparkles,
   Check,
@@ -11,7 +10,7 @@ import {
 } from 'lucide-react';
 
 const CASE_OPTIONS = [
-  { id: '', label: '🌐 All Cases (Cross-Case Network)' },
+  { id: '', label: '🌐 All Cases (Cross-Case Network Board)' },
   { id: '101', label: '📁 Case 101: Armed Robbery & Extortion (Delhi)' },
   { id: '102', label: '📁 Case 102: Cyber Fraud & Crypto Ring' },
   { id: '103', label: '📁 Case 103: Arms Smuggling & Supply (UP)' },
@@ -20,8 +19,8 @@ const CASE_OPTIONS = [
 ];
 
 const LAYOUT_OPTIONS = [
-  { id: 'cose', label: 'Force-Directed (Physics)' },
-  { id: 'concentric', label: 'Concentric (Hierarchy)' },
+  { id: 'cose', label: 'Force-Directed (Physics Board)' },
+  { id: 'concentric', label: 'Concentric (Hierarchy Pins)' },
   { id: 'circle', label: 'Circular Cluster' },
   { id: 'grid', label: 'Matrix Grid' },
 ];
@@ -49,39 +48,42 @@ export default function GraphControls({
 
   return (
     <div
-      className="glass-panel"
+      className="forensic-panel"
       style={{
-        padding: '0.75rem 1rem',
+        padding: '0.75rem 1.25rem',
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '0.75rem',
+        gap: '0.85rem',
         marginBottom: '1rem',
+        position: 'relative',
+        zIndex: 15,
       }}
     >
-      {/* Left: Filters & Layouts */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
+      {/* Left: Case Filter & Layout Control */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem' }}>
         {/* Case Selector Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Filter size={16} color="#818cf8" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Filter size={16} color="#D9AA3D" />
           <select
             value={selectedCase}
             onChange={(e) => onSelectCase(e.target.value)}
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
+              background: 'rgba(16, 19, 17, 0.85)',
               border: '1px solid var(--border-color)',
-              color: '#ffffff',
+              color: '#F1EBDD',
               borderRadius: '8px',
-              padding: '0.45rem 0.75rem',
+              padding: '0.5rem 0.85rem',
               fontSize: '0.85rem',
               outline: 'none',
               cursor: 'pointer',
-              fontWeight: 500,
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
             {CASE_OPTIONS.map((c) => (
-              <option key={c.id} value={c.id} style={{ background: '#111827', color: '#ffffff' }}>
+              <option key={c.id} value={c.id} style={{ background: '#101311', color: '#F1EBDD' }}>
                 {c.label}
               </option>
             ))}
@@ -89,24 +91,26 @@ export default function GraphControls({
         </div>
 
         {/* Layout Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Layers size={16} color="#06b6d4" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Layers size={16} color="#5E9F68" />
           <select
             value={layoutName}
             onChange={(e) => onSelectLayout(e.target.value)}
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
+              background: 'rgba(16, 19, 17, 0.85)',
               border: '1px solid var(--border-color)',
-              color: '#ffffff',
+              color: '#F1EBDD',
               borderRadius: '8px',
-              padding: '0.45rem 0.75rem',
+              padding: '0.5rem 0.85rem',
               fontSize: '0.85rem',
               outline: 'none',
               cursor: 'pointer',
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
             {LAYOUT_OPTIONS.map((l) => (
-              <option key={l.id} value={l.id} style={{ background: '#111827', color: '#ffffff' }}>
+              <option key={l.id} value={l.id} style={{ background: '#101311', color: '#F1EBDD' }}>
                 {l.label}
               </option>
             ))}
@@ -114,20 +118,19 @@ export default function GraphControls({
         </div>
       </div>
 
-      {/* Right: Path Finder & Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+      {/* Right: Path Finder & Sync Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
         {/* Shortest Path Trigger */}
         <button
           onClick={() => setShowPathFinder(!showPathFinder)}
-          className="btn-primary"
+          className={hasActivePath ? "btn-red" : "btn-primary"}
           style={{
-            padding: '0.45rem 0.85rem',
-            fontSize: '0.82rem',
-            background: hasActivePath ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : undefined,
+            padding: '0.5rem 0.95rem',
+            fontSize: '0.83rem',
           }}
         >
           <Route size={16} />
-          <span>{hasActivePath ? 'Path Active' : 'Shortest Path Finder'}</span>
+          <span>{hasActivePath ? 'Red String Connection Active' : 'Trace Connection String'}</span>
         </button>
 
         {hasActivePath && (
@@ -135,21 +138,22 @@ export default function GraphControls({
             onClick={onClearPath}
             title="Clear Path Highlight"
             style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
+              background: 'rgba(201, 42, 42, 0.15)',
+              border: '1px solid rgba(201, 42, 42, 0.35)',
+              color: '#ff6b6b',
               borderRadius: '8px',
-              padding: '0.45rem 0.65rem',
+              padding: '0.5rem 0.75rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem',
-              fontSize: '0.8rem',
+              gap: '0.3rem',
+              fontSize: '0.82rem',
               fontWeight: 600,
+              transition: 'all 0.2s ease',
             }}
           >
             <X size={14} />
-            <span>Reset Path</span>
+            <span>Reset String</span>
           </button>
         )}
 
@@ -157,79 +161,71 @@ export default function GraphControls({
         <button
           onClick={onSeedGraph}
           title="Re-seed Neo4j Graph from Dataset"
+          className="btn-secondary"
           style={{
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid var(--border-color)',
-            color: '#9ca3af',
-            borderRadius: '8px',
-            padding: '0.45rem 0.75rem',
+            padding: '0.5rem 0.85rem',
             fontSize: '0.82rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
             gap: '0.4rem',
-            transition: 'all 0.2s ease',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#9ca3af')}
         >
-          <Database size={15} />
-          <span>Sync Neo4j</span>
+          <Database size={15} color="#D9AA3D" />
+          <span>Sync Evidence Graph</span>
         </button>
       </div>
 
       {/* Path Finder Dialog Modal */}
       {showPathFinder && (
         <div
+          className="animate-slide-up forensic-panel"
           style={{
             position: 'absolute',
-            top: '4.5rem',
+            top: '4.8rem',
             right: '1.5rem',
-            background: 'rgba(17, 24, 39, 0.95)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(245, 158, 11, 0.4)',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            background: 'rgba(16, 19, 17, 0.96)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(214, 40, 40, 0.5)',
+            borderRadius: '14px',
+            padding: '1.35rem',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 0 20px rgba(214, 40, 40, 0.2)',
             zIndex: 50,
-            width: '320px',
+            width: '330px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.85rem',
+            gap: '0.95rem',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#fbbf24', fontWeight: 600, fontSize: '0.9rem' }}>
-              <Sparkles size={16} />
-              <span>Trace Suspect Connection Chain</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#D62828', fontWeight: 800, fontSize: '0.92rem' }}>
+              <Sparkles size={17} />
+              <span>Trace Red Connection String</span>
             </div>
             <button
               onClick={() => setShowPathFinder(false)}
-              style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}
+              style={{ background: 'transparent', border: 'none', color: '#A6B0AA', cursor: 'pointer' }}
             >
               <X size={16} />
             </button>
           </div>
 
           <div>
-            <label style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'block', marginBottom: '0.3rem' }}>
-              Source Entity:
+            <label style={{ fontSize: '0.75rem', color: '#A6B0AA', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
+              Source Evidence Pin:
             </label>
             <select
               value={sourceSuspect}
               onChange={(e) => setSourceSuspect(e.target.value)}
               style={{
                 width: '100%',
-                background: 'rgba(255, 255, 255, 0.08)',
+                background: 'rgba(8, 10, 9, 0.8)',
                 border: '1px solid var(--border-color)',
-                color: '#ffffff',
-                borderRadius: '6px',
-                padding: '0.4rem 0.6rem',
-                fontSize: '0.82rem',
+                color: '#F1EBDD',
+                borderRadius: '8px',
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.83rem',
               }}
             >
               {suspects.map((s) => (
-                <option key={s.id} value={s.id} style={{ background: '#111827' }}>
+                <option key={s.id} value={s.id} style={{ background: '#101311' }}>
                   {s.name || s.id} ({s.id})
                 </option>
               ))}
@@ -237,24 +233,24 @@ export default function GraphControls({
           </div>
 
           <div>
-            <label style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'block', marginBottom: '0.3rem' }}>
-              Target Entity:
+            <label style={{ fontSize: '0.75rem', color: '#A6B0AA', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
+              Target Evidence Pin:
             </label>
             <select
               value={targetSuspect}
               onChange={(e) => setTargetSuspect(e.target.value)}
               style={{
                 width: '100%',
-                background: 'rgba(255, 255, 255, 0.08)',
+                background: 'rgba(8, 10, 9, 0.8)',
                 border: '1px solid var(--border-color)',
-                color: '#ffffff',
-                borderRadius: '6px',
-                padding: '0.4rem 0.6rem',
-                fontSize: '0.82rem',
+                color: '#F1EBDD',
+                borderRadius: '8px',
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.83rem',
               }}
             >
               {suspects.map((s) => (
-                <option key={s.id} value={s.id} style={{ background: '#111827' }}>
+                <option key={s.id} value={s.id} style={{ background: '#101311' }}>
                   {s.name || s.id} ({s.id})
                 </option>
               ))}
@@ -263,16 +259,15 @@ export default function GraphControls({
 
           <button
             onClick={handleExecutePath}
-            className="btn-primary"
+            className="btn-red"
             style={{
               width: '100%',
               justifyContent: 'center',
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
               marginTop: '0.35rem',
             }}
           >
             <Check size={16} />
-            <span>Discover Shortest Path</span>
+            <span>Connect Evidence String</span>
           </button>
         </div>
       )}

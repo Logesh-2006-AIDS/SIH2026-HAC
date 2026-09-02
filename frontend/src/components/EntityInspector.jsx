@@ -4,7 +4,6 @@ import {
   Phone, 
   MapPin, 
   FolderArchive, 
-  Shield, 
   Car, 
   Building2, 
   CreditCard, 
@@ -34,7 +33,7 @@ export default function EntityInspector({
     if (isPhone) return `Phone: ${entity.number}`;
     if (isAccount) return `Account: ${entity.account_number}`;
     if (isLocation) return `Location: ${entity.name || entity.id}`;
-    return entity.id || 'Entity Details';
+    return entity.id || 'Evidence Record';
   };
 
   const getSubtitle = () => {
@@ -44,60 +43,74 @@ export default function EntityInspector({
     if (isPhone) return entity.registered ? 'Registered Subscriber' : 'Unregistered Burner Phone';
     if (isAccount) return `${entity.bank || 'Bank'} (IFSC: ${entity.ifsc || 'N/A'})`;
     if (isLocation) return `Coordinates: ${entity.lat}, ${entity.lon}`;
-    return 'Knowledge Graph Entity';
+    return 'Knowledge Graph Evidence Node';
   };
 
   return (
     <div
-      className="glass-panel"
+      className="evidence-card animate-slide-up"
       style={{
-        width: '340px',
+        width: '350px',
         maxHeight: 'calc(100vh - 180px)',
         overflowY: 'auto',
-        padding: '1.25rem',
+        padding: '1.5rem 1.35rem 1.35rem 1.35rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1rem',
-        borderLeft: '2px solid rgba(99, 102, 241, 0.4)',
-        animation: 'slideIn 0.2s ease',
+        gap: '1.1rem',
+        borderLeft: '4px solid #D62828', // Red string indicator edge
+        boxShadow: '-8px 0 32px rgba(0,0,0,0.6)',
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 30,
+        borderRadius: '12px 0 0 12px',
+        background: '#D8C58A',
+        color: '#24251F',
       }}
     >
+      {/* Metallic Pin at Top */}
+      <div className="pin-detail pin-detail-red" />
+
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '0.2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div
             style={{
-              padding: '0.45rem',
-              borderRadius: '8px',
-              background: 'rgba(99, 102, 241, 0.2)',
-              color: '#818cf8',
+              padding: '0.55rem',
+              borderRadius: '10px',
+              background: 'rgba(36, 37, 31, 0.12)',
+              color: '#24251F',
+              border: '1px solid rgba(36, 37, 31, 0.25)',
             }}
           >
-            {isPerson && <User size={20} />}
-            {isVehicle && <Car size={20} />}
-            {isOrg && <Building2 size={20} />}
-            {isPhone && <Phone size={20} />}
-            {isAccount && <CreditCard size={20} />}
-            {isLocation && <MapPin size={20} />}
+            {isPerson && <User size={22} />}
+            {isVehicle && <Car size={22} />}
+            {isOrg && <Building2 size={22} />}
+            {isPhone && <Phone size={22} />}
+            {isAccount && <CreditCard size={22} />}
+            {isLocation && <MapPin size={22} />}
           </div>
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.2 }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#24251F', lineHeight: 1.2 }}>
               {getTitle()}
             </h3>
-            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{getSubtitle()}</span>
+            <span style={{ fontSize: '0.76rem', color: '#54564B', fontWeight: 600 }}>{getSubtitle()}</span>
           </div>
         </div>
 
         <button
           onClick={onClose}
           style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#6b7280',
+            background: 'rgba(0,0,0,0.06)',
+            border: '1px solid rgba(0,0,0,0.15)',
+            color: '#24251F',
+            borderRadius: '6px',
             cursor: 'pointer',
-            padding: '0.2rem',
+            padding: '0.3rem',
+            transition: 'all 0.2s ease',
           }}
-          title="Close Inspector"
+          title="Unpin Inspector"
         >
           <X size={18} />
         </button>
@@ -105,43 +118,45 @@ export default function EntityInspector({
 
       {/* Entity Identifier Pill */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <span className="badge" style={{ background: 'rgba(255,255,255,0.06)', color: '#d1d5db' }}>
+        <span className="badge" style={{ background: 'rgba(0,0,0,0.08)', color: '#24251F', border: '1px solid rgba(0,0,0,0.15)', fontWeight: 700 }}>
           ID: {entity.id || entity.number || 'N/A'}
         </span>
         {entity.cases && entity.cases.length > 0 && (
-          <span className="badge badge-lead">
+          <span className="badge" style={{ background: 'rgba(214, 40, 40, 0.18)', color: '#900', border: '1px solid rgba(214, 40, 40, 0.4)', fontWeight: 700 }}>
             {entity.cases.length > 1 ? `🔗 Cross-Case (${entity.cases.join(', ')})` : `Case: ${entity.cases[0]}`}
           </span>
         )}
       </div>
 
-      {/* Detailed Properties */}
+      {/* Detailed Properties Card */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.65rem',
-          background: 'rgba(0, 0, 0, 0.2)',
-          padding: '0.85rem',
+          gap: '0.75rem',
+          background: 'rgba(255, 255, 255, 0.45)',
+          padding: '0.95rem',
           borderRadius: '8px',
-          border: '1px solid var(--border-color)',
-          fontSize: '0.82rem',
+          border: '1px solid rgba(0, 0, 0, 0.12)',
+          fontSize: '0.83rem',
         }}
       >
         {/* Aliases */}
         {entity.aliases && entity.aliases.length > 0 && (
           <div>
-            <span style={{ color: '#9ca3af', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>KNOWN ALIASES</span>
-            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
+            <span style={{ color: '#54564B', display: 'block', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em' }}>KNOWN ALIASES</span>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
               {entity.aliases.map((al, idx) => (
                 <span
                   key={idx}
                   style={{
-                    background: 'rgba(99, 102, 241, 0.15)',
-                    color: '#a5b4fc',
-                    padding: '0.15rem 0.45rem',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
+                    background: 'rgba(214, 40, 40, 0.12)',
+                    color: '#800',
+                    border: '1px solid rgba(214, 40, 40, 0.3)',
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: '6px',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
                   }}
                 >
                   "{al}"
@@ -154,50 +169,50 @@ export default function EntityInspector({
         {/* Primary Phone */}
         {entity.phone && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Phone size={14} color="#06b6d4" />
-            <span style={{ color: '#e5e7eb' }}>{entity.phone}</span>
+            <Phone size={15} color="#24251F" />
+            <span style={{ color: '#24251F', fontWeight: 700 }}>{entity.phone}</span>
           </div>
         )}
 
         {/* Address */}
         {entity.address && (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-            <MapPin size={14} color="#ef4444" style={{ marginTop: '0.15rem' }} />
-            <span style={{ color: '#d1d5db', lineHeight: 1.3 }}>{entity.address}</span>
+            <MapPin size={15} color="#D62828" style={{ marginTop: '0.15rem' }} />
+            <span style={{ color: '#24251F', lineHeight: 1.35, fontWeight: 500 }}>{entity.address}</span>
           </div>
         )}
 
         {/* Registration */}
         {entity.reg && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={14} color="#f59e0b" />
-            <span style={{ color: '#e5e7eb' }}>Reg: {entity.reg}</span>
+            <FileText size={15} color="#24251F" />
+            <span style={{ color: '#24251F', fontWeight: 700 }}>Reg: {entity.reg}</span>
           </div>
         )}
       </div>
 
       {/* Case Affiliation & Evidence */}
       <div>
-        <h4 style={{ fontSize: '0.8rem', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-          Investigative Links
+        <h4 style={{ fontSize: '0.78rem', color: '#54564B', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 800, letterSpacing: '0.05em' }}>
+          Pointers to Active Dossiers
         </h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
           {(entity.cases || []).map((cId) => (
             <div
               key={cId}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 0.65rem',
-                borderRadius: '6px',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid var(--border-color)',
-                fontSize: '0.8rem',
+                gap: '0.55rem',
+                padding: '0.55rem 0.75rem',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.45)',
+                border: '1px solid rgba(0, 0, 0, 0.12)',
+                fontSize: '0.82rem',
               }}
             >
-              <FolderArchive size={14} color="#818cf8" />
-              <span style={{ color: '#e5e7eb', fontWeight: 500 }}>FIR Case No. {cId}/2025</span>
+              <FolderArchive size={15} color="#D62828" />
+              <span style={{ color: '#24251F', fontWeight: 700 }}>FIR Case No. {cId}/2025</span>
             </div>
           ))}
         </div>
@@ -206,11 +221,11 @@ export default function EntityInspector({
       {/* Quick Action Button */}
       <button
         onClick={() => onSetAsPathSource(entity.id || entity.number)}
-        className="btn-primary"
-        style={{ width: '100%', justifyContent: 'center', marginTop: 'auto', fontSize: '0.82rem' }}
+        className="btn-red"
+        style={{ width: '100%', justifyContent: 'center', marginTop: 'auto', fontSize: '0.84rem' }}
       >
-        <Route size={15} />
-        <span>Trace Paths from this Entity</span>
+        <Route size={16} />
+        <span>Attach Red String Trace</span>
       </button>
     </div>
   );

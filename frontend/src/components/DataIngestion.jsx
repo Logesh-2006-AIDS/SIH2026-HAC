@@ -1,14 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle, AlertTriangle, Loader, ChevronRight, Database, Users, ArrowRight, X } from 'lucide-react';
+import { Upload, CheckCircle, AlertTriangle, Loader, ChevronRight, Database, Users, X } from 'lucide-react';
 import axios from 'axios';
 
 const DATA_TYPES = [
-  { id: 'fir_report', label: 'FIR Report', ext: '.txt', icon: '📋' },
+  { id: 'fir_report', label: 'FIR Report Document', ext: '.txt', icon: '📋' },
   { id: 'cdr', label: 'CDR / Call Detail Records', ext: '.csv', icon: '📞' },
   { id: 'financial', label: 'Financial Transactions', ext: '.csv', icon: '💰' },
   { id: 'intelligence', label: 'Intelligence Brief', ext: '.json', icon: '🔍' },
-  { id: 'csv_import', label: 'CSV Data', ext: '.csv', icon: '📊' },
-  { id: 'json_import', label: 'JSON Data', ext: '.json', icon: '📄' },
+  { id: 'csv_import', label: 'CSV Evidence Data', ext: '.csv', icon: '📊' },
+  { id: 'json_import', label: 'JSON Graph Data', ext: '.json', icon: '📄' },
 ];
 
 const STEPS = [
@@ -94,61 +94,64 @@ export default function DataIngestion() {
   };
 
   return (
-    <div style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: '#f8fafc', overflow: 'hidden' }}>
+    <div className="animate-fade-in" style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', background: 'transparent', color: '#F1EBDD', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8' }}>
-            <Upload size={22} />
+      <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(16, 19, 17, 0.92)', backdropFilter: 'blur(12px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{ padding: '0.55rem', borderRadius: '10px', background: 'rgba(217, 170, 61, 0.18)', color: '#D9AA3D', border: '1px solid rgba(217, 170, 61, 0.3)', boxShadow: '0 0 12px rgba(217, 170, 61, 0.2)' }}>
+            <Upload size={24} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Upload Investigation Data</h2>
-            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>Upload → Process → Review → Graph</p>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Data Ingestion & Evidence Ingestion Engine</h2>
+            <p style={{ fontSize: '0.8rem', color: '#A6B0AA', margin: 0 }}>Ingest CDRs, FIRs & Financial Statements directly into Neo4j Knowledge Graph</p>
           </div>
         </div>
         {currentStep > 0 && (
-          <button onClick={handleReset} style={{ padding: '0.4rem 0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <X size={14} /> New Upload
+          <button onClick={handleReset} className="btn-secondary" style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}>
+            <X size={14} /> New Evidence Upload
           </button>
         )}
       </div>
 
       {/* Step Progress Bar */}
-      <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(15, 23, 42, 0.5)' }}>
-        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+      <div style={{ padding: '0.85rem 1.75rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(8, 10, 9, 0.6)' }}>
+        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', overflowX: 'auto' }}>
           {STEPS.map((step, idx) => (
             <React.Fragment key={idx}>
               <div style={{
-                padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600,
-                background: idx <= currentStep ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.03)',
-                color: idx <= currentStep ? '#a5b4fc' : '#4b5563',
-                border: idx === currentStep ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid transparent',
+                padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.73rem', fontWeight: 700,
+                background: idx <= currentStep ? 'rgba(217, 170, 61, 0.2)' : 'rgba(255,255,255,0.03)',
+                color: idx <= currentStep ? '#D9AA3D' : '#6C7A73',
+                border: idx === currentStep ? '1px solid rgba(217, 170, 61, 0.5)' : '1px solid transparent',
+                boxShadow: idx === currentStep ? '0 0 10px rgba(217, 170, 61, 0.2)' : 'none',
+                whiteSpace: 'nowrap',
               }}>{idx + 1}. {step}</div>
-              {idx < STEPS.length - 1 && <ChevronRight size={12} color="#4b5563" />}
+              {idx < STEPS.length - 1 && <ChevronRight size={12} color="#6C7A73" />}
             </React.Fragment>
           ))}
         </div>
       </div>
 
       {/* Content Area */}
-      <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '1.75rem', overflowY: 'auto' }}>
         {error && (
-          <div style={{ padding: '1rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <AlertTriangle size={16} /> {error}
+          <div style={{ padding: '1.1rem 1.35rem', borderRadius: '10px', background: 'rgba(201, 42, 42, 0.15)', border: '1px solid rgba(201, 42, 42, 0.4)', color: '#ff6b6b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.88rem', fontWeight: 600 }}>
+            <AlertTriangle size={18} /> {error}
           </div>
         )}
 
         {/* Step 0: Select Data Type */}
         {currentStep === 0 && (
-          <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: '#cbd5e1' }}>Select Investigation Data Source Type</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+          <div className="animate-slide-up">
+            <h3 style={{ fontSize: '1.02rem', fontWeight: 800, marginBottom: '1.25rem', color: '#F1EBDD' }}>Select Investigation Data Source Type</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
               {DATA_TYPES.map(dt => (
                 <button key={dt.id} onClick={() => { setSelectedType(dt); setCurrentStep(1); }}
-                  style={{ padding: '1.25rem', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', cursor: 'pointer', textAlign: 'left', color: '#f8fafc', transition: 'all 0.15s ease' }}>
-                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{dt.icon}</div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>{dt.label}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>Accepts {dt.ext} files</div>
+                  className="forensic-panel glass-panel-interactive"
+                  style={{ padding: '1.5rem', cursor: 'pointer', textAlign: 'left', color: '#F1EBDD' }}>
+                  <div style={{ fontSize: '1.8rem', marginBottom: '0.65rem' }}>{dt.icon}</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800 }}>{dt.label}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#A6B0AA', marginTop: '0.3rem', fontWeight: 600 }}>Accepts {dt.ext} formatted files</div>
                 </button>
               ))}
             </div>
@@ -157,15 +160,16 @@ export default function DataIngestion() {
 
         {/* Step 1: Upload File */}
         {currentStep === 1 && (
-          <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: '#cbd5e1' }}>
+          <div className="animate-slide-up">
+            <h3 style={{ fontSize: '1.02rem', fontWeight: 800, marginBottom: '1.25rem', color: '#F1EBDD' }}>
               Upload {selectedType?.label} File
             </h3>
             <div onClick={() => fileRef.current?.click()}
-              style={{ padding: '3rem', borderRadius: '12px', border: '2px dashed var(--border-color)', background: 'rgba(255,255,255,0.02)', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s ease' }}>
-              <Upload size={40} color="#818cf8" style={{ marginBottom: '0.75rem' }} />
-              <div style={{ fontSize: '1rem', fontWeight: 600, color: '#cbd5e1' }}>Click to select file or drag & drop</div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.3rem' }}>Supported: {selectedType?.ext}</div>
+              className="forensic-panel glass-panel-interactive"
+              style={{ padding: '3.5rem', border: '2px dashed rgba(217, 170, 61, 0.4)', textAlign: 'center', cursor: 'pointer' }}>
+              <Upload size={48} color="#D9AA3D" style={{ marginBottom: '1rem' }} className="animate-pulse-glow" />
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F1EBDD' }}>Click to select evidence file or drag & drop</div>
+              <div style={{ fontSize: '0.83rem', color: '#A6B0AA', marginTop: '0.4rem' }}>Supported Formats: <strong>{selectedType?.ext}</strong></div>
             </div>
             <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={handleFileSelect} />
           </div>
@@ -173,42 +177,41 @@ export default function DataIngestion() {
 
         {/* Step 2: File Information */}
         {currentStep === 2 && selectedFile && (
-          <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: '#cbd5e1' }}>File Information</h3>
-            <div style={{ padding: '1.25rem', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div><span style={{ fontSize: '0.75rem', color: '#64748b' }}>Filename</span><div style={{ fontWeight: 600 }}>{selectedFile.name}</div></div>
-                <div><span style={{ fontSize: '0.75rem', color: '#64748b' }}>Format</span><div style={{ fontWeight: 600 }}>{selectedFile.type || selectedFile.name.split('.').pop().toUpperCase()}</div></div>
-                <div><span style={{ fontSize: '0.75rem', color: '#64748b' }}>Size</span><div style={{ fontWeight: 600 }}>{(selectedFile.size / 1024).toFixed(1)} KB</div></div>
-                <div><span style={{ fontSize: '0.75rem', color: '#64748b' }}>Data Type</span><div style={{ fontWeight: 600 }}>{selectedType?.label || 'Auto-detect'}</div></div>
-                <div><span style={{ fontSize: '0.75rem', color: '#64748b' }}>Upload Time</span><div style={{ fontWeight: 600 }}>{new Date().toLocaleString()}</div></div>
+          <div className="animate-slide-up">
+            <h3 style={{ fontSize: '1.02rem', fontWeight: 800, marginBottom: '1.25rem', color: '#F1EBDD' }}>File Information Overview</h3>
+            <div className="forensic-panel" style={{ padding: '1.5rem', marginBottom: '1.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+                <div><span style={{ fontSize: '0.75rem', color: '#6C7A73', fontWeight: 700 }}>Filename</span><div style={{ fontWeight: 800, color: '#F1EBDD', fontSize: '0.95rem' }}>{selectedFile.name}</div></div>
+                <div><span style={{ fontSize: '0.75rem', color: '#6C7A73', fontWeight: 700 }}>Format</span><div style={{ fontWeight: 800, color: '#F1EBDD', fontSize: '0.95rem' }}>{selectedFile.type || selectedFile.name.split('.').pop().toUpperCase()}</div></div>
+                <div><span style={{ fontSize: '0.75rem', color: '#6C7A73', fontWeight: 700 }}>Size</span><div style={{ fontWeight: 800, color: '#F1EBDD', fontSize: '0.95rem' }}>{(selectedFile.size / 1024).toFixed(1)} KB</div></div>
+                <div><span style={{ fontSize: '0.75rem', color: '#6C7A73', fontWeight: 700 }}>Data Type</span><div style={{ fontWeight: 800, color: '#F1EBDD', fontSize: '0.95rem' }}>{selectedType?.label || 'Auto-detect'}</div></div>
               </div>
             </div>
-            <button onClick={handleProcess} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Database size={16} /> Run Preprocessing & Entity Extraction
+            <button onClick={handleProcess} className="btn-primary" style={{ padding: '0.85rem 1.75rem', fontSize: '0.92rem' }}>
+              <Database size={18} /> Execute Preprocessing & Entity Extraction
             </button>
           </div>
         )}
 
         {/* Step 3: Processing */}
         {currentStep === 3 && (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <Loader size={40} color="#818cf8" className="animate-spin" />
-            <div style={{ fontSize: '1.1rem', fontWeight: 600, marginTop: '1rem', color: '#cbd5e1' }}>Processing Investigation Data...</div>
-            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.5rem' }}>Validating → Cleaning → Extracting Entities → Extracting Relationships</div>
+          <div style={{ textAlign: 'center', padding: '4rem' }}>
+            <Loader size={44} color="#D9AA3D" className="animate-spin" />
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, marginTop: '1.25rem', color: '#F1EBDD' }}>Processing Evidence Dataset...</div>
+            <div style={{ fontSize: '0.86rem', color: '#A6B0AA', marginTop: '0.5rem' }}>Validating → Cleaning → Extracting Entities → Extracting Relationships</div>
           </div>
         )}
 
         {/* Step 4: Entities Extracted */}
         {currentStep >= 4 && ingestionResult && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Summary Banner */}
-            <div style={{ padding: '1.25rem', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <CheckCircle size={18} color="#34d399" />
-                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#34d399' }}>Data Processed Successfully</span>
+            <div style={{ padding: '1.35rem', borderRadius: '12px', background: 'rgba(94, 159, 104, 0.15)', border: '1px solid rgba(94, 159, 104, 0.4)', boxShadow: '0 0 16px rgba(94, 159, 104, 0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.65rem' }}>
+                <CheckCircle size={20} color="#5E9F68" />
+                <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#72bf7e' }}>Dataset Processed & Graph Synced Successfully</span>
               </div>
-              <div style={{ display: 'flex', gap: '2rem', fontSize: '0.85rem', color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', fontSize: '0.88rem', color: '#F1EBDD' }}>
                 <div>Source: <strong>{ingestionResult.filename}</strong></div>
                 <div>Type: <strong>{ingestionResult.source_type}</strong></div>
                 <div>Records: <strong>{ingestionResult.rows_processed}</strong></div>
@@ -218,17 +221,17 @@ export default function DataIngestion() {
 
             {/* NLP Entities */}
             {nlpResult?.entities && nlpResult.entities.length > 0 && (
-              <div style={{ padding: '1.25rem', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#38bdf8', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Users size={18} /> Extracted Entities ({nlpResult.entities.length})
+              <div className="forensic-panel" style={{ padding: '1.35rem' }}>
+                <h3 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#D9AA3D', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                  <Users size={20} /> Extracted Entities ({nlpResult.entities.length})
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '0.85rem' }}>
                   {nlpResult.entities.map((e, idx) => (
-                    <div key={idx} style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '0.7rem', color: '#00f2fe', fontWeight: 700 }}>{e.label}</div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f8fafc' }}>{e.text}</div>
-                      {e.alias && <div style={{ fontSize: '0.75rem', color: '#fbbf24' }}>Alias: {e.alias}</div>}
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                    <div key={idx} className="evidence-card" style={{ padding: '0.85rem' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#D62828', fontWeight: 800 }}>{e.label}</div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#24251F' }}>{e.text}</div>
+                      {e.alias && <div style={{ fontSize: '0.76rem', color: '#800', fontWeight: 700 }}>Alias: {e.alias}</div>}
+                      <div style={{ fontSize: '0.72rem', color: '#54564B', marginTop: '0.25rem', fontWeight: 600 }}>
                         Confidence: {Math.round((e.confidence || 0.9) * 100)}% | {e.extractor || 'pattern'}
                       </div>
                     </div>
@@ -239,51 +242,31 @@ export default function DataIngestion() {
 
             {/* NLP Relationships */}
             {nlpResult?.relationships && nlpResult.relationships.length > 0 && (
-              <div style={{ padding: '1.25rem', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f59e0b', marginBottom: '0.75rem' }}>
+              <div className="forensic-panel" style={{ padding: '1.35rem' }}>
+                <h3 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#D62828', marginBottom: '0.85rem' }}>
                   Extracted Relationships ({nlpResult.relationships.length})
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {nlpResult.relationships.map((r, idx) => (
-                    <div key={idx} style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f8fafc' }}>
-                        ({r.subject}) --[{r.predicate}]--> ({r.object})
+                    <div key={idx} style={{ padding: '0.85rem 1.1rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.04)', borderLeft: '3px solid #D62828', borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#F1EBDD' }}>
+                        {`(${r.subject}) --[${r.predicate}]--> (${r.object})`}
                       </div>
-                      {r.explanation && <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '0.25rem' }}>{r.explanation}</div>}
+                      {r.explanation && <div style={{ fontSize: '0.8rem', color: '#A6B0AA', marginTop: '0.3rem' }}>{r.explanation}</div>}
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Entity Resolution */}
-            {nlpResult?.resolved_clusters && nlpResult.resolved_clusters.length > 0 && (
-              <div style={{ padding: '1.25rem', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#a78bfa', marginBottom: '0.75rem' }}>Entity Resolution</h3>
-                {nlpResult.resolved_clusters.map((cluster, idx) => (
-                  <div key={idx} style={{ padding: '0.85rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', marginBottom: '0.75rem' }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f8fafc', marginBottom: '0.5rem' }}>
-                      Possible Match — Confidence: {Math.round((cluster.confidence || 0.9) * 100)}%
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '0.5rem' }}>{cluster.explanation || cluster.reason}</div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: 'none', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>Approve Merge</button>
-                      <button style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.3)', background: 'transparent', color: '#f87171', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>Reject</button>
-                      <button style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: '#94a3b8', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>Review Later</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Final Status */}
-            <div style={{ padding: '1.25rem', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <Database size={18} color="#818cf8" />
-                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#a5b4fc' }}>Data Imported to Knowledge Graph</span>
+            <div style={{ padding: '1.35rem', borderRadius: '12px', background: 'rgba(217, 170, 61, 0.12)', border: '1px solid rgba(217, 170, 61, 0.35)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.45rem' }}>
+                <Database size={20} color="#D9AA3D" />
+                <span style={{ fontSize: '1.02rem', fontWeight: 800, color: '#D9AA3D' }}>Data Persisted to Neo4j Knowledge Graph</span>
               </div>
-              <div style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
-                {ingestionResult.entities_extracted} entities stored in PostgreSQL. Graph analytics will be updated automatically.
+              <div style={{ fontSize: '0.88rem', color: '#F1EBDD' }}>
+                {ingestionResult.entities_extracted} entities stored in database. Analytics recalculation scheduled.
               </div>
             </div>
           </div>

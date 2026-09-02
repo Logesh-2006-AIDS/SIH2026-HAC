@@ -10,13 +10,13 @@ try {
 }
 
 const ENTITY_COLORS = {
-  Person: '#3b82f6',          // Blue
-  Organization: '#f59e0b',    // Amber / Orange
-  Phone: '#06b6d4',           // Cyan
-  FinancialAccount: '#8b5cf6',// Purple
-  Vehicle: '#10b981',         // Emerald Green
-  Location: '#ef4444',        // Crimson Red
-  Default: '#9ca3af',
+  Person: '#D9AA3D',          // Gold
+  Organization: '#E8D9A8',    // Light Parchment
+  Phone: '#5E9F68',           // Verified Green
+  FinancialAccount: '#D8C58A',// Evidence Paper
+  Vehicle: '#94A3B8',         // Slate Steel
+  Location: '#C92A2A',        // Critical Red
+  Default: '#A6B0AA',
 };
 
 export default function GraphCanvas({
@@ -56,7 +56,7 @@ export default function GraphCanvas({
       return {
         data: {
           id: id,
-          label: label.length > 20 ? label.substring(0, 18) + '...' : label,
+          label: label.length > 22 ? label.substring(0, 20) + '...' : label,
           fullLabel: label,
           type: type,
           color: color,
@@ -68,7 +68,7 @@ export default function GraphCanvas({
       };
     });
 
-    // Transform backend edges to Cytoscape elements
+    // Transform backend edges to Cytoscape elements (Red investigation strings)
     const cyEdges = edges.map((e, idx) => {
       const source = e.source;
       const target = e.target;
@@ -104,80 +104,81 @@ export default function GraphCanvas({
         container: containerRef.current,
         elements: [...cyNodes, ...cyEdges],
         style: [
-          // Core Node Style
+          // Core Evidence Pin Node Style
           {
             selector: 'node',
             style: {
               'background-color': 'data(color)',
               'label': 'data(label)',
-              'color': '#f3f4f6',
+              'color': '#24251F',
               'font-size': '11px',
-              'font-weight': '600',
+              'font-weight': '700',
               'font-family': 'Inter, system-ui, sans-serif',
               'text-valign': 'bottom',
-              'text-margin-y': 6,
-              'text-background-color': 'rgba(11, 15, 25, 0.85)',
-              'text-background-opacity': 0.9,
-              'text-background-padding': '3px 6px',
+              'text-margin-y': 7,
+              'text-background-color': '#D8C58A',
+              'text-background-opacity': 0.95,
+              'text-background-padding': '4px 8px',
               'text-background-shape': 'roundrectangle',
-              'border-width': 2,
-              'border-color': 'rgba(255, 255, 255, 0.25)',
-              'width': 36,
-              'height': 36,
+              'border-width': 3,
+              'border-color': 'rgba(8, 10, 9, 0.9)',
+              'width': 40,
+              'height': 40,
               'transition-property': 'background-color, border-color, border-width, width, height',
               'transition-duration': '0.2s',
             },
           },
-          // Node hover / select states
+          // Node hover / select states (Parchment & Red string pins)
           {
             selector: 'node.selected',
             style: {
-              'border-color': '#ffffff',
-              'border-width': 4,
-              'width': 46,
-              'height': 46,
-              'box-shadow': '0 0 20px #ffffff',
+              'border-color': '#D62828',
+              'border-width': 5,
+              'width': 50,
+              'height': 50,
+              'box-shadow': '0 0 24px #D62828',
             },
           },
           {
             selector: 'node.path-highlight',
             style: {
-              'border-color': '#fbbf24',
-              'border-width': 5,
-              'background-color': '#f59e0b',
-              'width': 48,
-              'height': 48,
+              'border-color': '#D9AA3D',
+              'border-width': 6,
+              'background-color': '#D62828',
+              'color': '#ffffff',
+              'width': 52,
+              'height': 52,
               'z-index': 999,
             },
           },
-          // Core Edge Style
+          // Core Edge Style: Red Investigation Strings
           {
             selector: 'edge',
             style: {
-              'width': 2,
-              'line-color': 'rgba(255, 255, 255, 0.2)',
-              'target-arrow-color': 'rgba(255, 255, 255, 0.4)',
+              'width': 2.2,
+              'line-color': 'rgba(214, 40, 40, 0.55)', // Red string
+              'target-arrow-color': 'rgba(214, 40, 40, 0.85)',
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
-              'arrow-scale': 1.1,
+              'arrow-scale': 1.2,
               'label': 'data(label)',
-              'font-size': '9px',
-              'color': '#9ca3af',
+              'font-size': '9.5px',
+              'color': '#F1EBDD',
               'text-rotation': 'autorotate',
-              'text-background-color': 'rgba(17, 24, 39, 0.8)',
-              'text-background-opacity': 0.8,
-              'text-background-padding': '2px',
+              'text-background-color': '#141715',
+              'text-background-opacity': 0.92,
+              'text-background-padding': '3px 6px',
               'transition-property': 'line-color, width',
               'transition-duration': '0.2s',
             },
           },
-          // Path highlighted edge
+          // Path highlighted edge (Active Red Investigation String)
           {
             selector: 'edge.path-edge-highlight',
             style: {
-              'line-color': '#fbbf24',
-              'target-arrow-color': '#fbbf24',
-              'width': 4,
+              'line-color': '#D62828',
+              'target-arrow-color': '#D62828',
+              'width': 4.5,
               'z-index': 998,
             },
           },
@@ -234,25 +235,21 @@ export default function GraphCanvas({
   const handleZoomIn = () => cyRef.current?.zoom(cyRef.current.zoom() * 1.25);
   const handleZoomOut = () => cyRef.current?.zoom(cyRef.current.zoom() * 0.8);
   const handleFit = () => cyRef.current?.fit(50);
-  const handleReset = () => {
-    cyRef.current?.reset();
-    cyRef.current?.fit(50);
-  };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '520px', borderRadius: '12px', overflow: 'hidden' }}>
-      {/* Cytoscape Canvas Container */}
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '520px', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+      {/* Cytoscape Canvas Container (Black / Charcoal Command Center) */}
       <div
         ref={containerRef}
         style={{
           width: '100%',
           height: '100%',
           minHeight: '520px',
-          background: 'radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.95) 0%, rgba(11, 15, 25, 0.98) 100%)',
+          background: 'radial-gradient(circle at 50% 50%, rgba(20, 23, 21, 0.96) 0%, rgba(8, 10, 9, 0.98) 100%)',
         }}
       />
 
-      {/* Floating Canvas Controls (Zoom, Fit, Reset) */}
+      {/* Floating Controls (Zoom, Fit) */}
       <div
         style={{
           position: 'absolute',
@@ -261,12 +258,12 @@ export default function GraphCanvas({
           display: 'flex',
           flexDirection: 'column',
           gap: '0.4rem',
-          background: 'rgba(17, 24, 39, 0.85)',
-          backdropFilter: 'blur(10px)',
-          padding: '0.4rem',
-          borderRadius: '10px',
+          background: 'rgba(16, 19, 17, 0.92)',
+          backdropFilter: 'blur(16px)',
+          padding: '0.45rem',
+          borderRadius: '12px',
           border: '1px solid var(--border-color)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
           zIndex: 10,
         }}
       >
@@ -274,16 +271,19 @@ export default function GraphCanvas({
           onClick={handleZoomIn}
           title="Zoom In"
           style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '6px',
-            border: 'none',
+            width: '34px',
+            height: '34px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
             background: 'rgba(255,255,255,0.06)',
-            color: '#ffffff',
+            color: '#F1EBDD',
             cursor: 'pointer',
             fontWeight: 700,
             fontSize: '1.1rem',
+            transition: 'all 0.2s ease',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
         >
           +
         </button>
@@ -291,16 +291,19 @@ export default function GraphCanvas({
           onClick={handleZoomOut}
           title="Zoom Out"
           style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '6px',
-            border: 'none',
+            width: '34px',
+            height: '34px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
             background: 'rgba(255,255,255,0.06)',
-            color: '#ffffff',
+            color: '#F1EBDD',
             cursor: 'pointer',
             fontWeight: 700,
             fontSize: '1.1rem',
+            transition: 'all 0.2s ease',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
         >
           −
         </button>
@@ -308,16 +311,19 @@ export default function GraphCanvas({
           onClick={handleFit}
           title="Fit Network to Screen"
           style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '6px',
-            border: 'none',
-            background: 'rgba(255,255,255,0.06)',
-            color: '#818cf8',
+            width: '34px',
+            height: '34px',
+            borderRadius: '8px',
+            border: '1px solid rgba(217, 170, 61, 0.4)',
+            background: 'rgba(217, 170, 61, 0.15)',
+            color: '#D9AA3D',
             cursor: 'pointer',
-            fontSize: '0.75rem',
-            fontWeight: 600,
+            fontSize: '0.72rem',
+            fontWeight: 800,
+            transition: 'all 0.2s ease',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(217, 170, 61, 0.3)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(217, 170, 61, 0.15)')}
         >
           FIT
         </button>
@@ -331,22 +337,23 @@ export default function GraphCanvas({
           left: '1rem',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '0.6rem',
-          background: 'rgba(11, 15, 25, 0.8)',
-          backdropFilter: 'blur(8px)',
-          padding: '0.5rem 0.85rem',
-          borderRadius: '8px',
+          gap: '0.65rem',
+          background: 'rgba(8, 10, 9, 0.9)',
+          backdropFilter: 'blur(12px)',
+          padding: '0.55rem 0.95rem',
+          borderRadius: '10px',
           border: '1px solid var(--border-color)',
-          fontSize: '0.75rem',
+          fontSize: '0.76rem',
           zIndex: 10,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
         }}
       >
         {Object.entries(ENTITY_COLORS).map(([type, color]) => {
           if (type === 'Default') return null;
           return (
-            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, display: 'inline-block' }} />
-              <span style={{ color: '#d1d5db', fontWeight: 500 }}>{type}</span>
+            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, display: 'inline-block', boxShadow: `0 0 8px ${color}` }} />
+              <span style={{ color: '#F1EBDD', fontWeight: 600 }}>{type}</span>
             </div>
           );
         })}
@@ -358,17 +365,17 @@ export default function GraphCanvas({
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'rgba(11, 15, 25, 0.7)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(8, 10, 9, 0.8)',
+            backdropFilter: 'blur(6px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 20,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#818cf8', fontWeight: 600 }}>
-            <div className="spinner" style={{ width: 22, height: 22, border: '3px solid rgba(99,102,241,0.3)', borderTopColor: '#818cf8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            <span>Processing Knowledge Graph...</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', color: '#D9AA3D', fontWeight: 700, fontSize: '0.92rem' }}>
+            <div className="animate-spin" style={{ width: 24, height: 24, border: '3px solid rgba(217,170,61,0.3)', borderTopColor: '#D9AA3D', borderRadius: '50%' }} />
+            <span>Updating Digital Forensic Board...</span>
           </div>
         </div>
       )}
