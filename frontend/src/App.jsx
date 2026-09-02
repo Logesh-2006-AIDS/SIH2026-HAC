@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Sparkles } from 'lucide-react';
+
+// Core Components
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import GraphCanvas from './components/GraphCanvas';
 import GraphControls from './components/GraphControls';
 import EntityInspector from './components/EntityInspector';
-import CrossCasePanel from './components/CrossCasePanel';
-import LeadVerification from './components/LeadVerification';
+
+// Rewritten & New Components
 import AICopilot from './components/AICopilot';
-import TimelineReplay from './components/TimelineReplay';
+import CrossCasePanel from './components/CrossCasePanel';
 import SmartCaseBrief from './components/SmartCaseBrief';
-import InvestigationHeatmap from './components/InvestigationHeatmap';
-import RiskScoreMatrix from './components/RiskScoreMatrix';
-import InvestigationStory from './components/InvestigationStory';
-import ReportGenerator from './components/ReportGenerator';
-import { Sparkles } from 'lucide-react';
+import LeadVerification from './components/LeadVerification';
+import CaseInvestigation from './components/CaseInvestigation';
+import DataIngestion from './components/DataIngestion';
+import CrimeIntelligenceMap from './components/CrimeIntelligenceMap';
+import InvestigationPriority from './components/InvestigationPriority';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -98,6 +101,11 @@ export default function App() {
     }
   };
 
+  const handleSelectCase = (caseId) => {
+    setSelectedCase(caseId);
+    setActiveTab('cases');
+  };
+
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <Header 
@@ -169,17 +177,36 @@ export default function App() {
             </div>
           )}
 
-          {/* Add-On Feature Workspaces */}
-          {activeTab === 'copilot' && <AICopilot onFocusEntity={handleFocusEntity} />}
-          {activeTab === 'timeline' && <TimelineReplay nodes={nodes} edges={edges} />}
-          {activeTab === 'smartbrief' && <SmartCaseBrief onOpenGraph={() => setActiveTab('network')} />}
-          {activeTab === 'heatmap' && <InvestigationHeatmap onOpenGraph={() => setActiveTab('network')} />}
-          {activeTab === 'riskscore' && <RiskScoreMatrix />}
-          {activeTab === 'story' && <InvestigationStory />}
+          {/* New / Rewritten Workspaces */}
+          {activeTab === 'cases' && (
+            <CaseInvestigation 
+              caseNumber={selectedCase || '101'} 
+              onBack={() => setActiveTab('network')} 
+              onOpenGraph={() => setActiveTab('network')}
+            />
+          )}
+          {activeTab === 'map' && <CrimeIntelligenceMap onSelectCase={handleSelectCase} />}
           {activeTab === 'crosscase' && <CrossCasePanel onFocusEntity={handleFocusEntity} />}
-          {activeTab === 'cases' && <SmartCaseBrief onOpenGraph={() => setActiveTab('network')} />}
-          {activeTab === 'report' && <ReportGenerator />}
-          {activeTab === 'audit' && <LeadVerification />}
+          
+          {activeTab === 'copilot' && (
+            <AICopilot 
+              onFocusEntity={handleFocusEntity} 
+              contextCase={selectedCase} 
+              contextEntity={selectedEntity?.id} 
+            />
+          )}
+          {activeTab === 'priority' && <InvestigationPriority />}
+          {activeTab === 'brief' && <SmartCaseBrief selectedCase={selectedCase} />}
+          
+          {activeTab === 'ingest' && <DataIngestion />}
+          {activeTab === 'verification' && <LeadVerification />}
+          
+          {/* Audit Trail fallback for now */}
+          {activeTab === 'audit' && (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+              Select a Case to view its tamper-evident Audit Trail Export.
+            </div>
+          )}
         </main>
       </div>
     </div>

@@ -1,220 +1,85 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { GitBranch, Info, AlertTriangle, ArrowRight, ExternalLink } from 'lucide-react';
 import axios from 'axios';
-import { 
-  GitBranch, 
-  ShieldAlert, 
-  Users, 
-  Building2, 
-  PhoneCall, 
-  ArrowRight, 
-  Sparkles,
-  RefreshCw
-} from 'lucide-react';
 
-const STATIC_SCENARIOS = [
-  {
-    id: 'XC-001',
-    title: 'Shared Shell Company: Apex Global Logistics',
-    type: 'Financial Conduit',
-    cases: ['Case 101 (Robbery)', 'Case 105 (Hawala)'],
-    description: 'Beneficial owner Ravi Kumar (P001) laundered extortion proceeds from Case 101 through Apex Global accounts seized in Case 105.',
-    entityId: 'O001',
-    priority: 'HIGH',
-  },
-  {
-    id: 'XC-002',
-    title: 'Burner Phone Bridge: +91-98110-99999',
-    type: 'Communication Nexus',
-    cases: ['Case 102 (Cyber Fraud)', 'Case 103 (Arms)'],
-    description: 'Unregistered burner phone in frequent contact with Vikram Singh (102) and Suresh Yadav (103) before the arms consignment transit.',
-    entityId: 'P011',
-    priority: 'CRITICAL',
-  },
-  {
-    id: 'XC-003',
-    title: 'High-Betweenness Bridge: Vikram Singh',
-    type: 'Key Coordinator',
-    cases: ['Case 101', 'Case 102', 'Case 103'],
-    description: 'Vikram Singh links armed robbery muscle, cyber fraud servers, and arms logistics — identified as the syndicate broker.',
-    entityId: 'P002',
-    priority: 'CRITICAL',
-  },
-];
-
-export default function CrossCasePanel({
-  onFocusEntity = () => {},
-}) {
-  const [centralityData, setCentralityData] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchCentrality = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get('/api/v1/graph/centrality');
-      if (res.data?.success && Array.isArray(res.data?.data)) {
-        setCentralityData(res.data.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch centrality:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function CrossCasePanel({ onFocusEntity }) {
+  const [crossCaseEntities, setCrossCaseEntities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCentrality();
+    setLoading(true);
+    axios.get('/api/v1/graph/centrality').then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setCrossCaseEntities(res.data.data);
+      }
+    }).catch(err => console.error('Failed to load cross-case entities:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Banner */}
-      <div
-        className="glass-panel"
-        style={{
-          padding: '1.25rem 1.5rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <GitBranch size={22} color="#f59e0b" />
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff' }}>
-              Cross-Case Link & Syndicate Detection Center
-            </h2>
+    <div style={{ flex: 1, height: '100%', padding: '1.5rem', overflowY: 'auto', background: 'var(--bg-primary)', color: '#f8fafc' }}>
+      {/* Header */}
+      <div style={{ padding: '1.25rem 1.5rem', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24' }}>
+            <GitBranch size={22} />
           </div>
-          <p style={{ color: '#d1d5db', fontSize: '0.85rem' }}>
-            Automated graph analytics uncovering bridge suspects, shared front companies, and communication overlaps across independent FIRs.
-          </p>
+          <div>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Cross-Case Intelligence</h2>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>Entities appearing in multiple distinct investigations</p>
+          </div>
         </div>
-
-        <button
-          onClick={fetchCentrality}
-          className="btn-primary"
-          style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
-        >
-          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-          <span>Refresh Analysis</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.4rem 0.85rem', borderRadius: '20px', fontSize: '0.75rem', color: '#34d399' }}>
+          <Info size={14} /> Evidence-Grounded Graph Analytics
+        </div>
       </div>
 
-      {/* Two-Column Grid: Centrality Rankings vs Active Scenarios */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '1.25rem' }}>
-        {/* Left: Ranked Bridge Suspects */}
-        <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <Users size={18} color="#818cf8" />
-            <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Top Cross-Case Bridge Suspects</h3>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            {centralityData.map((item, idx) => (
-              <div
-                key={item.entity_id || idx}
-                style={{
-                  padding: '0.85rem 1rem',
-                  borderRadius: '8px',
-                  background: idx === 0 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                  border: idx === 0 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--border-color)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Loading cross-case intelligence from graph...</div>
+      ) : crossCaseEntities.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+          <AlertTriangle size={24} style={{ marginBottom: '0.5rem' }} />
+          <div>No cross-case entities found. Upload more case data to discover connections.</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.25rem' }}>
+          {crossCaseEntities.map((entity, idx) => (
+            <div key={idx} style={{ padding: '1.25rem', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                    <strong style={{ color: idx === 0 ? '#fbbf24' : '#e5e7eb', fontSize: '0.9rem' }}>
-                      {item.name}
-                    </strong>
-                    <span className="badge" style={{ background: 'rgba(255,255,255,0.08)', fontSize: '0.7rem' }}>
-                      {item.entity_id}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                    Connected across Cases: <strong style={{ color: '#a5b4fc' }}>{item.cases?.join(', ')}</strong>
-                  </div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase' }}>Bridge Entity</div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', margin: '0.2rem 0' }}>{entity.name}</h3>
+                  <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>ID: {entity.entity_id}</div>
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f59e0b' }}>
-                      {item.cross_case_degree}
-                    </div>
-                    <div style={{ fontSize: '0.65rem', color: '#6b7280', textTransform: 'uppercase' }}>Cases</div>
-                  </div>
-
-                  <button
-                    onClick={() => onFocusEntity(item.entity_id)}
-                    className="btn-primary"
-                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                    title="Focus in Knowledge Graph"
-                  >
-                    <span>Inspect</span>
-                    <ArrowRight size={12} />
-                  </button>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b', lineHeight: 1 }}>{entity.cross_case_degree}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.2rem' }}>Connected Cases</div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Right: Detected Cross-Case Scenarios */}
-        <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <Sparkles size={18} color="#f59e0b" />
-            <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>High-Priority Investigation Scenarios</h3>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {STATIC_SCENARIOS.map((sc) => (
-              <div
-                key={sc.id}
-                style={{
-                  padding: '1rem',
-                  borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.5rem',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h4 style={{ fontSize: '0.92rem', fontWeight: 600, color: '#ffffff', marginBottom: '0.2rem' }}>
-                      {sc.title}
-                    </h4>
-                    <span style={{ fontSize: '0.75rem', color: '#818cf8', fontWeight: 500 }}>
-                      {sc.type} • {sc.cases.join(' ↔ ')}
+              <div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.5rem' }}>Appears In:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {(entity.cases || []).map((c, cIdx) => (
+                    <span key={cIdx} style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'var(--bg-primary)', color: '#f8fafc', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      Case {c}
                     </span>
-                  </div>
-                  <span className={`badge ${sc.priority === 'CRITICAL' ? 'badge-danger' : 'badge-lead'}`}>
-                    {sc.priority}
-                  </span>
-                </div>
-
-                <p style={{ fontSize: '0.8rem', color: '#9ca3af', lineHeight: 1.4 }}>
-                  {sc.description}
-                </p>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
-                  <button
-                    onClick={() => onFocusEntity(sc.entityId)}
-                    className="btn-primary"
-                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                  >
-                    <span>Highlight Syndicate Chain</span>
-                    <ArrowRight size={13} />
-                  </button>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Calculated via Betweenness Centrality</div>
+                {onFocusEntity && (
+                  <button onClick={() => onFocusEntity(entity.entity_id)} style={{ padding: '0.4rem 0.85rem', borderRadius: '6px', border: 'none', background: '#0284c7', color: '#fff', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    View in Graph <ExternalLink size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
