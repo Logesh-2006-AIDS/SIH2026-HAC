@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, auth, ingest, graph, cases, leads, audit
+from app.api.v1.endpoints import health, auth, ingest, graph, cases, leads, audit, nlp
 
 api_router = APIRouter()
 
@@ -10,3 +10,4 @@ api_router.include_router(graph.router, prefix="/graph", tags=["Knowledge Graph 
 api_router.include_router(cases.router, prefix="/cases", tags=["Case Master Dossiers"])
 api_router.include_router(leads.router, prefix="/leads", tags=["Lead Verification & HITL"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Tamper-Evident Audit Trail"])
+api_router.include_router(nlp.router, prefix="/nlp", tags=["Phase 3 NLP & PDF Parser"])
