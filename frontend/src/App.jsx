@@ -7,19 +7,14 @@ import GraphControls from './components/GraphControls';
 import EntityInspector from './components/EntityInspector';
 import CrossCasePanel from './components/CrossCasePanel';
 import LeadVerification from './components/LeadVerification';
-import { 
-  Network, 
-  Share2, 
-  ShieldAlert, 
-  Users, 
-  GitBranch, 
-  Database,
-  ArrowRight,
-  Sparkles,
-  Search,
-  CheckCircle2,
-  FolderArchive
-} from 'lucide-react';
+import AICopilot from './components/AICopilot';
+import TimelineReplay from './components/TimelineReplay';
+import SmartCaseBrief from './components/SmartCaseBrief';
+import InvestigationHeatmap from './components/InvestigationHeatmap';
+import RiskScoreMatrix from './components/RiskScoreMatrix';
+import InvestigationStory from './components/InvestigationStory';
+import ReportGenerator from './components/ReportGenerator';
+import { Sparkles } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -90,13 +85,13 @@ export default function App() {
     fetchSubgraph(selectedCase);
   }, [selectedCase]);
 
-  // Extract persons for the pathfinder dropdown
+  // Extract persons for pathfinder dropdown
   const suspectList = nodes
     .filter((n) => n.id && (n.name || n.role || n.id.startsWith('P')))
     .map((n) => ({ id: n.id, name: n.name || n.id }));
 
   const handleFocusEntity = (entityId) => {
-    setActiveTab('dashboard');
+    setActiveTab('network');
     const match = nodes.find((n) => n.id === entityId || n.number === entityId);
     if (match) {
       setSelectedEntity(match);
@@ -104,18 +99,22 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+      <Header 
+        selectedCase={selectedCase} 
+        setSelectedCase={setSelectedCase}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
       
-      <div className="main-viewport">
-        <Header />
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
-        <main className="content-area">
-          {/* TAB 1: GRAPH & NETWORK OVERVIEW */}
-          {activeTab === 'dashboard' && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '0.75rem' }}>
-              {/* Controls bar */}
-              <GraphControls
+        <main style={{ flex: 1, display: 'flex', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+          {/* Main Network Visualizer Workspace */}
+          {(activeTab === 'dashboard' || activeTab === 'network') && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <GraphControls 
                 selectedCase={selectedCase}
                 onSelectCase={setSelectedCase}
                 layoutName={layoutName}
@@ -130,11 +129,11 @@ export default function App() {
                 suspects={suspectList}
               />
 
-              {/* Path Notification Alert */}
               {pathMessage && (
                 <div
                   style={{
                     padding: '0.6rem 1rem',
+                    margin: '0 1rem',
                     borderRadius: '8px',
                     background: 'rgba(245, 158, 11, 0.15)',
                     border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -150,94 +149,37 @@ export default function App() {
                   <span>{pathMessage}</span>
                 </div>
               )}
-
-              {/* Graph Visualizer + Side Inspector */}
-              <div style={{ display: 'flex', gap: '1rem', flex: 1, minHeight: '520px', height: 'calc(100vh - 210px)' }}>
-                <div style={{ flex: 1, position: 'relative' }}>
-                  <GraphCanvas
-                    nodes={nodes}
-                    edges={edges}
-                    selectedEntity={selectedEntity}
-                    onSelectEntity={setSelectedEntity}
-                    highlightedPath={highlightedPath}
-                    layoutName={layoutName}
-                    isLoading={isLoadingGraph}
-                  />
-                </div>
-
-                {/* Side Inspector Drawer */}
-                {selectedEntity && (
-                  <EntityInspector
-                    entity={selectedEntity}
-                    onClose={() => setSelectedEntity(null)}
-                    onSetAsPathSource={(id) => {
-                      // Trigger path finding with a default target
-                      handleFindPath(id, 'P004');
-                    }}
-                  />
-                )}
+              
+              <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+                <GraphCanvas 
+                  nodes={nodes} 
+                  edges={edges} 
+                  layoutName={layoutName}
+                  selectedEntity={selectedEntity}
+                  onSelectEntity={setSelectedEntity}
+                  highlightedPath={highlightedPath}
+                  isLoading={isLoadingGraph}
+                />
+                
+                <EntityInspector 
+                  entity={selectedEntity} 
+                  onClose={() => setSelectedEntity(null)} 
+                />
               </div>
             </div>
           )}
 
-          {/* TAB 2: CROSS-CASE INTELLIGENCE */}
-          {activeTab === 'crosscase' && (
-            <CrossCasePanel onFocusEntity={handleFocusEntity} />
-          )}
-
-          {/* TAB 3: LEAD VERIFICATION WORKBENCH */}
-          {activeTab === 'verification' && (
-            <LeadVerification />
-          )}
-
-          {/* TAB 4: CASE MASTER RECORDS */}
-          {activeTab === 'cases' && (
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <FolderArchive size={20} color="#818cf8" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Master Case Dossiers</h3>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-                {[
-                  { id: '101', title: 'Armed Robbery & Extortion Syndicate', date: '15/04/2025', ps: 'Crime Branch, North District, Delhi', suspects: 'Ravi Kumar, Vikram Singh, Meena Sharma' },
-                  { id: '102', title: 'Cyber Phishing & Crypto Laundering Ring', date: '28/05/2025', ps: 'Cyber Crime Branch, Delhi Police', suspects: 'Vikram Singh, Aarav Mehta, Sanjay Gupta' },
-                  { id: '103', title: 'Illicit Firearms Transit (NH-58 Interception)', date: '10/06/2025', ps: 'Special Crime Branch, UP Police (Meerut)', suspects: 'Suresh Yadav, Manish Tiwari, Burner Contact' },
-                  { id: '104', title: 'Inter-State Luxury Vehicle Theft Ring', date: '22/06/2025', ps: 'Auto Crime Cell, Mumbai Police', suspects: 'Priya Nair, Rohit Patel' },
-                  { id: '105', title: 'Commercial Hawala & Shell Company Layering', date: '05/07/2025', ps: 'Economic Offences Wing / ED', suspects: 'Deepak Srivastava, Ravi Kumar, Aarav Mehta' },
-                ].map((c) => (
-                  <div key={c.id} style={{ padding: '1.25rem', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', color: '#818cf8', fontWeight: 600, fontSize: '0.85rem' }}>
-                        FIR No. {c.id}/2025
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{c.date}</span>
-                    </div>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff', marginBottom: '0.35rem' }}>{c.title}</h4>
-                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', marginBottom: '0.5rem' }}>{c.ps}</p>
-                    <div style={{ fontSize: '0.75rem', color: '#d1d5db', marginBottom: '0.75rem' }}>
-                      <strong>Key Accused:</strong> {c.suspects}
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedCase(c.id);
-                        setActiveTab('dashboard');
-                      }}
-                      className="btn-primary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-                    >
-                      <span>Explore Case Subgraph</span>
-                      <ArrowRight size={13} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: CENTRALITY & CLUSTERS */}
-          {activeTab === 'analytics' && (
-            <CrossCasePanel onFocusEntity={handleFocusEntity} />
-          )}
+          {/* Add-On Feature Workspaces */}
+          {activeTab === 'copilot' && <AICopilot onFocusEntity={handleFocusEntity} />}
+          {activeTab === 'timeline' && <TimelineReplay nodes={nodes} edges={edges} />}
+          {activeTab === 'smartbrief' && <SmartCaseBrief onOpenGraph={() => setActiveTab('network')} />}
+          {activeTab === 'heatmap' && <InvestigationHeatmap onOpenGraph={() => setActiveTab('network')} />}
+          {activeTab === 'riskscore' && <RiskScoreMatrix />}
+          {activeTab === 'story' && <InvestigationStory />}
+          {activeTab === 'crosscase' && <CrossCasePanel onFocusEntity={handleFocusEntity} />}
+          {activeTab === 'cases' && <SmartCaseBrief onOpenGraph={() => setActiveTab('network')} />}
+          {activeTab === 'report' && <ReportGenerator />}
+          {activeTab === 'audit' && <LeadVerification />}
         </main>
       </div>
     </div>
