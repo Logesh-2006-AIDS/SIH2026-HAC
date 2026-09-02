@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Shield, Activity, Bell, UserCheck, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
-export default function Header() {
+export default function Header({ currentRole, setCurrentRole }) {
   const [health, setHealth] = useState({ status: 'checking', services: {} });
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function Header() {
           <span>Core API: {health.status}</span>
         </div>
 
-        {/* Investigator Profile */}
+        {/* Role Switcher */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -59,10 +59,26 @@ export default function Header() {
           background: 'rgba(255, 255, 255, 0.05)',
           border: '1px solid var(--border-color)'
         }}>
-          <UserCheck size={16} color="#6366f1" />
-          <div style={{ fontSize: '0.8rem', lineHeight: 1.2 }}>
-            <div style={{ fontWeight: 500, color: '#e5e7eb' }}>Insp. R. Vardhan</div>
-            <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Lead Investigator</div>
+          <UserCheck size={16} color={currentRole === 'INVESTIGATOR' ? '#6366f1' : currentRole === 'ANALYST' ? '#10b981' : '#f59e0b'} />
+          <div style={{ fontSize: '0.8rem', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Viewing as:</span>
+            <select 
+              value={currentRole} 
+              onChange={(e) => setCurrentRole(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#e5e7eb',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="INVESTIGATOR" style={{ background: '#1e293b' }}>🕵️‍♂️ Investigator</option>
+              <option value="ANALYST" style={{ background: '#1e293b' }}>🧠 Analyst</option>
+              <option value="ADMIN" style={{ background: '#1e293b' }}>⚙️ Admin</option>
+            </select>
           </div>
         </div>
       </div>

@@ -4,40 +4,59 @@ import {
   Bot, BarChart3, Upload, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 
-const MENU_GROUPS = [
-  {
-    title: 'INVESTIGATION',
-    items: [
-      { id: 'dashboard', label: 'Main Workspace', icon: <LayoutDashboard size={18} /> },
-      { id: 'cases', label: 'Case Master Dossiers', icon: <FileText size={18} /> },
-      { id: 'network', label: 'Network Analysis', icon: <Network size={18} /> },
-      { id: 'map', label: 'Crime Intelligence Map', icon: <Map size={18} /> },
-      { id: 'crosscase', label: 'Cross-Case Intelligence', icon: <GitBranch size={18} /> },
-    ]
-  },
-  {
-    title: 'INTELLIGENCE',
-    items: [
-      { id: 'copilot', label: 'AI Investigation Copilot', icon: <Bot size={18} /> },
-      { id: 'priority', label: 'Investigation Priority', icon: <BarChart3 size={18} /> },
-      { id: 'brief', label: 'Smart Case Brief', icon: <FileText size={18} /> },
-    ]
-  },
-  {
-    title: 'DATA',
-    items: [
-      { id: 'ingest', label: 'Upload Data', icon: <Upload size={18} /> },
-      { id: 'verification', label: 'Human Verification', icon: <CheckCircle2 size={18} /> },
-      { id: 'audit', label: 'Audit Trail', icon: <ShieldAlert size={18} /> },
-    ]
-  }
-];
+const ROLE_MENUS = {
+  INVESTIGATOR: [
+    {
+      title: 'TACTICAL OPERATIONS',
+      items: [
+        { id: 'dashboard', label: 'Investigation Workspace', icon: <LayoutDashboard size={18} /> },
+        { id: 'cases', label: 'Active Case Dossiers', icon: <FileText size={18} /> },
+        { id: 'network', label: 'Network & Path Finder', icon: <Network size={18} /> },
+        { id: 'verification', label: 'Lead Verification', icon: <CheckCircle2 size={18} /> },
+      ]
+    },
+    {
+      title: 'AI ASSISTANT',
+      items: [
+        { id: 'copilot', label: 'Investigation Copilot', icon: <Bot size={18} /> },
+        { id: 'brief', label: 'Smart Case Briefs', icon: <FileText size={18} /> },
+      ]
+    }
+  ],
+  ANALYST: [
+    {
+      title: 'STRATEGIC INTELLIGENCE',
+      items: [
+        { id: 'map', label: 'Crime Intelligence Map', icon: <Map size={18} /> },
+        { id: 'crosscase', label: 'Cross-Case Network', icon: <GitBranch size={18} /> },
+        { id: 'priority', label: 'Centrality & Priority', icon: <BarChart3 size={18} /> },
+      ]
+    },
+    {
+      title: 'ANALYTICS',
+      items: [
+        { id: 'network', label: 'Full Network Explore', icon: <Network size={18} /> },
+      ]
+    }
+  ],
+  ADMIN: [
+    {
+      title: 'SYSTEM OPERATIONS',
+      items: [
+        { id: 'ingest', label: 'Data Ingestion Engine', icon: <Upload size={18} /> },
+        { id: 'audit', label: 'Audit Trail & Logs', icon: <ShieldAlert size={18} /> },
+      ]
+    }
+  ]
+};
 
-export default function Sidebar({ activeTab, setActiveTab }) {
+export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
+  const currentMenu = ROLE_MENUS[currentRole] || ROLE_MENUS.INVESTIGATOR;
+
   return (
     <aside className="app-sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
       <div style={{ flex: 1, padding: '1.25rem 1rem', overflowY: 'auto' }}>
-        {MENU_GROUPS.map((group, gIdx) => (
+        {currentMenu.map((group, gIdx) => (
           <div key={gIdx} style={{ marginBottom: '1.75rem' }}>
             <div style={{
               fontSize: '0.7rem',

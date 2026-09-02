@@ -21,8 +21,16 @@ import InvestigationPriority from './components/InvestigationPriority';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [currentRole, setCurrentRole] = useState('INVESTIGATOR');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Auto-route on role change
+  useEffect(() => {
+    if (currentRole === 'INVESTIGATOR') setActiveTab('dashboard');
+    else if (currentRole === 'ANALYST') setActiveTab('map');
+    else if (currentRole === 'ADMIN') setActiveTab('ingest');
+  }, [currentRole]);
+
   // Knowledge Graph State
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
@@ -109,6 +117,8 @@ export default function App() {
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <Header 
+        currentRole={currentRole}
+        setCurrentRole={setCurrentRole}
         selectedCase={selectedCase} 
         setSelectedCase={setSelectedCase}
         searchQuery={searchQuery}
@@ -116,7 +126,7 @@ export default function App() {
       />
       
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar currentRole={currentRole} activeTab={activeTab} setActiveTab={setActiveTab} />
         
         <main style={{ flex: 1, display: 'flex', overflow: 'hidden', background: 'var(--bg-primary)' }}>
           {/* Main Network Visualizer Workspace */}
