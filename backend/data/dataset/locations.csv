@@ -1,7 +1,16 @@
-id,location_name,city,state
-L01,Rohini Sector 7,New Delhi,Delhi
-L02,MG Road,Gurgaon,Haryana
-L03,Karol Bagh,New Delhi,Delhi
-L04,Bandra West,Mumbai,Maharashtra
-L05,Gomti Nagar,Lucknow,Uttar Pradesh
-L06,Koramangala,Bengaluru,Karnataka
+city,state
+Gurugram,Haryana
+Guwahati,Assam
+Chennai,Tamil Nadu
+Ahmedabad,Gujarat
+New Delhi,Delhi
+Jaipur,Rajasthan
+Kolkata,West Bengal
+Bhubaneswar,Odisha
+Kochi,Kerala
+Chandigarh,Punjab
+Bengaluru,Karnataka
+Mumbai,Maharashtra
+Hyderabad,Telangana
+Lucknow,Uttar Pradesh
+Patna,Bihar

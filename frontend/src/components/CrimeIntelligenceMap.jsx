@@ -27,15 +27,15 @@ export default function CrimeIntelligenceMap() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900 to-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-red-900/40 bg-gradient-to-r from-red-950/40 via-black to-black shadow-2xl">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10">
+          <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-600/40 flex items-center justify-center text-red-500 shadow-lg shadow-red-500/10">
             <MapPin className="w-6 h-6" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-100 flex items-center space-x-2">
               <span>Geospatial Crime Intelligence & Hotspot Map</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-semibold">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-800 font-semibold font-mono">
                 INTERSTATE CORRIDORS
               </span>
             </h2>
@@ -46,9 +46,9 @@ export default function CrimeIntelligenceMap() {
         </div>
 
         <div className="flex items-center space-x-3 text-xs font-mono text-slate-400">
-          <span>Active Hotspots: <strong className="text-emerald-400">{mapData?.hotspots?.length || 6}</strong></span>
+          <span>Active Hotspots: <strong className="text-red-400">{mapData?.hotspots?.length || 6}</strong></span>
           <span>•</span>
-          <span>Corridors: <strong className="text-cyan-400">{mapData?.interstate_corridors?.length || 3}</strong></span>
+          <span>Corridors: <strong className="text-red-500">{mapData?.interstate_corridors?.length || 3}</strong></span>
         </div>
       </div>
 

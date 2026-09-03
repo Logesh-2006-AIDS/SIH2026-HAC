@@ -1,6 +1,86 @@
-id,owner,reg_number,model,color
-V01,Ravi Kumar,DL01AB1234,Hyundai Creta Black,Phantom Black
-V02,Vikram Singh,HR26DQ5544,Toyota Fortuner White,Pearl White
-V03,Aarav Mehta,MH02EZ9081,Mahindra Scorpio-N,Deep Forest
-V04,Suresh Yadav,UP32XY4411,Mahindra Bolero,Silver
-V05,Manish Tiwari,UP78KL7722,Tata Nexon,Daytona Grey
+vehicle_number,registration_state,cluster
+HR97BB2569,Haryana,Alpha
+HR76AA2014,Haryana,Alpha
+HR63BB5676,Haryana,Alpha
+HR39BB8323,Haryana,Alpha
+HR46BB7803,Haryana,Alpha
+HR70BB6304,Haryana,Alpha
+HR35BB4694,Haryana,Alpha
+HR93BB7354,Haryana,Alpha
+HR50BB2200,Haryana,Alpha
+HR44BB5208,Haryana,Alpha
+HR44BB2589,Haryana,Alpha
+HR45BB4607,Haryana,Alpha
+HR43BB4297,Haryana,Alpha
+HR29BB9935,Haryana,Alpha
+HR24BB2282,Haryana,Alpha
+AS47AA8324,Assam,Bravo
+AS99BB4813,Assam,Bravo
+AS31BB4231,Assam,Bravo
+AS16BB4941,Assam,Bravo
+AS29BB2325,Assam,Bravo
+AS86BB9188,Assam,Bravo
+AS76BB8937,Assam,Bravo
+AS37BB1578,Assam,Bravo
+AS13BB8902,Assam,Bravo
+AS14BB7718,Assam,Bravo
+AS13BB1232,Assam,Bravo
+TN40AA6500,Tamil Nadu,Charlie
+TN19BB8975,Tamil Nadu,Charlie
+TN31BB5087,Tamil Nadu,Charlie
+TN49BB3107,Tamil Nadu,Charlie
+TN34BB2320,Tamil Nadu,Charlie
+TN67BB7284,Tamil Nadu,Charlie
+TN15BB8107,Tamil Nadu,Charlie
+TN10BB5715,Tamil Nadu,Charlie
+TN32BB3958,Tamil Nadu,Charlie
+TN67BB1435,Tamil Nadu,Charlie
+TN14BB9778,Tamil Nadu,Charlie
+TN63BB1696,Tamil Nadu,Charlie
+GJ53BB4779,Gujarat,Delta
+GJ99AA8774,Gujarat,Delta
+GJ13BB9716,Gujarat,Delta
+GJ54BB5458,Gujarat,Delta
+GJ37BB7435,Gujarat,Delta
+GJ59BB6203,Gujarat,Delta
+GJ10BB2842,Gujarat,Delta
+GJ99BB5554,Gujarat,Delta
+GJ47BB2678,Gujarat,Delta
+GJ44BB9544,Gujarat,Delta
+GJ57BB2905,Gujarat,Delta
+DL73AA4779,Delhi,Echo
+DL72BB7578,Delhi,Echo
+DL87BB5232,Delhi,Echo
+DL59BB6275,Delhi,Echo
+DL14BB6830,Delhi,Echo
+DL96BB5468,Delhi,Echo
+DL49BB5663,Delhi,Echo
+DL88BB1770,Delhi,Echo
+DL22BB5486,Delhi,Echo
+DL85BB9161,Delhi,Echo
+DL57BB1672,Delhi,Echo
+TN21AA5581,Assam,Foxtrot
+GJ24BB6282,Gujarat,Foxtrot
+GJ70BB3333,Gujarat,Foxtrot
+GJ85BB8389,Gujarat,Foxtrot
+PB92BB4987,Punjab,Foxtrot
+RJ18BB3340,Rajasthan,Foxtrot
+AS70BB9307,Assam,Foxtrot
+MH78BB4014,Maharashtra,Foxtrot
+OD45BB7758,Odisha,Foxtrot
+TS15BB8153,Telangana,Foxtrot
+MH38BB6386,Maharashtra,Foxtrot
+OD94BB3247,Odisha,Foxtrot
+PB19BB4579,Punjab,Foxtrot
+BR32BB2629,Bihar,Foxtrot
+GJ23BB2902,Gujarat,Foxtrot
+DL12AA9026,Karnataka,Ghost
+OD30BB3345,Odisha,Ghost
+DL76BB7372,Delhi,Ghost
+DL19BB9580,Delhi,Ghost
+HR44BB8588,Haryana,Ghost
+AS57BB3432,Assam,Ghost
+GJ97BB3709,Gujarat,Ghost
+DL23BB2049,Delhi,Ghost
+KA12BB4524,Karnataka,Ghost
+RJ25BB6962,Rajasthan,Ghost

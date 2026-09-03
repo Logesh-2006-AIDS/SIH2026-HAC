@@ -1,259 +1,304 @@
-import React, { useState } from 'react';
-import { Shield, Search, BarChart3, Lock, User, ArrowRight, Activity, CheckCircle2, Sparkles, KeyRound } from 'lucide-react';
+import React, { useState, Suspense } from 'react';
+import { Shield, Lock, User, Mail, ArrowRight, Eye, EyeOff, ShieldCheck, Compass, AlertCircle, UserPlus, LogIn } from 'lucide-react';
+import { Canvas } from '@react-three/fiber';
+import InteractiveEarth from './InteractiveEarth';
+import { auth } from '../config/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 export default function LoginPortal({ onLoginSuccess }) {
-  const [username, setUsername] = useState('investigator');
-  const [password, setPassword] = useState('password123');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [role, setRole] = useState('investigator');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const quickRoles = [
-    {
-      role: 'investigator',
-      title: 'Senior IO (Investigator)',
-      badge: 'FIR Uploads & Dossiers',
-      icon: Search,
-      color: 'border-amber-500/40 bg-amber-500/10 hover:border-amber-400 text-amber-300',
-      desc: 'Process FIR documents, verify legal leads, inspect digital footprints and print judicial briefs.'
-    },
-    {
-      role: 'analyst',
-      title: 'Intelligence Analyst',
-      badge: 'Knowledge Graph & AI',
-      icon: BarChart3,
-      color: 'border-cyan-500/40 bg-cyan-500/10 hover:border-cyan-400 text-cyan-300',
-      desc: 'Explore 2D/3D criminal networks, betweenness centrality, geospatial map, and shortest paths.'
-    },
-    {
-      role: 'admin',
-      title: 'Chief Administrator',
-      badge: 'Dataset Ops & Audits',
-      icon: Shield,
-      color: 'border-purple-500/40 bg-purple-500/10 hover:border-purple-400 text-purple-300',
-      desc: 'Manage dataset seeding, monitor Neo4j & DB telemetry, and review tamper-evident audit logs.'
+  const roleNameMap = {
+    investigator: 'Senior IO Rajesh Varma',
+    analyst: 'Intelligence Analyst Priya Sen',
+    admin: 'Chief Administrator',
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+
+    if (!email || !password) {
+      setErrorMsg('Please provide both email and password.');
+      return;
     }
-  ];
 
-  const handleLogin = async (e, customRole = null) => {
-    if (e) e.preventDefault();
     setLoading(true);
-    setError('');
-
-    const targetUser = customRole || username;
-    const targetPass = customRole ? 'password123' : password;
 
     try {
-      const res = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: targetUser,
-          password: targetPass
-        })
-      });
+      let userCredential;
 
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem('crime_auth_token', data.access_token);
-        localStorage.setItem('crime_user_role', data.role);
-        localStorage.setItem('crime_user_name', data.full_name || data.username);
-        onLoginSuccess(data);
+      if (isSignUp) {
+        // Firebase Sign Up
+        userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+
+        const displayName = fullName.trim() || roleNameMap[role] || email.split('@')[0];
+        try {
+          await updateProfile(user, { displayName });
+        } catch (profileErr) {
+          console.warn('Profile update error:', profileErr);
+        }
+
+        const authData = {
+          access_token: await user.getIdToken(),
+          role: role,
+          username: email.split('@')[0],
+          full_name: displayName,
+          email: user.email,
+        };
+
+        localStorage.setItem('crime_auth_token', authData.access_token);
+        localStorage.setItem('crime_user_role', authData.role);
+        localStorage.setItem('crime_user_name', authData.full_name);
+
+        onLoginSuccess(authData);
       } else {
-        const errData = await res.json();
-        setError(errData.detail || 'Invalid law enforcement credentials.');
+        // Firebase Sign In
+        userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+
+        const authData = {
+          access_token: await user.getIdToken(),
+          role: role,
+          username: email.split('@')[0],
+          full_name: user.displayName || roleNameMap[role] || email.split('@')[0],
+          email: user.email,
+        };
+
+        localStorage.setItem('crime_auth_token', authData.access_token);
+        localStorage.setItem('crime_user_role', authData.role);
+        localStorage.setItem('crime_user_name', authData.full_name);
+
+        onLoginSuccess(authData);
       }
     } catch (err) {
-      console.error('Login error:', err);
-      // Fallback offline mock login for zero-latency hackathon demos
-      const mockData = {
-        access_token: 'mock_jwt_token_sih_2026',
-        role: targetUser,
-        username: targetUser,
-        full_name: targetUser === 'investigator' ? 'Senior IO Rajesh Varma' : (targetUser === 'analyst' ? 'Intelligence Analyst Priya Sen' : 'Chief Administrator')
-      };
-      localStorage.setItem('crime_auth_token', mockData.access_token);
-      localStorage.setItem('crime_user_role', mockData.role);
-      localStorage.setItem('crime_user_name', mockData.full_name);
-      onLoginSuccess(mockData);
+      console.error('Firebase Auth Error:', err);
+      let message = err.message;
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        message = 'Invalid email or password. If you are a new user, please Sign Up.';
+      } else if (err.code === 'auth/email-already-in-use') {
+        message = 'This email is already registered. Please switch to Sign In.';
+      } else if (err.code === 'auth/weak-password') {
+        message = 'Password must be at least 6 characters long.';
+      } else if (err.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/network-request-failed') {
+        message = 'Network connection failed. Please check your internet connection.';
+      }
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col justify-between p-4 sm:p-6 lg:p-8 relative overflow-hidden">
-      {/* Background Cyber Grid Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,240,255,0.15),rgba(255,255,255,0))] pointer-events-none"></div>
-
-      {/* Top Header Brand */}
-      <div className="max-w-6xl w-full mx-auto flex items-center justify-between z-10">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <Activity className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-lg tracking-wider bg-gradient-to-r from-cyan-400 via-teal-200 to-indigo-300 bg-clip-text text-transparent">
-                CRIMENEXUS AI
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-semibold uppercase">
-                SIH 2026
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">Law Enforcement Secure Authentication Portal</p>
-          </div>
-        </div>
-
-        <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400 font-mono">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>POL-SECURE RESTRICTED NETWORK</span>
-        </div>
+    <div className="min-h-screen bg-[#050000] text-slate-100 flex relative overflow-hidden font-sans">
+      
+      {/* 3D Earth Background Layer */}
+      <div className="absolute inset-0 w-full h-full z-0 pointer-events-auto">
+        <Canvas camera={{ position: [-60, 0, 240], fov: 45 }}>
+          <Suspense fallback={null}>
+            <InteractiveEarth />
+          </Suspense>
+        </Canvas>
       </div>
 
-      {/* Main Container */}
-      <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center my-auto z-10">
-        {/* Left Side: 1-Click Quick Role Switchers for Hackathon Judges (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="space-y-2">
-            <span className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase flex items-center space-x-2">
-              <Sparkles className="w-4 h-4" />
-              <span>Role-Based Access Control (RBAC)</span>
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
-              Select Your Authorized <span className="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">Investigation Dashboard</span>
-            </h1>
-            <p className="text-sm text-slate-400 max-w-xl">
-              Log in with your designated departmental credentials, or choose a role below for instant 1-click evaluation access.
-            </p>
+      {/* Main UI Overlay */}
+      <div className="relative z-10 w-full h-full flex flex-col pointer-events-none p-8">
+        
+        {/* Top Left Branding & Form */}
+        <div className="flex-1 flex flex-col space-y-6 max-w-[440px] pointer-events-auto">
+          
+          {/* Logo & Header */}
+          <div className="flex items-center space-x-4">
+            <div className="w-14 h-16 bg-red-950/20 border border-red-600/50 rounded-b-xl rounded-t-sm flex items-center justify-center relative shadow-[0_0_15px_rgba(255,0,0,0.3)]">
+              <div className="absolute inset-0 border-[1px] border-red-500/30 transform scale-90"></div>
+              <ShieldCheck className="w-8 h-8 text-red-500" />
+            </div>
+            <div>
+              <h1 className="font-bold text-2xl tracking-widest text-red-500">
+                CRIMENEXUS <span className="text-white">AI</span>
+              </h1>
+              <p className="text-[10px] tracking-widest text-slate-400 uppercase mt-0.5">
+                Law Enforcement Secure Portal
+              </p>
+              <div className="h-[1px] w-20 bg-gradient-to-r from-red-500 to-transparent mt-2"></div>
+            </div>
           </div>
 
-          {/* 3 Quick Role Selection Cards */}
-          <div className="space-y-3.5">
-            {quickRoles.map((r) => {
-              const Icon = r.icon;
-              return (
-                <div
-                  key={r.role}
-                  onClick={() => handleLogin(null, r.role)}
-                  className={`p-4 sm:p-5 rounded-2xl glass-panel border cursor-pointer transition-all duration-200 shadow-xl ${r.color} hover:scale-[1.01] flex items-center justify-between group`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-xl bg-slate-900/80 border border-slate-700/60 flex items-center justify-center shadow">
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h3 className="text-base font-bold text-slate-100 group-hover:text-white transition">
-                          {r.title}
-                        </h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900/90 text-slate-300 border border-slate-700">
-                          {r.badge}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 max-w-md line-clamp-2">
-                        {r.desc}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-slate-200 group-hover:border-white group-hover:text-white transition flex items-center space-x-1.5 shrink-0 ml-3">
-                    <span>Access</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Side: Credential Login Form (5 cols) */}
-        <div className="lg:col-span-5">
-          <div className="p-6 sm:p-8 rounded-3xl glass-panel border border-slate-700/80 shadow-2xl space-y-6">
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2 text-cyan-400 text-xs font-mono font-bold uppercase">
-                <Lock className="w-4 h-4" />
-                <span>Departmental Sign In</span>
-              </div>
-              <h2 className="text-xl font-bold text-slate-100">Officer Credentials</h2>
-              <p className="text-xs text-slate-400">Enter badge ID or officer username to proceed</p>
+          {/* Login / Signup Card */}
+          <div className="bg-black/50 backdrop-blur-md border border-red-900/40 rounded-2xl p-6 shadow-[0_0_40px_rgba(255,0,0,0.08)]">
+            
+            {/* Tab Switcher: Sign In vs Sign Up */}
+            <div className="flex items-center p-1 rounded-xl bg-slate-950/80 border border-red-900/30 mb-5">
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(false); setErrorMsg(''); }}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold tracking-wider uppercase transition flex items-center justify-center space-x-1.5 ${
+                  !isSignUp
+                    ? 'bg-red-950/70 text-red-400 border border-red-600/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(true); setErrorMsg(''); }}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold tracking-wider uppercase transition flex items-center justify-center space-x-1.5 ${
+                  isSignUp
+                    ? 'bg-red-950/70 text-red-400 border border-red-600/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Sign Up</span>
+              </button>
             </div>
 
-            {error && (
-              <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/50 text-xs text-red-300 flex items-center space-x-2">
-                <KeyRound className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
+            {/* Error Banner */}
+            {errorMsg && (
+              <div className="mb-4 p-3 rounded-xl bg-red-950/80 border border-red-500/50 flex items-start space-x-2 text-xs text-red-200 animate-fadeIn">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span className="leading-tight">{errorMsg}</span>
               </div>
             )}
 
-            <form onSubmit={(e) => handleLogin(e)} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Officer Username / Role
+            <form onSubmit={handleAuth} className="space-y-4">
+              
+              {/* Role Select */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Assign Operational Role
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-red-600/70">
                     <User className="w-4 h-4" />
                   </div>
                   <select
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-slate-900 text-xs text-slate-100 pl-10 pr-3 py-3 rounded-xl border border-slate-700 focus:outline-none focus:border-cyan-400 font-mono font-semibold"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full bg-black/70 text-xs text-slate-200 pl-10 pr-8 py-2.5 rounded-lg border border-red-900/40 focus:outline-none focus:border-red-600 appearance-none font-mono cursor-pointer"
                   >
-                    <option value="investigator">investigator (Senior IO)</option>
-                    <option value="analyst">analyst (Intelligence Analyst)</option>
-                    <option value="admin">admin (Chief Administrator)</option>
+                    <option value="investigator">Investigator (Senior IO)</option>
+                    <option value="analyst">Intelligence Analyst</option>
+                    <option value="admin">Chief Administrator</option>
                   </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Secure Password / Pin
+              {/* Full Name (Sign Up only) */}
+              {isSignUp && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    Officer Full Name / Badge
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. Inspector R. Sharma"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full bg-black/60 text-xs text-slate-200 pl-10 pr-3 py-2.5 rounded-lg border border-red-900/40 focus:outline-none focus:border-red-600 placeholder-slate-600 font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Officer Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    placeholder="officer@police.gov.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-black/60 text-xs text-slate-200 pl-10 pr-3 py-2.5 rounded-lg border border-red-900/40 focus:outline-none focus:border-red-600 placeholder-slate-600 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Password Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Secure Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
-                    type="password"
-                    placeholder="Enter password..."
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Enter password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-900 text-xs text-slate-100 pl-10 pr-3 py-3 rounded-xl border border-slate-700 focus:outline-none focus:border-cyan-400 font-mono"
+                    className="w-full bg-black/60 text-xs text-slate-200 pl-10 pr-10 py-2.5 rounded-lg border border-red-900/40 focus:outline-none focus:border-red-600 placeholder-slate-600 font-mono"
                   />
-                </div>
-                <div className="text-[11px] text-slate-500 font-mono mt-1 text-right">
-                  Default: <span className="text-cyan-400">password123</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:opacity-95 text-black font-extrabold text-xs tracking-wider uppercase transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2"
+                className="w-full py-3 rounded-lg bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold text-xs tracking-wider uppercase transition flex items-center justify-center space-x-2 border border-red-500/30 shadow-[0_0_15px_rgba(255,0,0,0.2)] mt-3 disabled:opacity-60"
               >
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    <span>Authenticate & Enter</span>
+                    <span>{isSignUp ? 'Create Officer Account' : 'Authenticate & Enter'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            <div className="pt-4 border-t border-slate-800/80 text-center text-[11px] text-slate-500 font-mono">
-              Protected by 256-Bit Military Encryption • SIH 2026
+            <div className="mt-5 flex items-center justify-center space-x-2 text-[10px] text-slate-500 font-mono">
+              <Lock className="w-3 h-3 text-red-600" />
+              <span>FIREBASE SECURE AUTH • <span className="text-red-600">SIH 2026</span></span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="max-w-6xl w-full mx-auto text-center text-xs text-slate-500 font-mono pt-4 z-10">
-        AI-Powered Criminal Network Investigation Platform • Dual Persistence (Neo4j + Relational) • Local Hash-Verified Chain of Custody
-      </footer>
+        {/* Top Right Compass */}
+        <div className="absolute top-10 right-10 text-red-700/50 flex flex-col items-center">
+          <span className="text-[10px] mb-1 font-mono">N</span>
+          <Compass className="w-8 h-8 text-red-500/80" />
+          <span className="text-[10px] mt-1 font-mono">V</span>
+        </div>
+
+      </div>
     </div>
   );
 }

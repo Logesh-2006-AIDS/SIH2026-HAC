@@ -45,15 +45,15 @@ export default function CrossCasePage({ onNavigateToWorkbench }) {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 via-slate-900 to-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-red-900/40 bg-gradient-to-r from-red-950/40 via-black to-black shadow-2xl">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-lg shadow-indigo-500/10">
+          <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-600/40 flex items-center justify-center text-red-500 shadow-lg shadow-red-500/10">
             <GitMerge className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-100 flex items-center space-x-2">
               <span>Cross-Case Intelligence & Syndicate Linkage</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-800 font-semibold">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-800 font-semibold font-mono">
                 INTER-JURISDICTIONAL
               </span>
             </h1>

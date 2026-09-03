@@ -1,56 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   color-scheme: dark;
 }
 
-code, pre {
+body {
+  background-color: #030102;
+  color: #f1f5f9;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+}
+
+code, pre, .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Custom glowing and glassmorphic utilities */
+/* Tactical Background Grid Texture */
+.bg-tactical-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(239, 68, 68, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(239, 68, 68, 0.03) 1px, transparent 1px);
+}
+
+.bg-radial-vignette {
+  background: radial-gradient(circle at 50% 30%, rgba(220, 38, 38, 0.04) 0%, rgba(3, 1, 2, 0.95) 75%);
+}
+
+/* Masterclass Matte Black & Red Glassmorphism */
 .glass-panel {
-  background: rgba(12, 18, 34, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 2, 4, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.85);
+}
+
+.glass-panel-elevated {
+  background: rgba(14, 4, 6, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.95), 0 0 20px 0 rgba(239, 68, 68, 0.05);
 }
 
 .glass-panel-hover {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .glass-panel-hover:hover {
-  border-color: rgba(0, 240, 255, 0.3);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.08);
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 25px rgba(220, 38, 38, 0.15), 0 12px 32px rgba(0, 0, 0, 0.9);
+  transform: translateY(-1px);
 }
 
-.glow-blue {
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+/* Neon Red & Crimson Glow Tokens */
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
-.glow-purple {
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.25);
+.glow-red-lg {
+  box-shadow: 0 0 35px rgba(239, 68, 68, 0.45);
 }
 
-.glow-rose {
-  box-shadow: 0 0 25px rgba(244, 63, 94, 0.25);
+.glow-red-subtle {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.12);
 }
 
-/* Custom Scrollbar */
+.glow-text-red {
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+/* Radar Scanline Keyframe */
+@keyframes radar-scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 0.3; }
+  100% { transform: translateY(1000%); opacity: 0; }
+}
+
+.animate-radar-scan {
+  animation: radar-scan 6s linear infinite;
+}
+
+/* Custom Tactical Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #070b14;
+  background: #030102;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: #25070a;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #4c0d12;
+  border-color: rgba(239, 68, 68, 0.4);
 }

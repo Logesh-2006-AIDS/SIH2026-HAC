@@ -63,15 +63,15 @@ export default function AdminDashboard({ systemStatus, onRefreshStatus }) {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-purple-500/20 bg-gradient-to-r from-purple-500/10 via-slate-900 to-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-red-900/40 bg-gradient-to-r from-red-950/40 via-black to-black shadow-2xl">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-lg shadow-purple-500/10">
+          <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-600/40 flex items-center justify-center text-red-500 shadow-lg shadow-red-500/10">
             <Shield className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-100 flex items-center space-x-2">
               <span>Admin Operations & Infrastructure Control</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-400 border border-purple-800 font-semibold">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-800 font-semibold font-mono">
                 SYSTEM HEALTH & INGESTION
               </span>
             </h1>
@@ -83,7 +83,7 @@ export default function AdminDashboard({ systemStatus, onRefreshStatus }) {
 
         <button
           onClick={onRefreshStatus}
-          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-400 border border-purple-500/30 text-xs font-bold flex items-center space-x-2 transition"
+          className="px-4 py-2 rounded-xl bg-black/80 hover:bg-red-950/60 text-red-400 border border-red-900/40 text-xs font-bold flex items-center space-x-2 transition"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Refresh System Health</span>
@@ -93,10 +93,10 @@ export default function AdminDashboard({ systemStatus, onRefreshStatus }) {
       {/* 3 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {/* Knowledge Graph Nodes */}
-        <div className="p-5 rounded-2xl glass-panel border border-cyan-500/20 shadow-xl space-y-2">
+        <div className="p-5 rounded-2xl glass-panel border border-red-900/40 shadow-xl space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Neo4j Graph Engine</span>
-            <Database className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-bold text-red-400 uppercase tracking-wider font-mono">Neo4j Graph Engine</span>
+            <Database className="w-4 h-4 text-red-500" />
           </div>
           <div className="text-3xl font-extrabold text-slate-100 font-mono">
             {systemStatus?.neo4j_graph?.total_nodes || 0}

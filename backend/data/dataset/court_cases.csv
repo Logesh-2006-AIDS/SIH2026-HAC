@@ -1,5 +1,151 @@
-case_id,person_name,ipc_sections,court_name,status
-CC-2024-901,Ravi Kumar,"302, 307, 120B IPC",Rohini District Court,Chargesheet Filed
-CC-2024-412,Vikram Singh,"379, 411 IPC, Arms Act 25",Gurugram Sessions Court,Under Trial
-CC-2025-104,Meena Sharma,"420, 467, 471 IPC",Patiala House Courts,Bail Granted with Conditions
-CC-2024-789,Suresh Yadav,Arms Act 25/54/59,Lucknow High Court Bench,Non-Bailable Warrant Issued
+court_case_id,person_name,ipc_section,state
+HC101,Ajay Nair,120B,Haryana
+HC102,Neha Nair,120B,Haryana
+HC103,Arjun Reddy,420,Haryana
+HC104,Vikram Singh,66C IT Act,Haryana
+HC105,Deepak Yadav,468,Haryana
+HC106,Neha Nair,468,Haryana
+HC107,Vikram Singh,392,Haryana
+HC108,Deepak Yadav,66C IT Act,Haryana
+HC109,Neha Nair,420,Haryana
+HC110,Nisha Das,120B,Haryana
+HC111,Farhan Yadav,420,Haryana
+HC112,Deepak Yadav,120B,Haryana
+HC113,Karan Sharma,420,Haryana
+HC114,Neha Yadav,66C IT Act,Haryana
+HC115,Neha Nair,392,Haryana
+HC116,Karan Sharma,420,Haryana
+HC117,Vikram Kumar,468,Haryana
+HC118,Vikram Singh,420,Haryana
+HC119,Nisha Das,392,Haryana
+HC120,Karan Sharma,120B,Haryana
+HC121,Ajay Nair,392,Haryana
+HC122,Deepak Yadav,120B,Haryana
+HC123,Arjun Reddy,468,Haryana
+HC124,Ajay Nair,379,Haryana
+HC125,Pooja Yadav,66C IT Act,Haryana
+HC126,Sanjay Reddy,379,Assam
+HC127,Deepak Nair,120B,Assam
+HC128,Deepak Nair,420,Assam
+HC129,Deepak Nair,392,Assam
+HC130,Meera Yadav,379,Assam
+HC131,Nisha Nair,66C IT Act,Assam
+HC132,Sanjay Reddy,420,Assam
+HC133,Farhan Khan,66C IT Act,Assam
+HC134,Imran Das,120B,Assam
+HC135,Nisha Nair,66C IT Act,Assam
+HC136,Rahul Patel,420,Assam
+HC137,Rahul Patel,66C IT Act,Assam
+HC138,Pooja Sharma,420,Assam
+HC139,Sanjay Reddy,420,Assam
+HC140,Imran Das,392,Assam
+HC141,Sanjay Reddy,66C IT Act,Assam
+HC142,Imran Das,66C IT Act,Assam
+HC143,Nisha Nair,392,Assam
+HC144,Aman Khan,120B,Assam
+HC145,Nisha Nair,392,Assam
+HC146,Pooja Sharma,392,Assam
+HC147,Ananya Das,392,Assam
+HC148,Sneha Reddy,420,Tamil Nadu
+HC149,Pooja Sharma,420,Tamil Nadu
+HC150,Karan Reddy,379,Tamil Nadu
+HC151,Vikram Khan,420,Tamil Nadu
+HC152,Sanjay Kumar,468,Tamil Nadu
+HC153,Sneha Reddy,379,Tamil Nadu
+HC154,Farhan Gupta,392,Tamil Nadu
+HC155,Priya Das,66C IT Act,Tamil Nadu
+HC156,Arjun Sharma,379,Tamil Nadu
+HC157,Aisha Gupta,392,Tamil Nadu
+HC158,Arjun Sharma,66C IT Act,Tamil Nadu
+HC159,Priya Gupta,468,Tamil Nadu
+HC160,Sneha Reddy,420,Tamil Nadu
+HC161,Vikram Khan,420,Tamil Nadu
+HC162,Arjun Sharma,66C IT Act,Tamil Nadu
+HC163,Pooja Sharma,66C IT Act,Tamil Nadu
+HC164,Sneha Reddy,420,Tamil Nadu
+HC165,Priya Gupta,66C IT Act,Tamil Nadu
+HC166,Sanjay Kumar,379,Tamil Nadu
+HC167,Sanjay Kumar,392,Tamil Nadu
+HC168,Sneha Yadav,66C IT Act,Gujarat
+HC169,Sneha Yadav,420,Gujarat
+HC170,Aman Patel,66C IT Act,Gujarat
+HC171,Deepak Sharma,379,Gujarat
+HC172,Pooja Sharma,392,Gujarat
+HC173,Aman Reddy,420,Gujarat
+HC174,Deepak Gupta,66C IT Act,Gujarat
+HC175,Pooja Gupta,379,Gujarat
+HC176,Pooja Gupta,120B,Gujarat
+HC177,Nisha Singh,468,Gujarat
+HC178,Aisha Nair,120B,Gujarat
+HC179,Aisha Nair,379,Gujarat
+HC180,Aman Patel,392,Gujarat
+HC181,Rohit Yadav,420,Gujarat
+HC182,Sneha Yadav,420,Gujarat
+HC183,Aman Patel,468,Gujarat
+HC184,Pooja Gupta,66C IT Act,Gujarat
+HC185,Deepak Sharma,420,Gujarat
+HC186,Rohit Khan,468,Delhi
+HC187,Neha Singh,392,Delhi
+HC188,Farhan Nair,392,Delhi
+HC189,Aman Sharma,120B,Delhi
+HC190,Rohit Khan,66C IT Act,Delhi
+HC191,Farhan Nair,120B,Delhi
+HC192,Arjun Patel,420,Delhi
+HC193,Arjun Yadav,120B,Delhi
+HC194,Rohit Khan,120B,Delhi
+HC195,Aman Singh,379,Delhi
+HC196,Priya Gupta,120B,Delhi
+HC197,Aman Sharma,468,Delhi
+HC198,Priya Gupta,120B,Delhi
+HC199,Farhan Nair,468,Delhi
+HC200,Arjun Patel,379,Delhi
+HC201,Aman Sharma,468,Delhi
+HC202,Farhan Nair,468,Delhi
+HC203,Rohit Khan,66C IT Act,Delhi
+HC204,Sneha Yadav,379,Delhi
+HC205,Rohit Singh,420,Delhi
+HC206,Neha Khan,420,Assam
+HC207,Aman Singh,468,Gujarat
+HC208,Sneha Nair,420,Gujarat
+HC209,Aman Khan,420,Gujarat
+HC210,Ravi Sharma,66C IT Act,Rajasthan
+HC211,Sneha Nair,66C IT Act,West Bengal
+HC212,Neha Khan,66C IT Act,Odisha
+HC213,Priya Singh,379,Kerala
+HC214,Vikram Yadav,66C IT Act,Punjab
+HC215,Aman Khan,420,Rajasthan
+HC216,Aman Singh,468,Karnataka
+HC217,Aman Khan,379,Assam
+HC218,Neha Patel,468,Maharashtra
+HC219,Aman Khan,392,Odisha
+HC220,Sanjay Nair,66C IT Act,Telangana
+HC221,Ravi Sharma,468,Tamil Nadu
+HC222,Nisha Sharma,420,Odisha
+HC223,Sneha Nair,468,Uttar Pradesh
+HC224,Vikram Yadav,468,Maharashtra
+HC225,Pooja Patel,468,Odisha
+HC226,Sneha Nair,420,Punjab
+HC227,Pooja Patel,66C IT Act,Bihar
+HC228,Nisha Sharma,66C IT Act,Telangana
+HC229,Ravi Sharma,379,Gujarat
+HC230,Vikram Yadav,392,Haryana
+HC231,Deepak Patel,120B,Karnataka
+HC232,Sneha Nair,379,Odisha
+HC233,Nisha Yadav,66C IT Act,Delhi
+HC234,Nisha Yadav,120B,Delhi
+HC235,Ananya Patel,420,Haryana
+HC236,Deepak Patel,120B,Odisha
+HC237,Deepak Patel,379,Gujarat
+HC238,Farhan Gupta,468,Assam
+HC239,Deepak Patel,120B,Delhi
+HC240,Ananya Patel,379,Gujarat
+HC241,Karan Sharma,468,Gujarat
+HC242,Sneha Nair,66C IT Act,Uttar Pradesh
+HC243,Neha Kumar,392,Kerala
+HC244,Neha Kumar,379,Delhi
+HC245,Ajay Kumar,66C IT Act,Gujarat
+HC246,Nisha Yadav,379,Delhi
+HC247,Karan Sharma,66C IT Act,Rajasthan
+HC248,Ajay Kumar,379,Rajasthan
+HC249,Karan Sharma,120B,Karnataka
+HC250,Sneha Nair,66C IT Act,Rajasthan

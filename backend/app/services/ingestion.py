@@ -312,6 +312,123 @@ class IngestionService:
                         })
                         stats["clusters_loaded"] += 1
 
+        # 8. cluster_summary.csv (network_cluster, total_cases, avg_confidence)
+        cs2_file = os.path.join(folder, "cluster_summary.csv")
+        if os.path.exists(cs2_file):
+            with open(cs2_file, mode="r", encoding="utf-8", errors="ignore") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    cluster_name = row.get("network_cluster")
+                    if cluster_name:
+                        neo4j_client.add_node(cluster_name, "CRIMINAL_ORGANIZATION", {
+                            "name": f"Network {cluster_name}",
+                            "total_cases": row.get("total_cases", "0"),
+                            "avg_confidence": row.get("avg_confidence", "0"),
+                            "threat_level": "HIGH"
+                        })
+                        stats["clusters_loaded"] += 1
+
+        # 9. master_case_mapping_150.csv — Rich master file linking everything
+        master_file = os.path.join(folder, "master_case_mapping_150.csv")
+        if os.path.exists(master_file):
+            with open(master_file, mode="r", encoding="utf-8", errors="ignore") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    case_id = row.get("case_id", "")
+                    person_name = row.get("person_name", "")
+                    cluster = row.get("network_cluster", "")
+                    phone = row.get("phone_number", "")
+                    vehicle = row.get("vehicle_number", "")
+                    city = row.get("city", "")
+                    crime_type = row.get("crime_type", "")
+                    role = row.get("role", "Suspect")
+                    confidence = float(row.get("confidence_score", 50)) / 100.0
+                    linked_case = row.get("linked_case", "")
+
+                    # Create FIR node
+                    if case_id:
+                        neo4j_client.add_node(case_id, "FIR_RECORD", {
+                            "name": f"{case_id} - {crime_type}",
+                            "crime_type": crime_type,
+                            "fir_date": row.get("fir_date", ""),
+                            "cluster": cluster,
+                            "risk_level": row.get("cluster_risk_level", "Medium"),
+                            "status": "ACTIVE"
+                        })
+
+                    # Create Person node and link to FIR
+                    if person_name:
+                        neo4j_client.add_node(person_name, "SUSPECT_PERSON", {
+                            "name": person_name,
+                            "role": role,
+                            "city": city,
+                            "state": row.get("state", ""),
+                        })
+                        if case_id:
+                            neo4j_client.add_relationship(
+                                person_name, "SUSPECT_PERSON",
+                                "INVOLVED_IN", case_id, "FIR_RECORD",
+                                {"confidence": confidence, "role": role}
+                            )
+
+                    # Create Phone node and link to Person
+                    if phone:
+                        neo4j_client.add_node(phone, "PHONE_NUMBER", {
+                            "name": phone,
+                            "communication_count": row.get("communication_count", "0")
+                        })
+                        if person_name:
+                            neo4j_client.add_relationship(
+                                person_name, "SUSPECT_PERSON",
+                                "USES_PHONE", phone, "PHONE_NUMBER",
+                                {"confidence": 0.95}
+                            )
+
+                    # Create Vehicle node and link to Person
+                    if vehicle:
+                        neo4j_client.add_node(vehicle, "VEHICLE_NUMBER", {
+                            "name": vehicle,
+                            "registration_state": row.get("registration_state", "")
+                        })
+                        if person_name:
+                            neo4j_client.add_relationship(
+                                person_name, "SUSPECT_PERSON",
+                                "USES_VEHICLE", vehicle, "VEHICLE_NUMBER",
+                                {"confidence": 0.90}
+                            )
+
+                    # Create Location node and link Person
+                    if city:
+                        neo4j_client.add_node(city, "LOCATION", {
+                            "name": city,
+                            "state": row.get("state", "")
+                        })
+                        if person_name:
+                            neo4j_client.add_relationship(
+                                person_name, "SUSPECT_PERSON",
+                                "OPERATES_IN", city, "LOCATION",
+                                {"confidence": 0.85}
+                            )
+
+                    # Link Person to Cluster/Network
+                    if cluster and person_name:
+                        neo4j_client.add_relationship(
+                            person_name, "SUSPECT_PERSON",
+                            "MEMBER_OF", cluster, "CRIMINAL_ORGANIZATION",
+                            {"confidence": confidence}
+                        )
+
+                    # Cross-case links
+                    if linked_case and case_id:
+                        neo4j_client.add_relationship(
+                            case_id, "FIR_RECORD",
+                            "LINKED_TO", linked_case, "FIR_RECORD",
+                            {"confidence": confidence, "reason": row.get("confidence_reason", "")}
+                        )
+
+                    stats.setdefault("master_records_loaded", 0)
+                    stats["master_records_loaded"] += 1
+
         return {
             "status": "SUCCESS",
             "stats": stats,

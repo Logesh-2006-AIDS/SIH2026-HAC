@@ -67,19 +67,19 @@ export default function WorkbenchPage({ caseId = "FIR-2025-ND-101", onNavigateTo
   return (
     <div className="space-y-6">
       {/* Workbench Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-slate-900 to-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-red-900/40 bg-gradient-to-r from-red-950/40 via-black to-black shadow-2xl">
         <div className="flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+          <div className="w-11 h-11 rounded-xl bg-red-950/60 border border-red-600/40 flex items-center justify-center text-red-500 shadow-lg shadow-red-500/10">
             <Briefcase className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-mono font-bold text-cyan-400 uppercase">ACTIVE INVESTIGATION WORKBENCH</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">
+              <span className="text-xs font-mono font-bold text-red-400 uppercase">ACTIVE INVESTIGATION WORKBENCH</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800 font-bold">
                 {caseDetail?.fir_number || caseId}
               </span>
             </div>
-            <h1 className="text-xl font-bold text-slate-100 mt-0.5">{caseDetail?.title || 'Case Investigation Workspace'}</h1>
+            <h1 className="text-xl font-bold text-slate-100 mt-0.5 font-mono">{caseDetail?.title || 'Case Investigation Workspace'}</h1>
           </div>
         </div>
 

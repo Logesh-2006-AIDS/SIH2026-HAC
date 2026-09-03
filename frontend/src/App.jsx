@@ -1,9 +1,19 @@
+/**
+ * CRIMENEXUS AI — Masterclass Role-Based Application Shell
+ * Black & Red Tactical Intelligence System.
+ */
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar.jsx';
 import LoginPortal from './components/LoginPortal.jsx';
+import PermissionGuard from './components/guards/PermissionGuard.jsx';
 
-// 14 Dedicated Investigation Pages
-import OverviewPage from './pages/OverviewPage.jsx';
+// ─── Role-Specific Landing Dashboards ───────────────────────────────
+import InvestigatorOverview from './pages/InvestigatorOverview.jsx';
+import IntelligenceOverview from './pages/IntelligenceOverview.jsx';
+import AdminOverview from './pages/AdminOverview.jsx';
+
+// ─── Shared Workstation Pages ───────────────────────────────────────
 import CasesPage from './pages/CasesPage.jsx';
 import WorkbenchPage from './pages/WorkbenchPage.jsx';
 import KnowledgeGraphPage from './pages/KnowledgeGraphPage.jsx';
@@ -17,44 +27,79 @@ import VerificationCenterPage from './pages/VerificationCenterPage.jsx';
 import AuditLogsPage from './pages/AuditLogsPage.jsx';
 import UserManagementPage from './pages/UserManagementPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
+import AdminDashboard from './components/AdminDashboard.jsx';
+import OverviewPage from './pages/OverviewPage.jsx';
 
-import { Activity, Database, Server, User, Search, Bell } from 'lucide-react';
+import { Shield, Database, Lock, Radio } from 'lucide-react';
+import { getLandingPage, hasPermission, getRoleMetadata } from './config/rbacConfig';
 
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [activePage, setActivePage] = useState('overview');
+// ─── Page Registry ──────────────────────────────────────────────────
+const PAGE_COMPONENTS = {
+  // Investigator pages
+  inv_overview:       { component: InvestigatorOverview, needsNav: true },
+  cases:              { component: CasesPage, needsNav: true, needsCase: true },
+  fir_upload:         { component: DataIngestionPage, needsIngestion: true },
+  workbench:          { component: WorkbenchPage, needsCase: true, needsEntity: true },
+  entity_search:      { component: KnowledgeGraphPage, needsEntity: true },
+  inv_network:        { component: KnowledgeGraphPage, needsEntity: true },
+  cross_case:         { component: CrossCasePage, needsCase: true },
+  verification:       { component: VerificationCenterPage },
+  copilot:            { component: CopilotPage, needsEntity: true, needsCase: true },
+  inv_reports:        { component: OverviewPage, needsNav: true, needsEntity: true },
+
+  // Analyst pages
+  intel_overview:     { component: IntelligenceOverview, needsNav: true },
+  graph:              { component: KnowledgeGraphPage, needsEntity: true },
+  analytics:          { component: NetworkAnalyticsPage, needsEntity: true },
+  entity_explorer:    { component: KnowledgeGraphPage, needsEntity: true },
+  centrality:         { component: NetworkAnalyticsPage, needsEntity: true },
+  community:          { component: NetworkAnalyticsPage, needsEntity: true },
+  shortest_path:      { component: NetworkAnalyticsPage, needsEntity: true },
+  link_prediction:    { component: AiLeadsPage },
+  cross_intel:        { component: CrossCasePage, needsCase: true },
+  heatmap:            { component: CrimeHeatmapPage, needsCase: true },
+  crime_trends:       { component: CrimeHeatmapPage, needsCase: true },
+  ai_insights:        { component: CopilotPage, needsEntity: true, needsCase: true },
+  intel_reports:      { component: OverviewPage, needsNav: true, needsEntity: true },
+
+  // Admin pages
+  admin_overview:     { component: AdminOverview, needsNav: true },
+  dataset_mgmt:       { component: AdminDashboard, needsNav: true },
+  ingestion:          { component: DataIngestionPage, needsIngestion: true },
+  data_validation:    { component: VerificationCenterPage },
+  entity_resolution:  { component: VerificationCenterPage },
+  neo4j_db:           { component: KnowledgeGraphPage, needsEntity: true },
+  system_health:      { component: SettingsPage, needsUser: true },
+  users:              { component: UserManagementPage },
+  security:           { component: SettingsPage, needsUser: true },
+  audit:              { component: AuditLogsPage },
+  data_quality:       { component: VerificationCenterPage },
+  sys_config:         { component: SettingsPage, needsUser: true },
+};
+
+function AppShell() {
+  const { isAuthenticated, user, role, login, logout, landingPage, metadata } = useAuth();
+  const [activePage, setActivePage] = useState(null);
   const [selectedCaseId, setSelectedCaseId] = useState('FIR-2025-ND-101');
   const [selectedEntity, setSelectedEntity] = useState(null);
 
-  // Check saved session on startup
+  // Set landing page when role changes
   useEffect(() => {
-    const token = localStorage.getItem('crime_auth_token');
-    const role = localStorage.getItem('crime_user_role');
-    const name = localStorage.getItem('crime_user_name');
-
-    if (token) {
-      setIsAuthenticated(true);
-      setCurrentUser({
-        access_token: token,
-        role: role || 'Investigator',
-        full_name: name || 'Senior IO Rajesh Varma'
-      });
+    if (role && !activePage) {
+      setActivePage(getLandingPage(role));
     }
-  }, []);
+  }, [role]);
+
+  // Guard: if user navigates to a page they don't have permission for, redirect
+  useEffect(() => {
+    if (role && activePage && !hasPermission(role, activePage)) {
+      setActivePage(getLandingPage(role));
+    }
+  }, [activePage, role]);
 
   const handleLoginSuccess = (userData) => {
-    setIsAuthenticated(true);
-    setCurrentUser(userData);
-    setActivePage('overview');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('crime_auth_token');
-    localStorage.removeItem('crime_user_role');
-    localStorage.removeItem('crime_user_name');
-    setIsAuthenticated(false);
-    setCurrentUser(null);
+    login(userData);
+    setActivePage(getLandingPage(userData.role || 'investigator'));
   };
 
   const handleNavigateToCase = (caseId) => {
@@ -64,145 +109,133 @@ export default function App() {
 
   const handleNavigateToEntity = (entity) => {
     setSelectedEntity(entity);
-    setActivePage('graph');
+    if (role === 'analyst') setActivePage('graph');
+    else if (role === 'admin') setActivePage('neo4j_db');
+    else setActivePage('entity_search');
   };
 
+  const handleNavigateToPage = (pageId) => {
+    if (hasPermission(role, pageId)) {
+      setActivePage(pageId);
+    }
+  };
+
+  // ─── Login Screen ─────────────────────────────────────────────────
   if (!isAuthenticated) {
     return <LoginPortal onLoginSuccess={handleLoginSuccess} />;
   }
 
-  return (
-    <div className="flex h-screen bg-[#070b14] text-slate-100 selection:bg-cyan-500 selection:text-black overflow-hidden font-sans">
-      {/* 1. Left Professional Sidebar (14 Pages) */}
-      <Sidebar
-        activePage={activePage}
-        setActivePage={setActivePage}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-      />
+  // ─── Render Active Page ───────────────────────────────────────────
+  const renderActivePage = () => {
+    const pageConfig = PAGE_COMPONENTS[activePage];
+    if (!pageConfig) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center text-slate-500 text-xs font-mono">
+            <p>Module offline: <span className="text-red-500">{activePage}</span></p>
+          </div>
+        </div>
+      );
+    }
 
-      {/* 2. Main Content Container */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="h-14 bg-[#080d1a]/90 backdrop-blur-md border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0 z-20">
-          <div className="flex items-center space-x-3">
-            <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest">
-              NAVIGATION
+    const Component = pageConfig.component;
+    const props = {};
+
+    if (pageConfig.needsNav) {
+      props.onNavigateToPage = handleNavigateToPage;
+      props.onNavigateToCase = handleNavigateToCase;
+      props.onNavigateToEntity = handleNavigateToEntity;
+    }
+    if (pageConfig.needsCase) {
+      props.caseId = selectedCaseId;
+      props.onSelectCase = handleNavigateToCase;
+      props.onNavigateToWorkbench = handleNavigateToCase;
+      props.onNavigateToIngestion = () => handleNavigateToPage('fir_upload');
+    }
+    if (pageConfig.needsEntity) {
+      props.selectedEntityProp = selectedEntity;
+      props.onNavigateToEntity = handleNavigateToEntity;
+    }
+    if (pageConfig.needsIngestion) {
+      props.onIngestionSuccess = (res) => handleNavigateToCase(res.case_id);
+    }
+    if (pageConfig.needsUser) {
+      props.currentUser = user;
+    }
+
+    return (
+      <PermissionGuard pageId={activePage} onRedirect={() => setActivePage(landingPage)}>
+        <Component {...props} />
+      </PermissionGuard>
+    );
+  };
+
+  const roleMeta = getRoleMetadata(role);
+
+  return (
+    <div className="flex h-screen bg-[#030102] text-slate-100 selection:bg-red-600 selection:text-white overflow-hidden font-sans bg-tactical-grid">
+      {/* Dynamic Tactical Sidebar */}
+      <Sidebar activePage={activePage} setActivePage={handleNavigateToPage} />
+
+      {/* Main Content Container */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#030102]">
+        {/* Top Tactical HUD Header */}
+        <header className="h-14 bg-[#060203]/95 backdrop-blur-md border-b border-red-950/50 px-6 flex items-center justify-between shrink-0 z-20 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+          {/* Breadcrumb Module Indicator */}
+          <div className="flex items-center space-x-2 font-mono text-xs">
+            <span className="text-red-500 font-bold tracking-widest uppercase">
+              {roleMeta.workstationTitle}
             </span>
-            <span className="text-slate-600">/</span>
-            <span className="text-xs font-extrabold text-slate-100 uppercase tracking-wider font-mono">
-              {activePage.replace('_', ' ')}
+            <span className="text-red-800">/</span>
+            <span className="text-slate-300 font-bold uppercase tracking-wider">
+              {activePage?.replace(/_/g, ' ')}
             </span>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Neo4j Telemetry Badge */}
-            <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-mono">
-              <Database className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-slate-400">Graph:</span>
-              <span className="text-emerald-400 font-bold flex items-center space-x-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-                <span>Neo4j Active</span>
+          {/* Right Status Badges */}
+          <div className="flex items-center space-x-3.5">
+            {/* Live Graph Status */}
+            <div className="hidden sm:flex items-center space-x-2 px-2.5 py-1 rounded-md bg-black/80 border border-red-950/60 text-[10px] font-mono">
+              <Database className="w-3.5 h-3.5 text-red-500" />
+              <span className="text-slate-500">GRAPH:</span>
+              <span className="text-red-400 font-bold flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                <span>NEO4J ACTIVE</span>
               </span>
             </div>
 
+            {/* Security Indicator */}
+            <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-black/80 border border-red-950/60 text-[10px] font-mono text-slate-400">
+              <Lock className="w-3 h-3 text-red-600" />
+              <span className="text-red-500/80 font-bold">POL-SECURE</span>
+            </div>
+
             {/* Officer Profile Badge */}
-            <div className="flex items-center space-x-2 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-              <span className="text-slate-300 font-bold">{currentUser?.full_name}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700">
-                {currentUser?.role}
+            <div className="flex items-center space-x-2 text-xs font-mono bg-red-950/40 border border-red-800/40 px-3 py-1 rounded-lg">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              <span className="text-slate-200 font-bold">{user?.full_name}</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-950 text-red-400 border border-red-700 font-bold uppercase">
+                {roleMeta.shortName}
               </span>
             </div>
           </div>
         </header>
 
-        {/* Dynamic Page Routing */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#070b14]">
+        {/* Dynamic Page Content Viewport */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 bg-[#030102] bg-radial-vignette">
           <div className="max-w-7xl mx-auto w-full">
-            {activePage === 'overview' && (
-              <OverviewPage
-                onNavigateToCase={handleNavigateToCase}
-                onNavigateToEntity={handleNavigateToEntity}
-                onNavigateToPage={(page) => setActivePage(page)}
-              />
-            )}
-
-            {activePage === 'cases' && (
-              <CasesPage
-                onSelectCase={handleNavigateToCase}
-                onNavigateToWorkbench={handleNavigateToCase}
-                onNavigateToIngestion={() => setActivePage('ingestion')}
-              />
-            )}
-
-            {activePage === 'workbench' && (
-              <WorkbenchPage
-                caseId={selectedCaseId}
-                onNavigateToEntity={handleNavigateToEntity}
-              />
-            )}
-
-            {activePage === 'graph' && (
-              <KnowledgeGraphPage
-                selectedEntityProp={selectedEntity}
-                onNavigateToEntity={handleNavigateToEntity}
-              />
-            )}
-
-            {activePage === 'heatmap' && (
-              <CrimeHeatmapPage
-                onNavigateToCase={handleNavigateToCase}
-              />
-            )}
-
-            {activePage === 'cross_case' && (
-              <CrossCasePage
-                onNavigateToWorkbench={handleNavigateToCase}
-              />
-            )}
-
-            {activePage === 'analytics' && (
-              <NetworkAnalyticsPage
-                onNavigateToEntity={handleNavigateToEntity}
-              />
-            )}
-
-            {activePage === 'leads' && (
-              <AiLeadsPage />
-            )}
-
-            {activePage === 'copilot' && (
-              <CopilotPage
-                onNavigateToEntity={handleNavigateToEntity}
-                onNavigateToCase={handleNavigateToCase}
-              />
-            )}
-
-            {activePage === 'ingestion' && (
-              <DataIngestionPage
-                onIngestionSuccess={(res) => handleNavigateToCase(res.case_id)}
-              />
-            )}
-
-            {activePage === 'verification' && (
-              <VerificationCenterPage />
-            )}
-
-            {activePage === 'audit' && (
-              <AuditLogsPage />
-            )}
-
-            {activePage === 'users' && (
-              <UserManagementPage />
-            )}
-
-            {activePage === 'settings' && (
-              <SettingsPage currentUser={currentUser} />
-            )}
+            {renderActivePage()}
           </div>
         </main>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }

@@ -45,15 +45,15 @@ export default function KnowledgeGraphPage({ onNavigateToEntity }) {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-slate-900 to-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-red-900/40 bg-gradient-to-r from-red-950/40 via-black to-black shadow-2xl">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+          <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-600/40 flex items-center justify-center text-red-500 shadow-lg shadow-red-500/10">
             <Share2 className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-100 flex items-center space-x-2">
-              <span>National Criminal Knowledge Graph Explorer</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-semibold">
+              <span>CRIMENEXUS AI - National Criminal Knowledge Graph</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-800 font-semibold font-mono">
                 NEO4J + CYTOSCAPE.JS
               </span>
             </h1>
@@ -65,7 +65,7 @@ export default function KnowledgeGraphPage({ onNavigateToEntity }) {
 
         <button
           onClick={fetchGraph}
-          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 text-xs font-bold flex items-center space-x-2 transition"
+          className="px-4 py-2 rounded-xl bg-black/80 hover:bg-red-950/60 text-red-400 border border-red-900/40 text-xs font-bold flex items-center space-x-2 transition"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Reload Graph Data</span>

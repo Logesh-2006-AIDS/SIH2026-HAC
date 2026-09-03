@@ -58,14 +58,14 @@ export default function OverviewPage({ onNavigateToCase, onNavigateToEntity, onN
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl glass-panel border border-cyan-500/30 bg-gradient-to-r from-cyan-500/15 via-slate-900 to-slate-900 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl glass-panel border border-red-900/40 bg-gradient-to-r from-red-950/40 via-black to-black shadow-2xl flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-cyan-400 text-xs font-mono font-bold uppercase tracking-wider">
+          <div className="flex items-center space-x-2 text-red-400 text-xs font-mono font-bold uppercase tracking-wider">
             <Activity className="w-4 h-4" />
             <span>NATIONAL CRIMINAL INTELLIGENCE FUSION DESK</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight mt-1">
-            Criminal Network Operations Overview
+            CRIMENEXUS AI - Operations Overview Dashboard
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Real-time entity aggregation, multi-jurisdiction cross-case detection & AI lead intelligence.
@@ -75,7 +75,7 @@ export default function OverviewPage({ onNavigateToCase, onNavigateToEntity, onN
         <div className="flex items-center space-x-3">
           <button
             onClick={() => onNavigateToPage('workbench')}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:opacity-90 text-black font-extrabold text-xs transition flex items-center space-x-2 shadow-lg shadow-cyan-500/20"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-red-900/40 border border-red-500/30"
           >
             <span>Open Investigation Workbench</span>
             <ArrowRight className="w-4 h-4" />

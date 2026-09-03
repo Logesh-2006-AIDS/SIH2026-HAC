@@ -53,15 +53,15 @@ export default function CasesPage({ onSelectCase, onNavigateToWorkbench, onNavig
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-slate-900 to-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-panel border border-red-900/40 bg-gradient-to-r from-red-950/40 via-black to-black shadow-2xl">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-lg shadow-blue-500/10">
+          <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-600/40 flex items-center justify-center text-red-500 shadow-lg shadow-red-500/10">
             <FolderOpen className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-100 flex items-center space-x-2">
               <span>Case Investigation Registry</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-950 text-blue-400 border border-blue-800 font-semibold">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-800 font-semibold font-mono">
                 POLICE DOCKETS
               </span>
             </h1>
@@ -73,7 +73,7 @@ export default function CasesPage({ onSelectCase, onNavigateToWorkbench, onNavig
 
         <button
           onClick={onNavigateToIngestion}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 text-black font-extrabold text-xs transition flex items-center space-x-2 shadow-lg shadow-blue-500/20"
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-red-900/30 border border-red-500/40"
         >
           <Plus className="w-4 h-4" />
           <span>Upload & Ingest New FIR</span>

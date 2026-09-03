@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.models.models import User, CaseFile, ExtractedEntityRecord, ExtractedRelationRecord, AuditLog
 from app.db.neo4j_client import neo4j_client
 from app.services.ingestion import ingestion_service
+from app.services.stitch_service import stitch_service
 from app.schemas.schemas import AuditLogResponse
 from app.core.config import settings
 
@@ -43,7 +44,8 @@ def get_system_status(db: Session = Depends(get_db)):
             "status": "HEALTHY",
             "upload_dir": settings.UPLOAD_DIR,
             "dataset_dir": settings.DATASET_DIR
-        }
+        },
+        "stitch_api": stitch_service.get_status()
     }
 
 @router.post("/seed-dataset")

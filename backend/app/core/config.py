@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     NEO4J_USER: str = os.getenv("NEO4J_USER", "neo4j")
     NEO4J_PASSWORD: str = os.getenv("NEO4J_PASSWORD", "password123")
     NEO4J_DATABASE: str = os.getenv("NEO4J_DATABASE", "neo4j")
+ 
+    # Stitch API Integration
+    STITCH_API_KEY: str = os.getenv("STITCH_API_KEY", "")
+    STITCH_API_URL: str = os.getenv("STITCH_API_URL", "https://api.stitchdata.com/v2/import/push")
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [

@@ -30,16 +30,16 @@ export default function CytoscapeGraph({
         return;
       }
 
-      let color = '#94a3b8';
+      let color = '#71717a';
       if (n.label === 'SUSPECT_PERSON' || n.label === 'Person') color = '#ef4444';
-      else if (n.label === 'PERSON') color = '#f97316';
-      else if (n.label === 'PHONE_NUMBER' || n.label === 'Phone') color = '#06b6d4';
-      else if (n.label === 'VEHICLE_NUMBER' || n.label === 'Vehicle') color = '#a855f7';
-      else if (n.label === 'LOCATION' || n.label === 'Location') color = '#10b981';
-      else if (n.label === 'CRIMINAL_ORGANIZATION' || n.label === 'Organization') color = '#f43f5e';
-      else if (n.label === 'FIR_RECORD' || n.label === 'Case') color = '#3b82f6';
-      else if (n.label === 'LEGAL_SECTION' || n.label === 'LegalSection') color = '#eab308';
-      else if (n.label === 'FINANCIAL_AMOUNT' || n.label === 'Financial') color = '#14b8a6';
+      else if (n.label === 'PERSON') color = '#dc2626';
+      else if (n.label === 'PHONE_NUMBER' || n.label === 'Phone') color = '#f87171';
+      else if (n.label === 'VEHICLE_NUMBER' || n.label === 'Vehicle') color = '#fb7185';
+      else if (n.label === 'LOCATION' || n.label === 'Location') color = '#991b1b';
+      else if (n.label === 'CRIMINAL_ORGANIZATION' || n.label === 'Organization') color = '#b91c1c';
+      else if (n.label === 'FIR_RECORD' || n.label === 'Case') color = '#ef4444';
+      else if (n.label === 'LEGAL_SECTION' || n.label === 'LegalSection') color = '#7f1d1d';
+      else if (n.label === 'FINANCIAL_AMOUNT' || n.label === 'Financial') color = '#fca5a5';
 
       cyElements.push({
         group: 'nodes',
@@ -90,19 +90,19 @@ export default function CytoscapeGraph({
             'background-color': 'data(color)',
             'label': 'data(label)',
             'color': '#f8fafc',
-            'font-family': 'Inter, sans-serif',
+            'font-family': 'Plus Jakarta Sans, sans-serif',
             'font-size': '11px',
             'font-weight': 'bold',
             'text-valign': 'bottom',
             'text-margin-y': 6,
-            'text-background-color': '#070b14',
-            'text-background-opacity': 0.75,
+            'text-background-color': '#050102',
+            'text-background-opacity': 0.85,
             'text-background-padding': '3px',
             'text-background-shape': 'roundrectangle',
             'width': 28,
             'height': 28,
             'border-width': 2,
-            'border-color': 'rgba(255,255,255,0.4)',
+            'border-color': 'rgba(239,68,68,0.5)',
             'transition-property': 'background-color, border-color, width, height',
             'transition-duration': '0.2s'
           }
@@ -111,28 +111,28 @@ export default function CytoscapeGraph({
           selector: 'node:selected',
           style: {
             'border-width': 4,
-            'border-color': '#00f0ff',
+            'border-color': '#ef4444',
             'width': 36,
             'height': 36,
             'shadow-blur': 25,
-            'shadow-color': '#00f0ff',
-            'shadow-opacity': 0.8
+            'shadow-color': '#ef4444',
+            'shadow-opacity': 0.9
           }
         },
         {
           selector: 'edge',
           style: {
             'width': 1.5,
-            'line-color': 'rgba(100, 116, 139, 0.4)',
-            'target-arrow-color': 'rgba(100, 116, 139, 0.6)',
+            'line-color': 'rgba(239, 68, 68, 0.25)',
+            'target-arrow-color': 'rgba(239, 68, 68, 0.4)',
             'target-arrow-shape': 'triangle',
             'curve-style': 'bezier',
             'label': 'data(label)',
             'font-family': 'JetBrains Mono, monospace',
             'font-size': '9px',
-            'color': '#94a3b8',
-            'text-background-color': '#0b0f19',
-            'text-background-opacity': 0.8,
+            'color': '#f87171',
+            'text-background-color': '#050102',
+            'text-background-opacity': 0.85,
             'text-background-padding': '2px',
             'text-rotation': 'autorotate'
           }
@@ -141,17 +141,19 @@ export default function CytoscapeGraph({
           selector: 'edge[?isAi]',
           style: {
             'line-style': 'dashed',
-            'line-color': '#a855f7',
-            'target-arrow-color': '#a855f7',
+            'line-color': '#ef4444',
+            'target-arrow-color': '#ef4444',
             'width': 2
           }
         },
         {
           selector: 'edge:selected',
           style: {
-            'line-color': '#00f0ff',
-            'target-arrow-color': '#00f0ff',
-            'width': 3
+            'line-color': '#ef4444',
+            'target-arrow-color': '#ef4444',
+            'width': 3,
+            'shadow-blur': 15,
+            'shadow-color': '#ef4444'
           }
         }
       ],
