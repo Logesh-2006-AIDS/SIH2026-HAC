@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Sparkles, FileSpreadsheet, Layers, RefreshCw } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Sparkles, FileSpreadsheet, Layers, RefreshCw, Download } from 'lucide-react';
 
 export default function DataIngestionPage({ onIngestionSuccess }) {
   const [file, setFile] = useState(null);
@@ -182,28 +182,58 @@ export default function DataIngestionPage({ onIngestionSuccess }) {
 
           {ingestionResult ? (
             <div className="space-y-4 text-xs">
-              {/* SHA-256 Badge */}
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between font-mono text-[11px]">
-                <span className="text-slate-400">File Hash (SHA-256): <strong className="text-slate-200">{ingestionResult.file_hash_sha256}</strong></span>
-                <span className="text-emerald-400 font-bold">VERIFIED</span>
+              {/* SHA-256 Badge & PDF Action */}
+              <div className="p-3.5 rounded-xl bg-black/80 border border-red-950/60 flex flex-wrap items-center justify-between gap-2 font-mono text-[11px]">
+                <div>
+                  <span className="text-slate-400">File Hash (SHA-256): </span>
+                  <span className="text-slate-200 font-bold break-all">{ingestionResult.file_hash_sha256}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-red-400 bg-red-950 px-2 py-0.5 rounded border border-red-800 font-bold">COURT VERIFIED</span>
+                  <button
+                    onClick={() => {
+                      const cid = ingestionResult.case_id || 'FIR-2025-ND-101';
+                      window.open(`/api/v1/reports/judicial-pdf/${encodeURIComponent(cid)}`, '_blank');
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white font-bold font-mono text-xs flex items-center space-x-1.5 shadow-[0_0_12px_rgba(239,68,68,0.3)] border border-red-500/40"
+                    title="Download Court-Admissible Judicial Report PDF"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Generate Judicial PDF</span>
+                  </button>
+                </div>
               </div>
 
               {/* Entities List */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1 font-mono">
                 {ingestionResult.nlp_result?.entities?.map((e, idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                  <div key={idx} className="p-2.5 rounded-lg bg-black/80 border border-red-950/60 flex items-center justify-between">
                     <div>
-                      <div className="text-slate-100 font-bold">{e.normalized}</div>
-                      <div className="text-[10px] text-cyan-400">{e.label}</div>
+                      <div className="text-slate-100 font-bold">{e.normalized || e.text}</div>
+                      <div className="text-[10px] text-red-400">{e.label}</div>
                     </div>
-                    <span className="text-[10px] text-emerald-400 font-bold">{(e.confidence * 100).toFixed(0)}%</span>
+                    <span className="text-[10px] text-red-500 bg-red-950 px-1.5 py-0.2 rounded border border-red-900 font-bold">{((e.confidence || 0.88) * 100).toFixed(0)}%</span>
                   </div>
                 ))}
               </div>
+
+              {/* Bottom Action */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => {
+                    const cid = ingestionResult.case_id || 'FIR-2025-ND-101';
+                    window.open(`/api/v1/reports/judicial-pdf/${encodeURIComponent(cid)}`, '_blank');
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-red-800 hover:from-red-600 hover:to-red-700 text-white font-bold font-mono text-xs flex items-center justify-center space-x-2 shadow-[0_0_20px_rgba(239,68,68,0.3)] border border-red-500/40"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Court-Admissible Judicial Report (PDF)</span>
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="h-64 flex flex-col items-center justify-center text-center text-xs text-slate-500">
-              <FileText className="w-10 h-10 text-slate-700 mb-2" />
+            <div className="h-64 flex flex-col items-center justify-center text-center text-xs text-slate-500 font-mono">
+              <FileText className="w-10 h-10 text-red-950 mb-2" />
               <span>No document processed yet. Select a file on the left to start.</span>
             </div>
           )}

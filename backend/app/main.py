@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.db.session import engine, Base
-from app.api.v1 import auth, cases, graph, nlp_router, admin, analytics, map_router, leads, overview, cross_case, copilot, system_api
+from app.api.v1 import auth, cases, graph, nlp_router, admin, analytics, map_router, leads, overview, cross_case, copilot, system_api, reports
 
 # Create SQLite / PostgreSQL tables
 Base.metadata.create_all(bind=engine)
@@ -41,6 +41,8 @@ app.include_router(leads.router, prefix=f"{settings.API_V1_STR}/leads", tags=["L
 app.include_router(map_router.router, prefix=f"{settings.API_V1_STR}/map", tags=["Crime Map"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin & Diagnostics"])
 app.include_router(system_api.router, prefix=f"{settings.API_V1_STR}/system", tags=["Users & Settings"])
+app.include_router(reports.router, prefix=f"{settings.API_V1_STR}/reports", tags=["Judicial Intelligence Reports"])
+
 
 @app.get("/")
 def root():

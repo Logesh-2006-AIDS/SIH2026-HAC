@@ -56,10 +56,15 @@ export default function WorkbenchPage({ caseId = "FIR-2025-ND-101", onNavigateTo
     fetchCase();
   }, [caseId]);
 
+  const handleDownloadPdf = () => {
+    const targetCaseId = caseDetail?.case_id || caseId || 'FIR-2025-ND-101';
+    window.open(`/api/v1/reports/judicial-pdf/${encodeURIComponent(targetCaseId)}`, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -85,11 +90,12 @@ export default function WorkbenchPage({ caseId = "FIR-2025-ND-101", onNavigateTo
 
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => setShowBrief(true)}
-            className="px-3.5 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition flex items-center space-x-1.5 shadow"
+            onClick={handleDownloadPdf}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-red-800 hover:from-red-600 hover:to-red-700 text-white font-bold text-xs font-mono transition flex items-center space-x-2 shadow-[0_0_20px_rgba(239,68,68,0.3)] border border-red-500/40"
+            title="Download Court-Admissible Judicial Report PDF"
           >
-            <Printer className="w-4 h-4" />
-            <span>Generate Judicial Brief</span>
+            <Download className="w-4 h-4" />
+            <span>Generate Judicial PDF Report</span>
           </button>
         </div>
       </div>

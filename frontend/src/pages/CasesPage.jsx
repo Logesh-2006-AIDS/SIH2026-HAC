@@ -159,17 +159,24 @@ export default function CasesPage({ onSelectCase, onNavigateToWorkbench, onNavig
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-              <span className="flex items-center space-x-1 font-mono text-cyan-400">
-                <User className="w-3.5 h-3.5" />
-                <span>{c.entities_count || 6} Linked Entities</span>
-              </span>
+            <div className="pt-3 border-t border-red-950/60 flex items-center justify-between text-xs font-mono">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`/api/v1/reports/judicial-pdf/${encodeURIComponent(c.case_id)}`, '_blank');
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-black/80 hover:bg-red-950/60 text-red-400 border border-red-950 hover:border-red-700 transition flex items-center space-x-1 shadow"
+                title="Download Judicial Report PDF"
+              >
+                <Download className="w-3 h-3" />
+                <span>PDF Report</span>
+              </button>
 
               <button
                 onClick={() => onNavigateToWorkbench(c.case_id)}
-                className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-extrabold text-xs transition flex items-center space-x-1 shadow"
+                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white font-bold text-xs transition flex items-center space-x-1 shadow-[0_0_12px_rgba(239,68,68,0.2)] border border-red-500/30"
               >
-                <span>Launch Workbench</span>
+                <span>Launch</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
