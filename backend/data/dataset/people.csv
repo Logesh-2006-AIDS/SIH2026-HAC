@@ -1,0 +1,11 @@
+person_id,name,aliases,role,age,address
+P001,Ravi Kumar,Ravan;Ravi K,Kingpin / Syndicate Leader,38,"Sector 7, Rohini, New Delhi"
+P002,Vikram Singh,Vicky;Viper,Key Operative / Bridge Node,34,"MG Road, Gurgaon, Haryana"
+P003,Meena Sharma,Meena S,Financial Handler / Money Launderer,31,"Karol Bagh, New Delhi"
+P004,Aarav Mehta,AJ;Aarav M,Smuggling Coordinator,42,"Bandra West, Mumbai, Maharashtra"
+P005,Suresh Yadav,Chota Suresh;S. Yadav,Enforcer / Arms Dealer,29,"Gomti Nagar, Lucknow, UP"
+P006,Priya Nair,Priya N,Cyber Operative / Crypto Mule,27,"Koramangala, Bengaluru, Karnataka"
+P007,Deepak Srivastava,Deepak S,Logistics Provider,45,"Civil Lines, Prayagraj, UP"
+P008,Manish Tiwari,Manu,Vehicle Transporter,33,"Kanpur, UP"
+P009,Sanjay Gupta,Sanju,Hawala Courier,39,"Salt Lake, Kolkata, WB"
+P010,Rohit Patel,Rohit P,Safehouse Custodian,36,"Ahmedabad, Gujarat"

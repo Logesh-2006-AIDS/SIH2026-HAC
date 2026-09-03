@@ -1,0 +1,6 @@
+id,sender,receiver,amount,date
+TX001,Ravi Kumar,Meena Sharma,"45,00,000",2025-01-15
+TX002,Meena Sharma,Aarav Mehta,"28,50,000",2025-01-20
+TX003,Vikram Singh,Suresh Yadav,"12,00,000",2025-02-02
+TX004,Aarav Mehta,Priya Nair,"18,00,000",2025-02-10
+TX005,Deepak Srivastava,Manish Tiwari,"7,50,000",2025-02-18

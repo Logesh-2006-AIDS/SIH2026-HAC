@@ -1,0 +1,4 @@
+cluster_id,gang_name,threat_level,summary
+SYN-001,Viper Syndicate,CRITICAL,"Interstate syndicate spanning Delhi, Haryana and UP involved in armed extortion, hawala laundering, and illegal firearm distribution."
+SYN-002,Apex Logistics Front,HIGH,Commercial front company used for moving illicit contraband between Northern and Western corridors.
+SYN-003,Crypto Hawala Cell,SEVERE,Decentralized money laundering ring converting extortion funds into cryptocurrency.

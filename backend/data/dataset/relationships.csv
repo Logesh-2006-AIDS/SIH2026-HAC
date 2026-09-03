@@ -1,0 +1,11 @@
+source,target,relationship,confidence
+Ravi Kumar,Vikram Singh,CO_CONSPIRATOR,0.96
+Ravi Kumar,Meena Sharma,FINANCIAL_HANDLER,0.94
+Vikram Singh,Suresh Yadav,ARMS_SUPPLIER,0.92
+Vikram Singh,Aarav Mehta,INTERSTATE_COORDINATOR,0.95
+Aarav Mehta,Priya Nair,CRYPTO_MULE,0.89
+Ravi Kumar,Deepak Srivastava,LOGISTICS_SUPPORTER,0.91
+Deepak Srivastava,Manish Tiwari,GETAWAY_DRIVER,0.93
+Suresh Yadav,Manish Tiwari,CO_ACCUSED,0.90
+Aarav Mehta,Rohit Patel,SAFEHOUSE_HANDLER,0.88
+Meena Sharma,Sanjay Gupta,HAWALA_OPERATOR,0.95

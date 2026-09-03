@@ -1,0 +1,4 @@
+case_1,case_2,match_score,common_entities
+FIR-2025-ND-101,FIR-2025-ND-104,0.94,Ravi Kumar;DL01AB1234;+91-98110-44501
+FIR-2025-ND-102,FIR-2025-HR-203,0.89,Vikram Singh;+91-98765-32100
+FIR-2025-ND-101,FIR-2025-UP-505,0.82,Meena Sharma;Suresh Yadav
