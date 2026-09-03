@@ -276,12 +276,28 @@ class IngestionService:
             with open(rel_file, mode="r", encoding="utf-8", errors="ignore") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    src = row.get("source") or row.get("person_a") or row.get("source_id")
-                    tgt = row.get("target") or row.get("person_b") or row.get("target_id")
-                    rel_type = (row.get("relationship") or row.get("relation_type") or "ASSOCIATE_OF").upper().replace(" ", "_")
-                    conf = float(row.get("confidence", 0.90))
+                    src = row.get("from") or row.get("source") or row.get("person_a") or row.get("source_id")
+                    tgt = row.get("to") or row.get("target") or row.get("person_b") or row.get("target_id")
+                    rel_type = (row.get("relationship") or row.get("relation_type") or "ASSOCIATED_WITH").upper().replace(" ", "_")
+                    conf = float(row.get("confidence", 0.94))
                     if src and tgt:
-                        neo4j_client.add_relationship(src, "SUSPECT_PERSON", rel_type, tgt, "SUSPECT_PERSON", {"confidence": conf})
+                        # Infer node types
+                        def infer_type(val):
+                            s = str(val).strip()
+                            if s.isdigit() and len(s) >= 8: return "PHONE_NUMBER"
+                            if any(s.startswith(p) for p in ["DL", "HR", "UP", "MH", "KA", "TN", "PB", "GJ", "RJ"]) and len(s) >= 8: return "VEHICLE_NUMBER"
+                            if s.startswith("FIR") or s.startswith("CASE"): return "FIR_RECORD"
+                            if s.startswith("T00") or s.startswith("TXN"): return "FINANCIAL_AMOUNT"
+                            if s.startswith("HC") or s.startswith("COURT"): return "LEGAL_SECTION"
+                            if any(c in s for c in ["Delhi", "Gurugram", "Noida", "Mumbai", "Jaipur", "Lucknow", "Chandigarh", "Ahmedabad", "Ukkadam", "Coimbatore"]): return "LOCATION"
+                            return "SUSPECT_PERSON"
+
+                        src_type = infer_type(src)
+                        tgt_type = infer_type(tgt)
+
+                        neo4j_client.add_node(src, src_type, {"name": src})
+                        neo4j_client.add_node(tgt, tgt_type, {"name": tgt})
+                        neo4j_client.add_relationship(src, src_type, rel_type, tgt, tgt_type, {"confidence": conf})
                         stats["relationships_loaded"] += 1
 
         # 6. Transactions CSV
