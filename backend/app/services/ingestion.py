@@ -171,6 +171,9 @@ class IngestionService:
             "nlp_result": nlp_result
         }
 
+    def load_seed_datasets(self, db: Session, dataset_folder: Optional[str] = None) -> Dict[str, Any]:
+        return self.seed_dataset_csvs(db, dataset_folder)
+
     def seed_dataset_csvs(self, db: Session, dataset_folder: Optional[str] = None) -> Dict[str, Any]:
         """
         Universal Loader for the 9 CSVs from SIH Investigation Database:

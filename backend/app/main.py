@@ -7,7 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
-from app.db.session import engine, Base
+from app.db.session import engine, Base, SessionLocal
+from app.services.ingestion import ingestion_service
 from app.api.v1 import auth, cases, graph, nlp_router, admin, analytics, map_router, leads, overview, cross_case, copilot, system_api, reports
 
 # Create SQLite / PostgreSQL tables
@@ -18,6 +19,21 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     description="Unified AI Intelligence Platform for Criminal Investigation, NLP Entity Extraction, and Neo4j Graph Analytics"
 )
+
+@app.on_event("startup")
+def startup_event():
+    """Auto-seeds all 150 cases and knowledge graph from dataset on startup."""
+    db = SessionLocal()
+    try:
+        dataset_folder = os.path.join(os.path.dirname(__file__), "..", "data", "dataset")
+        if os.path.exists(dataset_folder):
+            res = ingestion_service.load_seed_datasets(db, dataset_folder)
+            print(f"[STARTUP] Ingested dataset successfully: {res.get('status')}")
+    except Exception as e:
+        print(f"[STARTUP] Auto-seed error: {e}")
+    finally:
+        db.close()
+
 
 # Set up CORS
 app.add_middleware(
