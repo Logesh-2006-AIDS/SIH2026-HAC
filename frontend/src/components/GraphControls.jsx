@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Filter, 
   Layers, 
   Route, 
-  Database, 
   Sparkles,
   Check,
   X
@@ -31,14 +30,24 @@ export default function GraphControls({
   layoutName = 'cose',
   onSelectLayout = () => {},
   onFindPath = () => {},
-  onSeedGraph = () => {},
   onClearPath = () => {},
   hasActivePath = false,
   suspects = [],
+  pathSourceId = null,
+  focusMode = true,
+  onToggleFocusMode = () => {},
+  expandHops = 1,
+  onExpandHops = () => {},
+  graphFocusEntity = null,
+  onClearFocus = () => {},
 }) {
   const [showPathFinder, setShowPathFinder] = useState(false);
-  const [sourceSuspect, setSourceSuspect] = useState('P001');
+  const [sourceSuspect, setSourceSuspect] = useState(pathSourceId || 'P001');
   const [targetSuspect, setTargetSuspect] = useState('P004');
+
+  useEffect(() => {
+    if (pathSourceId) setSourceSuspect(pathSourceId);
+  }, [pathSourceId]);
 
   const handleExecutePath = () => {
     if (!sourceSuspect || !targetSuspect) return;
@@ -157,20 +166,18 @@ export default function GraphControls({
           </button>
         )}
 
-        {/* Reseed / Reconnect Neo4j Button */}
-        <button
-          onClick={onSeedGraph}
-          title="Re-seed Neo4j Graph from Dataset"
-          className="btn-secondary"
-          style={{
-            padding: '0.5rem 0.85rem',
-            fontSize: '0.82rem',
-            gap: '0.4rem',
-          }}
-        >
-          <Database size={15} color="#D9AA3D" />
-          <span>Sync Evidence Graph</span>
+        {graphFocusEntity && (
+          <button type="button" onClick={onClearFocus} className="btn-secondary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem' }}>
+            Exit Focus
+          </button>
+        )}
+        <button type="button" onClick={onToggleFocusMode} className="btn-secondary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem' }}>
+          {focusMode ? 'Focus: ON' : 'Focus: OFF'}
         </button>
+        <select value={expandHops} onChange={(e) => onExpandHops(Number(e.target.value))} style={{ background: 'rgba(16,19,17,0.85)', border: '1px solid var(--border-color)', color: '#F1EBDD', borderRadius: 8, padding: '0.4rem 0.6rem', fontSize: '0.78rem' }}>
+          <option value={1}>1-hop</option>
+          <option value={2}>2-hop expand</option>
+        </select>
       </div>
 
       {/* Path Finder Dialog Modal */}

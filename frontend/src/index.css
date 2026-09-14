@@ -749,6 +749,180 @@ input[type="text"]:focus, select:focus, textarea:focus {
   color: #0369a1;
 }
 
+/* Investigator board — clean feature notes + energy ropes */
+.board-rope {
+  fill: none;
+  stroke: #b91c1c;
+  stroke-width: 0.55;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0.4px 0.8px 0.4px rgba(0, 0, 0, 0.65));
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.board-rope.is-hot {
+  stroke: #ef4444;
+  stroke-width: 0.75;
+}
+
+.board-rope-energy {
+  fill: none;
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  stroke-dasharray: 12 88;
+  vector-effect: non-scaling-stroke;
+  filter: url(#ropeGlow);
+  animation: rope-energy-flow 2.2s linear infinite;
+  opacity: 0.95;
+}
+
+.energy-delay-0 { animation-delay: 0s; }
+.energy-delay-1 { animation-delay: 0.35s; }
+.energy-delay-2 { animation-delay: 0.7s; }
+.energy-delay-3 { animation-delay: 1.05s; }
+.energy-delay-4 { animation-delay: 1.4s; }
+
+@keyframes rope-energy-flow {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+.board-note {
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  box-shadow: none;
+}
+
+.board-sticky-body {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 2px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.board-note.tone-yellow .board-sticky-body {
+  background: linear-gradient(160deg, #fef08a 0%, #fde047 100%);
+  color: #713f12;
+}
+
+.board-note.tone-orange .board-sticky-body {
+  background: linear-gradient(160deg, #fed7aa 0%, #fdba74 100%);
+  color: #7c2d12;
+}
+
+.board-note.tone-blue .board-sticky-body {
+  background: linear-gradient(160deg, #bae6fd 0%, #7dd3fc 100%);
+  color: #0c4a6e;
+}
+
+.board-note.tone-cream .board-sticky-body {
+  background: linear-gradient(160deg, #faf6e8 0%, #efe6c8 100%);
+  color: #292524;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.board-note.is-hot .board-sticky-body,
+.board-note.is-hot .board-copilot-card,
+.board-note.is-hot .board-map-card {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 240, 180, 0.35);
+}
+
+.board-silhouette {
+  width: 52px;
+  height: 72px;
+  border-radius: 28px 28px 18px 18px;
+  background:
+    radial-gradient(circle at 50% 22%, #3f3f46 0 14px, transparent 15px),
+    linear-gradient(180deg, transparent 28px, #3f3f46 28px 72px);
+  opacity: 0.95;
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.45));
+}
+
+.board-copilot-card {
+  background: linear-gradient(160deg, #111a16 0%, #0b1210 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 6px;
+  padding: 0.7rem 0.8rem 0.65rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.board-copilot-label,
+.board-map-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #ecfdf5;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.board-map-label {
+  color: #e0f2fe;
+}
+
+.copilot-spark {
+  animation: spark-blink 1.6s ease-in-out infinite;
+}
+
+.copilot-spark.delay {
+  animation-delay: 0.7s;
+}
+
+@keyframes spark-blink {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.board-map-card {
+  background: #1a2c3a;
+  border: 2px solid #3b5066;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7);
+}
+
+.board-mini-map {
+  height: 108px;
+  width: 100%;
+}
+
+.board-map-label {
+  width: 100%;
+  justify-content: center;
+  padding: 0.4rem 0.5rem 0.5rem;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.map-pulse {
+  transform-origin: 58px 42px;
+  animation: map-ring 2s ease-out infinite;
+}
+
+@keyframes map-ring {
+  0% { opacity: 0.8; transform: scale(0.6); }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+
+.board-wanted:hover {
+  filter: brightness(1.05);
+}
+
 /* Slide-Over Forensic Drawer */
 .forensic-drawer-backdrop {
   position: absolute;

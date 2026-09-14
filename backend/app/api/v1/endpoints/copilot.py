@@ -12,7 +12,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.postgres import get_db
-from app.db.neo4j_client import Neo4jClient
+from app.db.neo4j_client import Neo4jClient, MemgraphClient
+from app.services import graph_analytics
 from app.schemas.common import ResponseEnvelope
 
 router = APIRouter()
@@ -103,40 +104,94 @@ def extract_two_entities(question: str):
     return None, None
 
 
+def _resolve_entity_id(name: str) -> Optional[str]:
+    fb = graph_analytics._load_fallback_graph()
+    needle = (name or "").lower().strip()
+    for n in fb.get("nodes", []):
+        if (n.get("id") or "").lower() == needle:
+            return n["id"]
+        if needle in (n.get("name") or "").lower():
+            return n["id"]
+        for al in (n.get("aliases") or []):
+            if needle in str(al).lower():
+                return n["id"]
+    return None
+
+
+def _safe_run(cypher: str, params: Optional[Dict] = None) -> List[Dict[str, Any]]:
+    try:
+        if MemgraphClient.verify_connectivity():
+            return MemgraphClient.run_query(cypher, params or {}) or []
+    except Exception as e:
+        logger.info("Memgraph query unavailable (%s); using JSON fallback.", e)
+    return []
+
+
 # ── Query Executors ──────────────────────────────────────────────────────────
 
 def query_entity_connections(entity_name: str) -> Dict[str, Any]:
     """Find all entities connected to a named entity."""
-    query = """
-    MATCH (n:Entity)
-    WHERE toLower(n.name) CONTAINS toLower($name) OR toLower(n.id) = toLower($name)
-    WITH n LIMIT 1
-    MATCH (n)-[r]-(connected:Entity)
-    RETURN n.id AS source_id, n.name AS source_name, labels(n) AS source_labels,
-           type(r) AS relationship, properties(r) AS rel_props,
-           connected.id AS target_id, connected.name AS target_name,
-           labels(connected) AS target_labels, connected.cases AS target_cases
-    LIMIT 25
-    """
-    results = Neo4jClient.run_query(query, {"name": entity_name})
+    results = _safe_run(
+        """
+        MATCH (n:Entity)
+        WHERE toLower(n.name) CONTAINS toLower($name) OR toLower(n.id) = toLower($name)
+        WITH n LIMIT 1
+        MATCH (n)-[r]-(connected:Entity)
+        RETURN n.id AS source_id, n.name AS source_name, labels(n) AS source_labels,
+               type(r) AS relationship, properties(r) AS rel_props,
+               connected.id AS target_id, connected.name AS target_name,
+               labels(connected) AS target_labels, connected.cases AS target_cases
+        LIMIT 25
+        """,
+        {"name": entity_name},
+    )
+
     if not results:
-        return {"answer": f"No verified connections found for '{entity_name}' in the current investigation data.", "entities": [], "sources": []}
+        eid = _resolve_entity_id(entity_name)
+        if not eid:
+            return {
+                "answer": f"Insufficient evidence available for '{entity_name}' in the current investigation data.",
+                "entities": [],
+                "sources": [],
+            }
+        profile = graph_analytics.get_entity_profile(eid)
+        if not profile:
+            return {"answer": f"Insufficient evidence available for '{entity_name}'.", "entities": [], "sources": []}
+        connections = [
+            {
+                "entity_id": r["target_id"],
+                "name": r["target_name"],
+                "type": r["target_type"],
+                "relationship": r["relationship"],
+            }
+            for r in profile.get("relationships", [])
+        ]
+        answer = f"{profile['entity'].get('name', entity_name)} is connected to {len(connections)} entities:\n\n"
+        for i, c in enumerate(connections, 1):
+            answer += f"{i}. {c['name']} ({c['type']}) — via {(c['relationship'] or '').replace('_', ' ')}\n"
+        return {
+            "answer": answer,
+            "entities": connections,
+            "cases": profile.get("connected_cases", []),
+            "sources": ["Investigation Graph (JSON fallback)", f"Entity profile {eid}"],
+            "confidence": "Graph evidence",
+            "suggestion": "Open Entity Investigation or Focus on Graph for this person.",
+        }
 
     source = results[0]
     connections = []
     cases_set = set()
     for r in results:
-        conn = {
+        connections.append({
             "entity_id": r.get("target_id", ""),
             "name": r.get("target_name", r.get("target_id", "")),
             "type": (r.get("target_labels") or ["Entity"])[0] if isinstance(r.get("target_labels"), list) else "Entity",
             "relationship": r.get("relationship", "CONNECTED"),
-        }
-        connections.append(conn)
+        })
         for c in (r.get("target_cases") or []):
             cases_set.add(c)
 
-    answer = f"{source.get('source_name', entity_name)} is connected to {len(connections)} entities through verified evidence-backed relationships:\n\n"
+    answer = f"{source.get('source_name', entity_name)} is connected to {len(connections)} entities:\n\n"
     for i, c in enumerate(connections, 1):
         answer += f"{i}. {c['name']} ({c['type']}) — via {c['relationship'].replace('_', ' ')}\n"
 
@@ -144,23 +199,46 @@ def query_entity_connections(entity_name: str) -> Dict[str, Any]:
         "answer": answer,
         "entities": connections,
         "cases": list(cases_set),
-        "sources": [f"Neo4j Knowledge Graph — {len(results)} relationship records"],
-        "confidence": f"{min(95, 80 + len(connections) * 2)}% (Graph Evidence)",
+        "sources": [f"Memgraph — {len(results)} relationship records"],
+        "confidence": "Graph evidence",
     }
 
 
 def query_cross_case_entities() -> Dict[str, Any]:
     """Find entities appearing in multiple cases."""
-    query = """
-    MATCH (p:Person)
-    WHERE size(p.cases) > 1
-    RETURN p.id AS entity_id, p.name AS name, p.cases AS cases, size(p.cases) AS case_count
-    ORDER BY case_count DESC
-    LIMIT 10
-    """
-    results = Neo4jClient.run_query(query)
+    results = _safe_run(
+        """
+        MATCH (p:Person)
+        WHERE size(p.cases) > 1
+        RETURN p.id AS entity_id, p.name AS name, p.cases AS cases, size(p.cases) AS case_count
+        ORDER BY case_count DESC
+        LIMIT 10
+        """
+    )
     if not results:
-        return {"answer": "No cross-case entities detected in the current investigation data.", "entities": [], "sources": []}
+        bridges = graph_analytics.get_betweenness_centrality()
+        if not bridges:
+            return {"answer": "Insufficient evidence — no cross-case entities detected.", "entities": [], "sources": []}
+        entities = [
+            {
+                "entity_id": r["entity_id"],
+                "name": r["name"],
+                "type": "Person",
+                "role": f"Appears in {r['cross_case_degree']} cases: {', '.join(r.get('cases', []))}",
+            }
+            for r in bridges
+        ]
+        answer = f"Found {len(entities)} cross-case bridge entities:\n\n"
+        for i, e in enumerate(entities, 1):
+            answer += f"{i}. {e['name']} — {e['role']}\n"
+        return {
+            "answer": answer,
+            "entities": entities,
+            "cases": list({c for r in bridges for c in (r.get("cases") or [])}),
+            "sources": ["Cross-case analysis (graph fallback)"],
+            "confidence": "Graph evidence",
+            "suggestion": "Open Cross-Case Intelligence, then View on Graph.",
+        }
 
     entities = []
     for r in results:
@@ -168,124 +246,103 @@ def query_cross_case_entities() -> Dict[str, Any]:
             "entity_id": r["entity_id"],
             "name": r["name"],
             "type": "Person",
-            "role": f"Appears in {r['case_count']} cases: {', '.join(r.get('cases', []))}"
+            "role": f"Appears in {r['case_count']} cases: {', '.join(r.get('cases', []))}",
         })
-
     answer = f"Found {len(entities)} entities appearing across multiple cases:\n\n"
     for i, e in enumerate(entities, 1):
         answer += f"{i}. {e['name']} ({e['entity_id']}) — {e['role']}\n"
-
     return {
         "answer": answer,
         "entities": entities,
         "cases": list({c for r in results for c in (r.get("cases") or [])}),
-        "sources": ["Neo4j Cross-Case Analysis"],
-        "confidence": "97% (Direct Graph Evidence)",
+        "sources": ["Memgraph Cross-Case Analysis"],
+        "confidence": "Graph evidence",
     }
 
 
 def query_shortest_path(name_a: str, name_b: str) -> Dict[str, Any]:
-    """Find shortest path between two entities."""
-    query = """
-    MATCH (a:Entity), (b:Entity)
-    WHERE (toLower(a.name) CONTAINS toLower($name_a) OR toLower(a.id) = toLower($name_a))
-      AND (toLower(b.name) CONTAINS toLower($name_b) OR toLower(b.id) = toLower($name_b))
-    WITH a, b LIMIT 1
-    MATCH path = shortestPath((a)-[*]-(b))
-    RETURN [n in nodes(path) | {id: n.id, name: n.name, labels: labels(n)}] AS path_nodes,
-           [r in relationships(path) | type(r)] AS path_rels,
-           length(path) AS distance
-    """
-    results = Neo4jClient.run_query(query, {"name_a": name_a, "name_b": name_b})
-    if not results or not results[0].get("path_nodes"):
+    """Find shortest path between two entities with evidence hops."""
+    id_a = _resolve_entity_id(name_a)
+    id_b = _resolve_entity_id(name_b)
+    if not id_a or not id_b:
+        return {
+            "answer": f"Insufficient evidence — could not resolve both '{name_a}' and '{name_b}'.",
+            "entities": [],
+            "sources": [],
+        }
+    data = graph_analytics.get_path_with_evidence(id_a, id_b)
+    path = data.get("path") or []
+    if not path:
         return {"answer": f"No connection path found between '{name_a}' and '{name_b}'.", "entities": [], "sources": []}
 
-    r = results[0]
-    path_nodes = r["path_nodes"]
-    path_rels = r.get("path_rels", [])
-    distance = r.get("distance", 0)
-
-    entities = [{"entity_id": n.get("id", ""), "name": n.get("name", n.get("id", "")), "type": (n.get("labels") or ["Entity"])[0] if isinstance(n.get("labels"), list) else "Entity"} for n in path_nodes]
-
-    chain_parts = []
-    for i, node in enumerate(path_nodes):
-        chain_parts.append(node.get("name", node.get("id", "?")))
-        if i < len(path_rels):
-            chain_parts.append(f"--[{path_rels[i]}]-->")
-
-    answer = f"Connection chain between {name_a} and {name_b} (distance: {distance}):\n\n"
-    answer += " ".join(chain_parts)
-
+    hops = data.get("hops") or []
+    answer = data.get("explanation", "") + "\n\n"
+    for h in hops:
+        answer += (
+            f"{h['from_name']} → [{h['relationship']}] → {h['to_name']}\n"
+            f"  Source: {h.get('evidence_source')} · Confidence: {round((h.get('confidence') or 0.9)*100)}%\n"
+        )
+    entities = [{"entity_id": pid, "name": pid, "type": "Entity"} for pid in path]
     return {
         "answer": answer,
         "entities": entities,
-        "sources": [f"Neo4j Shortest Path — {distance} hops"],
-        "confidence": "96% (Graph Traversal)",
+        "sources": ["Graph path trace with evidence"],
+        "confidence": "Graph traversal",
+        "suggestion": "Open Link Analysis and Trace Connection to highlight this path.",
     }
 
 
 def query_case_connections(case_id: str = None) -> Dict[str, Any]:
     """Find entities and connections for a case."""
     if not case_id:
-        # Find all cases with their entity counts
-        query = """
-        MATCH (n:Entity)
-        UNWIND n.cases AS c
-        RETURN c AS case_id, count(DISTINCT n) AS entity_count
-        ORDER BY entity_count DESC
-        """
-        results = Neo4jClient.run_query(query)
-        if not results:
-            return {"answer": "No cases found in the knowledge graph.", "entities": [], "sources": []}
-
+        fb = graph_analytics._load_fallback_graph()
+        counts = {}
+        for n in fb.get("nodes", []):
+            for c in (n.get("cases") or []):
+                counts[c] = counts.get(c, 0) + 1
         answer = "Cases in the knowledge graph:\n\n"
-        for r in results:
-            answer += f"- Case {r['case_id']}: {r['entity_count']} entities\n"
-        return {"answer": answer, "entities": [], "sources": ["Neo4j Case Registry"], "cases": [r["case_id"] for r in results]}
+        for cid, cnt in sorted(counts.items()):
+            answer += f"- Case {cid}: {cnt} entities\n"
+        return {"answer": answer, "entities": [], "sources": ["Case registry"], "cases": list(counts.keys())}
 
-    query = """
-    MATCH (n:Entity)
-    WHERE $case_id IN n.cases
-    RETURN n.id AS entity_id, n.name AS name, labels(n) AS labels, n.cases AS cases
-    ORDER BY n.name
-    LIMIT 25
-    """
-    results = Neo4jClient.run_query(query, {"case_id": case_id})
-    if not results:
+    subgraph = graph_analytics.get_subgraph(case_id)
+    nodes = subgraph.get("nodes", [])
+    if not nodes:
         return {"answer": f"No entities found for Case {case_id}.", "entities": [], "sources": []}
-
-    entities = [{"entity_id": r["entity_id"], "name": r.get("name", r["entity_id"]), "type": (r.get("labels") or ["Entity"])[0] if isinstance(r.get("labels"), list) else "Entity"} for r in results]
-
+    entities = [
+        {
+            "entity_id": n.get("id"),
+            "name": n.get("name") or n.get("reg_number") or n.get("number") or n.get("id"),
+            "type": "Entity",
+        }
+        for n in nodes
+    ]
     answer = f"Case {case_id} involves {len(entities)} entities:\n\n"
     for i, e in enumerate(entities, 1):
-        answer += f"{i}. {e['name']} ({e['type']})\n"
-
-    return {"answer": answer, "entities": entities, "sources": [f"Neo4j Case {case_id} Subgraph"], "cases": [case_id]}
+        answer += f"{i}. {e['name']}\n"
+    return {"answer": answer, "entities": entities, "sources": [f"Case {case_id} subgraph"], "cases": [case_id]}
 
 
 def query_general(question: str) -> Dict[str, Any]:
-    """General fallback: search entities by name similarity."""
-    query = """
-    MATCH (n:Entity)
-    WHERE any(word IN split(toLower($q), ' ') WHERE toLower(n.name) CONTAINS word AND size(word) > 2)
-    RETURN n.id AS entity_id, n.name AS name, labels(n) AS labels, n.cases AS cases
-    LIMIT 10
-    """
-    words = re.sub(r'[^\w\s]', '', question)
-    results = Neo4jClient.run_query(query, {"q": words})
-    if not results:
+    """General fallback: search entities by name tokens against ground truth."""
+    words = [w for w in re.sub(r"[^\w\s]", "", question).lower().split() if len(w) > 2]
+    fb = graph_analytics._load_fallback_graph()
+    hits = []
+    for n in fb.get("nodes", []):
+        name = (n.get("name") or "").lower()
+        if any(w in name for w in words):
+            hits.append(n)
+    if not hits:
         return {
-            "answer": "No matching entities found in the current investigation data for this query. Try asking about specific persons, cases, vehicles, or phone numbers.",
+            "answer": "Insufficient evidence available for this query. Try asking about a specific person, case, phone, or path between two entities.",
             "entities": [],
             "sources": [],
         }
-
-    entities = [{"entity_id": r["entity_id"], "name": r.get("name", r["entity_id"]), "type": (r.get("labels") or ["Entity"])[0] if isinstance(r.get("labels"), list) else "Entity"} for r in results]
+    entities = [{"entity_id": n["id"], "name": n.get("name", n["id"]), "type": "Entity"} for n in hits[:10]]
     answer = f"Found {len(entities)} potentially relevant entities:\n\n"
     for i, e in enumerate(entities, 1):
-        answer += f"{i}. {e['name']} ({e['type']})\n"
-
-    return {"answer": answer, "entities": entities, "sources": ["Neo4j Entity Search"]}
+        answer += f"{i}. {e['name']} ({e['entity_id']})\n"
+    return {"answer": answer, "entities": entities, "sources": ["Entity search"]}
 
 
 # ── Main Endpoint ────────────────────────────────────────────────────────────

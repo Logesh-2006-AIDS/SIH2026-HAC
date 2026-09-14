@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Shield, CheckCircle, Sparkles, Download, Users, GitBranch, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
-export default function SmartCaseBrief({ selectedCase }) {
+export default function SmartCaseBrief({ selectedCase, reportMode = false }) {
   const [cases, setCases] = useState([]);
-  const [activeCaseId, setActiveCaseId] = useState(selectedCase || '');
+  const [activeCaseId, setActiveCaseId] = useState(selectedCase || '103');
   const [brief, setBrief] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch available cases
+  useEffect(() => {
+    if (selectedCase) setActiveCaseId(selectedCase);
+  }, [selectedCase]);
+
   useEffect(() => {
     axios.get('/api/v1/cases/').then(res => {
       if (res.data?.data) setCases(res.data.data);

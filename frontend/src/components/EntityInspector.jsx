@@ -1,22 +1,31 @@
-import React from 'react';
-import { 
-  User, 
-  Phone, 
-  MapPin, 
-  FolderArchive, 
-  Car, 
-  Building2, 
-  CreditCard, 
-  X,
-  FileText,
-  Route
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import {
+  User, Phone, MapPin, FolderArchive, Car, Building2, CreditCard, X,
+  Route, Network, FileText, GitBranch, Crosshair,
 } from 'lucide-react';
 
 export default function EntityInspector({
   entity = null,
   onClose = () => {},
-  onSetAsPathSource = () => {},
+  onFocusEntity = () => {},
+  onTraceFrom = () => {},
+  onViewCrossCase = () => {},
+  onViewEvidence = () => {},
+  onOpenCase = () => {},
 }) {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!entity?.id) {
+      setProfile(null);
+      return;
+    }
+    axios.get(`/api/v1/graph/entity/${entity.id}/profile`)
+      .then((res) => { if (res.data?.success) setProfile(res.data.data); })
+      .catch(() => setProfile(null));
+  }, [entity?.id]);
+
   if (!entity) return null;
 
   const isPerson = !!entity.role || !!entity.name;
@@ -24,209 +33,120 @@ export default function EntityInspector({
   const isOrg = !!entity.alias || (entity.type && entity.type.includes('Company'));
   const isPhone = !!entity.number && !entity.name;
   const isAccount = !!entity.account_number;
-  const isLocation = !!entity.lat && !!entity.lon;
+  const isLocation = entity.lat != null && entity.lon != null;
 
   const getTitle = () => {
     if (isPerson) return entity.name || entity.id;
-    if (isVehicle) return `Vehicle: ${entity.reg_number}`;
+    if (isVehicle) return entity.reg_number;
     if (isOrg) return entity.name || entity.alias;
-    if (isPhone) return `Phone: ${entity.number}`;
-    if (isAccount) return `Account: ${entity.account_number}`;
-    if (isLocation) return `Location: ${entity.name || entity.id}`;
-    return entity.id || 'Evidence Record';
+    if (isPhone) return entity.number;
+    if (isAccount) return entity.account_number;
+    if (isLocation) return entity.name || entity.id;
+    return entity.id;
   };
 
-  const getSubtitle = () => {
-    if (isPerson) return entity.role || 'Suspect / Associate';
-    if (isVehicle) return `${entity.color || ''} ${entity.model || ''} (${entity.type || 'Vehicle'})`.trim();
-    if (isOrg) return entity.type || 'Organization / Front Syndicate';
-    if (isPhone) return entity.registered ? 'Registered Subscriber' : 'Unregistered Burner Phone';
-    if (isAccount) return `${entity.bank || 'Bank'} (IFSC: ${entity.ifsc || 'N/A'})`;
-    if (isLocation) return `Coordinates: ${entity.lat}, ${entity.lon}`;
-    return 'Knowledge Graph Evidence Node';
-  };
+  const entityType = profile?.entity?.entity_type
+    || (isPerson ? 'Person' : isVehicle ? 'Vehicle' : isPhone ? 'Phone' : isAccount ? 'FinancialAccount' : isLocation ? 'Location' : isOrg ? 'Organization' : 'Entity');
+
+  const stats = profile?.statistics || {};
+  const relationships = (profile?.relationships || []).slice(0, 6);
 
   return (
     <div
       className="evidence-card animate-slide-up"
       style={{
-        width: '350px',
-        maxHeight: 'calc(100vh - 180px)',
-        overflowY: 'auto',
-        padding: '1.5rem 1.35rem 1.35rem 1.35rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.1rem',
-        borderLeft: '4px solid #D62828', // Red string indicator edge
-        boxShadow: '-8px 0 32px rgba(0,0,0,0.6)',
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 30,
-        borderRadius: '12px 0 0 12px',
-        background: '#D8C58A',
-        color: '#24251F',
+        width: 360, maxHeight: 'calc(100vh - 120px)', overflowY: 'auto',
+        padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem',
+        borderLeft: '4px solid #D62828', position: 'absolute', top: 0, right: 0, bottom: 0, zIndex: 30,
+        borderRadius: '12px 0 0 12px', background: '#D8C58A', color: '#24251F',
       }}
     >
-      {/* Metallic Pin at Top */}
       <div className="pin-detail pin-detail-red" />
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '0.2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div
-            style={{
-              padding: '0.55rem',
-              borderRadius: '10px',
-              background: 'rgba(36, 37, 31, 0.12)',
-              color: '#24251F',
-              border: '1px solid rgba(36, 37, 31, 0.25)',
-            }}
-          >
-            {isPerson && <User size={22} />}
-            {isVehicle && <Car size={22} />}
-            {isOrg && <Building2 size={22} />}
-            {isPhone && <Phone size={22} />}
-            {isAccount && <CreditCard size={22} />}
-            {isLocation && <MapPin size={22} />}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ padding: 8, borderRadius: 8, background: 'rgba(36,37,31,0.12)' }}>
+            {isPerson && <User size={20} />}
+            {isVehicle && <Car size={20} />}
+            {isOrg && <Building2 size={20} />}
+            {isPhone && <Phone size={20} />}
+            {isAccount && <CreditCard size={20} />}
+            {isLocation && <MapPin size={20} />}
           </div>
           <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#24251F', lineHeight: 1.2 }}>
-              {getTitle()}
-            </h3>
-            <span style={{ fontSize: '0.76rem', color: '#54564B', fontWeight: 600 }}>{getSubtitle()}</span>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>{getTitle()}</h3>
+            <span style={{ fontSize: '0.72rem', color: '#54564B', fontWeight: 700 }}>{entityType}</span>
           </div>
         </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            background: 'rgba(0,0,0,0.06)',
-            border: '1px solid rgba(0,0,0,0.15)',
-            color: '#24251F',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            padding: '0.3rem',
-            transition: 'all 0.2s ease',
-          }}
-          title="Unpin Inspector"
-        >
-          <X size={18} />
+        <button type="button" onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 6, cursor: 'pointer', padding: 4 }}>
+          <X size={16} />
         </button>
       </div>
 
-      {/* Entity Identifier Pill */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <span className="badge" style={{ background: 'rgba(0,0,0,0.08)', color: '#24251F', border: '1px solid rgba(0,0,0,0.15)', fontWeight: 700 }}>
-          ID: {entity.id || entity.number || 'N/A'}
-        </span>
-        {entity.cases && entity.cases.length > 0 && (
-          <span className="badge" style={{ background: 'rgba(214, 40, 40, 0.18)', color: '#900', border: '1px solid rgba(214, 40, 40, 0.4)', fontWeight: 700 }}>
-            {entity.cases.length > 1 ? `🔗 Cross-Case (${entity.cases.join(', ')})` : `Case: ${entity.cases[0]}`}
-          </span>
-        )}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <span className="badge" style={{ background: 'rgba(0,0,0,0.08)', fontWeight: 700 }}>ID: {entity.id}</span>
+        {(entity.cases || []).map((c) => (
+          <span key={c} className="badge badge-red" style={{ fontSize: '0.68rem' }}>Case {c}</span>
+        ))}
       </div>
 
-      {/* Detailed Properties Card */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem',
-          background: 'rgba(255, 255, 255, 0.45)',
-          padding: '0.95rem',
-          borderRadius: '8px',
-          border: '1px solid rgba(0, 0, 0, 0.12)',
-          fontSize: '0.83rem',
-        }}
-      >
-        {/* Aliases */}
-        {entity.aliases && entity.aliases.length > 0 && (
-          <div>
-            <span style={{ color: '#54564B', display: 'block', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em' }}>KNOWN ALIASES</span>
-            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
-              {entity.aliases.map((al, idx) => (
-                <span
-                  key={idx}
-                  style={{
-                    background: 'rgba(214, 40, 40, 0.12)',
-                    color: '#800',
-                    border: '1px solid rgba(214, 40, 40, 0.3)',
-                    padding: '0.2rem 0.55rem',
-                    borderRadius: '6px',
-                    fontSize: '0.76rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  "{al}"
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Primary Phone */}
-        {entity.phone && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Phone size={15} color="#24251F" />
-            <span style={{ color: '#24251F', fontWeight: 700 }}>{entity.phone}</span>
-          </div>
-        )}
-
-        {/* Address */}
-        {entity.address && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-            <MapPin size={15} color="#D62828" style={{ marginTop: '0.15rem' }} />
-            <span style={{ color: '#24251F', lineHeight: 1.35, fontWeight: 500 }}>{entity.address}</span>
-          </div>
-        )}
-
-        {/* Registration */}
-        {entity.reg && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={15} color="#24251F" />
-            <span style={{ color: '#24251F', fontWeight: 700 }}>Reg: {entity.reg}</span>
-          </div>
-        )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.78rem' }}>
+        <MiniStat label="Direct Connections" value={stats.connection_count ?? '—'} />
+        <MiniStat label="Cases" value={stats.case_count ?? entity.cases?.length ?? '—'} />
+        <MiniStat label="Priority" value={stats.priority_level ?? '—'} />
+        <MiniStat label="Centrality" value={stats.degree_centrality ?? '—'} />
       </div>
 
-      {/* Case Affiliation & Evidence */}
-      <div>
-        <h4 style={{ fontSize: '0.78rem', color: '#54564B', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 800, letterSpacing: '0.05em' }}>
-          Pointers to Active Dossiers
-        </h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-          {(entity.cases || []).map((cId) => (
-            <div
-              key={cId}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.55rem',
-                padding: '0.55rem 0.75rem',
-                borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.45)',
-                border: '1px solid rgba(0, 0, 0, 0.12)',
-                fontSize: '0.82rem',
-              }}
-            >
-              <FolderArchive size={15} color="#D62828" />
-              <span style={{ color: '#24251F', fontWeight: 700 }}>FIR Case No. {cId}/2025</span>
+      {relationships.length > 0 && (
+        <div>
+          <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: '#54564B', letterSpacing: '0.05em', marginBottom: 6 }}>IMPORTANT RELATIONSHIPS</h4>
+          {relationships.map((r, i) => (
+            <div key={i} style={{ fontSize: '0.76rem', padding: '0.35rem 0', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+              → {(r.relationship || '').replace(/_/g, ' ').toLowerCase()} → <strong>{r.target_name}</strong>
+              <div style={{ fontSize: '0.68rem', color: '#54564B' }}>
+                {r.evidence_source} · {Math.round((r.confidence || 0.9) * 100)}%
+              </div>
             </div>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Quick Action Button */}
-      <button
-        onClick={() => onSetAsPathSource(entity.id || entity.number)}
-        className="btn-red"
-        style={{ width: '100%', justifyContent: 'center', marginTop: 'auto', fontSize: '0.84rem' }}
-      >
-        <Route size={16} />
-        <span>Attach Red String Trace</span>
-      </button>
+      {profile?.cross_case && (
+        <div style={{ fontSize: '0.76rem', color: '#900', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <GitBranch size={14} /> Appears in multiple cases — cross-case entity
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 'auto' }}>
+        <button type="button" className="btn-red" style={{ width: '100%', justifyContent: 'center', fontSize: '0.78rem' }} onClick={() => onFocusEntity(entity)}>
+          <Network size={14} /> Focus This Entity
+        </button>
+        <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.78rem' }} onClick={() => onTraceFrom(entity.id)}>
+          <Route size={14} /> Trace Connection
+        </button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <button type="button" className="btn-secondary" style={{ fontSize: '0.72rem', justifyContent: 'center' }} onClick={onViewEvidence}>
+            <FileText size={12} /> Evidence
+          </button>
+          <button type="button" className="btn-secondary" style={{ fontSize: '0.72rem', justifyContent: 'center' }} onClick={onViewCrossCase}>
+            <Crosshair size={12} /> Cross-Case
+          </button>
+        </div>
+        {(entity.cases || []).length > 0 && (
+          <button type="button" className="btn-secondary" style={{ width: '100%', fontSize: '0.72rem', justifyContent: 'center' }} onClick={() => onOpenCase(entity.cases[0])}>
+            <FolderArchive size={12} /> Open Case {entity.cases[0]}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.45)', padding: '0.45rem 0.55rem', borderRadius: 6, border: '1px solid rgba(0,0,0,0.1)' }}>
+      <div style={{ fontSize: '0.62rem', color: '#54564B', fontWeight: 700 }}>{label}</div>
+      <div style={{ fontWeight: 800 }}>{value}</div>
     </div>
   );
 }

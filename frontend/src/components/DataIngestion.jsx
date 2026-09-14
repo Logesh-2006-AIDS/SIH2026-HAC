@@ -22,7 +22,7 @@ const STEPS = [
   'Import Complete',
 ];
 
-export default function DataIngestion() {
+export default function DataIngestion({ caseId = '', onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedType, setSelectedType] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -47,10 +47,10 @@ export default function DataIngestion() {
     setError(null);
 
     try {
-      // Step 1: Ingest file through backend
       const formData = new FormData();
       formData.append('file', selectedFile);
       if (selectedType) formData.append('source_type', selectedType.id);
+      if (caseId) formData.append('case_id', caseId);
 
       const ingestRes = await axios.post('/api/v1/ingest/file', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -67,6 +67,7 @@ export default function DataIngestion() {
             const nlpRes = await axios.post('/api/v1/nlp/process-text', {
               text: text,
               document_id: selectedFile.name,
+              case_id: caseId || undefined,
             });
             if (nlpRes.data?.success) {
               setNlpResult(nlpRes.data.data);
@@ -75,6 +76,7 @@ export default function DataIngestion() {
             console.warn('NLP processing not available:', nlpErr);
           }
         }
+        if (onComplete) onComplete();
       }
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Processing failed');
@@ -102,7 +104,9 @@ export default function DataIngestion() {
             <Upload size={24} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Data Ingestion & Evidence Ingestion Engine</h2>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+              Add Evidence{caseId ? ` — Case ${caseId}` : ''}
+            </h2>
             <p style={{ fontSize: '0.8rem', color: '#A6B0AA', margin: 0 }}>Ingest CDRs, FIRs & Financial Statements directly into Neo4j Knowledge Graph</p>
           </div>
         </div>

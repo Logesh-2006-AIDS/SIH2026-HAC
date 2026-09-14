@@ -215,72 +215,7 @@ def get_case_timeline(
     if not case:
         raise HTTPException(status_code=404, detail=f"Case '{case_number}' not found.")
 
-    # Build timeline from graph relationships that have timestamps or from case events
-    from app.db.neo4j_client import Neo4jClient
-
-    query = """
-    MATCH (n:Entity)-[r]-(m:Entity)
-    WHERE $case_id IN n.cases OR $case_id IN m.cases
-    RETURN n.id AS source_id, n.name AS source_name, labels(n) AS source_labels,
-           type(r) AS relationship, properties(r) AS rel_props,
-           m.id AS target_id, m.name AS target_name, labels(m) AS target_labels,
-           r.timestamp AS timestamp, r.confidence AS confidence, r.source AS evidence_source
-    ORDER BY r.timestamp
-    """
-    results = Neo4jClient.run_query(query, {"case_id": case_number})
-
-    timeline_events = []
-    # Add case creation event
-    timeline_events.append({
-        "date": case.get("incident_date", ""),
-        "title": "Case Registered",
-        "description": f"{case['fir_number']} - {case['title']}",
-        "entities": case.get("accused", []),
-        "relationship": "CASE_REGISTERED",
-        "evidence_source": case.get("jurisdiction", ""),
-        "confidence": 1.0,
-        "event_type": "CASE",
-    })
-
-    # Add relationship-based events
-    seen = set()
-    for r in (results or []):
-        key = f"{r.get('source_id')}-{r.get('relationship')}-{r.get('target_id')}"
-        if key in seen:
-            continue
-        seen.add(key)
-
-        source_type = (r.get("source_labels") or ["Entity"])[0] if isinstance(r.get("source_labels"), list) else "Entity"
-        target_type = (r.get("target_labels") or ["Entity"])[0] if isinstance(r.get("target_labels"), list) else "Entity"
-        rel_type = r.get("relationship", "CONNECTED")
-
-        # Generate human-readable description
-        desc_map = {
-            "COMMUNICATES_WITH": "Communication link identified",
-            "CALLS": "CDR call record detected",
-            "TRANSFERRED_TO": "Financial transfer recorded",
-            "OWNS": "Asset ownership identified",
-            "ASSOCIATED_WITH": "Association discovered",
-            "WORKS_FOR": "Organizational affiliation identified",
-            "OPERATES_FROM": "Operational base identified",
-            "INVOLVED_IN": "Case involvement established",
-            "TRANSITS_VIA": "Transit route identified",
-        }
-        description = desc_map.get(rel_type, f"{rel_type.replace('_', ' ').title()} discovered")
-
-        timeline_events.append({
-            "date": r.get("timestamp") or case.get("incident_date", ""),
-            "title": description,
-            "description": f"{r.get('source_name', r.get('source_id'))} ({source_type}) → {rel_type.replace('_', ' ')} → {r.get('target_name', r.get('target_id'))} ({target_type})",
-            "entities": [
-                r.get("source_name", r.get("source_id", "")),
-                r.get("target_name", r.get("target_id", "")),
-            ],
-            "relationship": rel_type,
-            "evidence_source": r.get("evidence_source") or r.get("rel_props", {}).get("source", case.get("jurisdiction", "")),
-            "confidence": r.get("confidence") or r.get("rel_props", {}).get("confidence", 0.9),
-            "event_type": source_type,
-        })
+    timeline_events = graph_analytics.get_case_timeline_events(case)
 
     return ResponseEnvelope(
         success=True,
@@ -319,18 +254,18 @@ def generate_case_brief(
             if c != case_number:
                 related_cases.add(c)
 
-    # Build AI-suggested leads (entities with high degree that may need investigation)
-    from app.db.neo4j_client import Neo4jClient
-    centrality_query = """
-    MATCH (n:Entity)-[r]-(m:Entity)
-    WHERE $case_id IN n.cases
-    WITH n, count(DISTINCT m) AS degree
-    WHERE degree > 2
-    RETURN n.id AS id, n.name AS name, degree
-    ORDER BY degree DESC
-    LIMIT 5
-    """
-    high_degree = Neo4jClient.run_query(centrality_query, {"case_id": case_number}) or []
+    # High-degree entities in case subgraph (AI-suggested leads)
+    degree_map = {}
+    for e in edges:
+        for nid in (e.get("source"), e.get("target")):
+            if nid:
+                degree_map[nid] = degree_map.get(nid, 0) + 1
+    node_names = {n.get("id"): n.get("name", n.get("id")) for n in nodes}
+    high_degree = sorted(
+        [{"id": k, "name": node_names.get(k, k), "degree": v} for k, v in degree_map.items() if v > 2],
+        key=lambda x: x["degree"],
+        reverse=True,
+    )[:5]
 
     brief = {
         "case_information": {
@@ -391,28 +326,7 @@ def get_cross_case_links(
     current_user: User = Depends(get_current_user),
 ):
     """Find entities that connect this case to other cases."""
-    from app.db.neo4j_client import Neo4jClient
-
-    query = """
-    MATCH (n:Entity)
-    WHERE $case_id IN n.cases AND size(n.cases) > 1
-    RETURN n.id AS entity_id, n.name AS name, labels(n) AS labels, n.cases AS cases
-    ORDER BY size(n.cases) DESC
-    """
-    results = Neo4jClient.run_query(query, {"case_id": case_number})
-
-    links = []
-    for r in (results or []):
-        other_cases = [c for c in (r.get("cases") or []) if c != case_number]
-        labels = r.get("labels") or ["Entity"]
-        entity_type = labels[0] if isinstance(labels, list) else "Entity"
-        links.append({
-            "entity_id": r.get("entity_id"),
-            "name": r.get("name", r.get("entity_id")),
-            "type": entity_type,
-            "shared_cases": other_cases,
-            "total_cases": len(r.get("cases", [])),
-        })
+    links = graph_analytics.get_cross_case_links(case_number)
 
     return ResponseEnvelope(
         success=True,

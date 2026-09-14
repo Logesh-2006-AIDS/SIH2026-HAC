@@ -1,13 +1,19 @@
 """
-Phase 4: Knowledge Graph Builder
-Seeds the Neo4j database using ground_truth JSON files from the synthetic dataset.
+Memgraph Knowledge Graph Builder
+Seeds entities/relationships from ground_truth JSON using Memgraph-compatible Cypher.
+No APOC — dynamic relationship types are applied via safe typed CREATE batches.
 """
 import json
 import logging
 import os
-from app.db.neo4j_client import Neo4jClient
+import re
+from collections import defaultdict
+
+from app.db.neo4j_client import MemgraphClient
 
 logger = logging.getLogger(__name__)
+
+_SAFE_REL = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 
 def load_json_file(filepath: str) -> dict:
@@ -16,16 +22,11 @@ def load_json_file(filepath: str) -> dict:
 
 
 def clear_graph():
-    """Wipe the entire Neo4j database for a fresh seed."""
-    logger.info("Clearing existing Neo4j graph...")
-    query = "MATCH (n) DETACH DELETE n"
-    Neo4jClient.run_query(query)
+    logger.info("Clearing existing Memgraph graph...")
+    MemgraphClient.run_query("MATCH (n) DETACH DELETE n")
 
 
 def seed_nodes(entities: dict):
-    """Create nodes from the ground_truth_entities.json structure."""
-    
-    # 1. Persons
     person_query = """
     UNWIND $persons AS p
     MERGE (n:Person:Entity {id: p.id})
@@ -37,10 +38,9 @@ def seed_nodes(entities: dict):
         n.role = p.role,
         n.cases = p.cases
     """
-    Neo4jClient.run_query(person_query, {"persons": entities.get("persons", [])})
-    logger.info(f"Seeded {len(entities.get('persons', []))} Person nodes.")
+    MemgraphClient.run_query(person_query, {"persons": entities.get("persons", [])})
+    logger.info("Seeded %s Person nodes.", len(entities.get("persons", [])))
 
-    # 2. Organizations
     org_query = """
     UNWIND $orgs AS o
     MERGE (n:Organization:Entity {id: o.id})
@@ -51,22 +51,19 @@ def seed_nodes(entities: dict):
         n.type = o.type,
         n.cases = o.cases
     """
-    Neo4jClient.run_query(org_query, {"orgs": entities.get("organizations", [])})
-    logger.info(f"Seeded {len(entities.get('organizations', []))} Organization nodes.")
+    MemgraphClient.run_query(org_query, {"orgs": entities.get("organizations", [])})
 
-    # 3. Vehicles
     veh_query = """
     UNWIND $vehicles AS v
     MERGE (n:Vehicle:Entity {id: v.id})
-    SET n.reg_number = v.plate,
+    SET n.reg_number = coalesce(v.plate, v.reg_number),
         n.type = v.type,
         n.model = v.model,
         n.color = v.color,
         n.cases = v.cases
     """
-    Neo4jClient.run_query(veh_query, {"vehicles": entities.get("vehicles", [])})
+    MemgraphClient.run_query(veh_query, {"vehicles": entities.get("vehicles", [])})
 
-    # 4. Locations
     loc_query = """
     UNWIND $locations AS l
     MERGE (n:Location:Entity {id: l.id})
@@ -75,81 +72,141 @@ def seed_nodes(entities: dict):
         n.lon = l.lon,
         n.cases = l.cases
     """
-    Neo4jClient.run_query(loc_query, {"locations": entities.get("locations", [])})
+    MemgraphClient.run_query(loc_query, {"locations": entities.get("locations", [])})
 
-    # 5. Financial Accounts
     acc_query = """
     UNWIND $accounts AS a
     MERGE (n:FinancialAccount:Entity {id: a.id})
-    SET n.account_number = a.number,
+    SET n.account_number = coalesce(a.number, a.account_number),
         n.ifsc = a.ifsc,
         n.bank = a.bank,
         n.cases = a.cases
     """
-    Neo4jClient.run_query(acc_query, {"accounts": entities.get("financial_accounts", [])})
+    MemgraphClient.run_query(acc_query, {"accounts": entities.get("financial_accounts", [])})
 
-    # 6. Phones
     phone_query = """
     UNWIND $phones AS ph
-    MERGE (n:Phone:Entity {number: ph.number})
-    SET n.registered = ph.registered,
+    MERGE (n:Phone:Entity {id: ph.id})
+    SET n.number = ph.number,
+        n.registered = ph.registered,
         n.note = ph.note,
-        n.id = "PH_" + ph.number
+        n.cases = coalesce(ph.cases, [])
     """
-    Neo4jClient.run_query(phone_query, {"phones": entities.get("phone_numbers", [])})
-    
-    # Optionally, link phones to persons if they are registered
+    phones = []
+    for ph in entities.get("phone_numbers", []):
+        phones.append({
+            **ph,
+            "id": ph.get("id") or f"PH_{ph.get('number')}",
+        })
+    MemgraphClient.run_query(phone_query, {"phones": phones})
+
+    # Case nodes
+    case_ids = set()
+    for group in entities.values():
+        if isinstance(group, list):
+            for item in group:
+                for c in (item.get("cases") or []):
+                    case_ids.add(str(c))
+    if case_ids:
+        MemgraphClient.run_query(
+            """
+            UNWIND $cases AS c
+            MERGE (n:Case:Entity {id: c})
+            SET n.case_number = c, n.name = 'Case ' + toString(c)
+            """,
+            {"cases": list(case_ids)},
+        )
+        # Link persons to cases
+        MemgraphClient.run_query(
+            """
+            UNWIND $persons AS p
+            MATCH (person:Person {id: p.id})
+            UNWIND p.cases AS cid
+            MATCH (c:Case {id: cid})
+            MERGE (person)-[r:INVOLVED_IN]->(c)
+            SET r.verification_status = 'VERIFIED', r.confidence = 1.0, r.source_case = cid
+            """,
+            {"persons": entities.get("persons", [])},
+        )
+
     link_phone_query = """
     UNWIND $phones AS ph
-    MATCH (n:Phone {number: ph.number})
+    MATCH (n:Phone {id: ph.id})
     MATCH (p:Person {id: ph.person_id})
-    MERGE (p)-[:OWNS_PHONE]->(n)
+    MERGE (p)-[r:USES]->(n)
+    SET r.verification_status = 'VERIFIED', r.confidence = 1.0
     """
-    Neo4jClient.run_query(link_phone_query, {"phones": [ph for ph in entities.get("phone_numbers", []) if ph.get("person_id")]})
+    linked = [ph for ph in phones if ph.get("person_id")]
+    if linked:
+        MemgraphClient.run_query(link_phone_query, {"phones": linked})
 
 
 def seed_edges(graph: dict):
-    """Create relationships from the ground_truth_graph.json structure."""
+    """Create relationships without APOC (Memgraph-compatible)."""
     edges = graph.get("edges", [])
-    
-    query = """
-    UNWIND $edges AS e
-    MATCH (source:Entity {id: e.from_id})
-    MATCH (target:Entity {id: e.to_id})
-    CALL apoc.create.relationship(source, e.relation, {
-        source_case: e.source_case,
-        confidence: e.confidence
-    }, target) YIELD rel
-    RETURN count(rel)
-    """
-    Neo4jClient.run_query(query, {"edges": edges})
-    logger.info(f"Seeded {len(edges)} Relationships.")
+    by_type = defaultdict(list)
+    for e in edges:
+        rel = (e.get("relation") or e.get("type") or "ASSOCIATED_WITH").upper().replace(" ", "_")
+        if not _SAFE_REL.match(rel):
+            rel = "ASSOCIATED_WITH"
+        by_type[rel].append({
+            "from_id": e.get("from_id") or e.get("source"),
+            "to_id": e.get("to_id") or e.get("target"),
+            "source_case": e.get("source_case"),
+            "confidence": e.get("confidence", 0.9),
+            "source_document": e.get("source_document") or f"FIR-{e.get('source_case', '')}",
+            "verification_status": e.get("verification_status") or "AI_SUGGESTED",
+        })
+
+    for rel, batch in by_type.items():
+        query = f"""
+        UNWIND $edges AS e
+        MATCH (source:Entity {{id: e.from_id}})
+        MATCH (target:Entity {{id: e.to_id}})
+        MERGE (source)-[r:{rel}]->(target)
+        SET r.source_case = e.source_case,
+            r.confidence = e.confidence,
+            r.source_document = e.source_document,
+            r.verification_status = e.verification_status
+        """
+        MemgraphClient.run_query(query, {"edges": batch})
+        logger.info("Seeded %s %s relationships.", len(batch), rel)
 
 
 def build_graph_from_synthetic_data(data_dir: str = None):
-    """Main orchestrator for wiping and seeding the graph."""
     if not data_dir or not os.path.exists(data_dir):
-        # Auto-discover data dir
         candidates = [
             os.path.join(os.getcwd(), "data"),
             os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "data"),
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "data")),
-            "d:/sih-2026/House-targaryen--2026/data",
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data")),
         ]
         for c in candidates:
             if os.path.exists(os.path.join(c, "metadata", "ground_truth_entities.json")):
                 data_dir = c
                 break
-                
+
     if not data_dir:
         raise FileNotFoundError("Could not locate data directory containing synthetic datasets.")
 
     metadata_dir = os.path.join(data_dir, "metadata")
     entities_path = os.path.join(metadata_dir, "ground_truth_entities.json")
     graph_path = os.path.join(metadata_dir, "ground_truth_graph.json")
-    
+
     if not os.path.exists(entities_path) or not os.path.exists(graph_path):
         raise FileNotFoundError(f"Synthetic data JSON files not found in {metadata_dir}")
+
+    if not MemgraphClient.verify_connectivity():
+        logger.warning("Memgraph unreachable — seed skipped; JSON fallback remains active.")
+        entities = load_json_file(entities_path)
+        graph = load_json_file(graph_path)
+        return {
+            "status": "fallback",
+            "message": "Memgraph not running. Serving ground_truth JSON via FastAPI.",
+            "nodes": len(entities.get("persons", [])) + len(entities.get("organizations", []))
+                     + len(entities.get("vehicles", [])) + len(entities.get("locations", []))
+                     + len(entities.get("financial_accounts", [])) + len(entities.get("phone_numbers", [])),
+            "edges": len(graph.get("edges", [])),
+        }
 
     entities = load_json_file(entities_path)
     graph = load_json_file(graph_path)
@@ -157,12 +214,11 @@ def build_graph_from_synthetic_data(data_dir: str = None):
     clear_graph()
     seed_nodes(entities)
     seed_edges(graph)
-    
-    # Return some basic stats
+
     return {
         "status": "success",
-        "nodes": len(entities.get("persons", [])) + len(entities.get("organizations", [])) + 
-                 len(entities.get("vehicles", [])) + len(entities.get("locations", [])) + 
-                 len(entities.get("financial_accounts", [])) + len(entities.get("phone_numbers", [])),
-        "edges": len(graph.get("edges", []))
+        "nodes": len(entities.get("persons", [])) + len(entities.get("organizations", []))
+                 + len(entities.get("vehicles", [])) + len(entities.get("locations", []))
+                 + len(entities.get("financial_accounts", [])) + len(entities.get("phone_numbers", [])),
+        "edges": len(graph.get("edges", [])),
     }

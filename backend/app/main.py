@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
-from app.db.neo4j_client import Neo4jClient
+from app.db.neo4j_client import MemgraphClient
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,21 +15,19 @@ logger = logging.getLogger("sih-platform")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application startup & shutdown events."""
-    logger.info("Starting up AI-Powered Criminal Network Analysis Platform...")
-    # Test Neo4j connectivity
+    logger.info("Starting AI-Powered Criminal Network Analysis Platform...")
     try:
-        if Neo4jClient.verify_connectivity():
-            logger.info("Neo4j database connection established.")
+        if MemgraphClient.verify_connectivity():
+            logger.info("Memgraph connection established.")
         else:
-            logger.warning("Neo4j database is currently unreachable.")
+            logger.warning("Memgraph unreachable — operating with local JSON graph fallback.")
     except Exception as e:
-        logger.warning(f"Neo4j startup check notice: {e}")
-    
+        logger.warning("Memgraph startup check: %s", e)
+
     yield
 
-    logger.info("Shutting down application...")
-    Neo4jClient.close()
+    logger.info("Shutting down...")
+    MemgraphClient.close()
 
 
 app = FastAPI(
@@ -40,7 +38,6 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
@@ -57,7 +54,8 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 def root():
     return {
         "title": settings.APP_NAME,
-        "version": "0.1.0",
+        "version": "0.2.0",
         "docs": "/docs",
         "api_v1": settings.API_V1_STR,
+        "graph_store": "memgraph",
     }
