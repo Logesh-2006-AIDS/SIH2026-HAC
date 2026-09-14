@@ -74,10 +74,18 @@ async def ingest_file(
     db: Session = Depends(get_db),
 ):
     content_bytes = await file.read()
-    try:
-        content = content_bytes.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded text.")
+    if file.filename and file.filename.lower().endswith(".pdf"):
+        from app.nlp.pdf_parser import extract_text_from_pdf_bytes
+        try:
+            content = extract_text_from_pdf_bytes(content_bytes)
+        except Exception as e:
+            logger.exception(f"Failed to parse PDF: {e}")
+            raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+    else:
+        try:
+            content = content_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(status_code=400, detail="File must be UTF-8 encoded text or a valid PDF.")
 
     try:
         result = ingest_document(

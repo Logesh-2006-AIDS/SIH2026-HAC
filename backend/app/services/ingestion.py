@@ -130,9 +130,81 @@ def extract_entities_from_text(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def parse_fir_text(content: str, case_id: Optional[str], ds_id: int) -> Tuple[List[Dict], int]:
-    """Parse a plain-text FIR report and extract all pattern entities."""
-    entities = extract_entities_from_text(content, source_case_id=case_id, data_source_id=ds_id)
-    return entities, 1  # row_count = 1 document
+    """Parse a plain-text (or extracted PDF) FIR report using the full NLP pipeline."""
+    from app.nlp.pipeline import nlp_pipeline
+    from app.db.neo4j_client import Neo4jClient
+    
+    nlp_result = nlp_pipeline.process_document(content, document_id=f"DOC-{ds_id}")
+    
+    # 1. Map NLP entities to RawEntity format for Postgres
+    db_entities = []
+    neo4j_nodes = []
+    nlp_entities = nlp_result.get("entities", [])
+    
+    for e in nlp_entities:
+        text = e.get("text", "").strip()
+        label = e.get("label", "UNKNOWN")
+        conf = e.get("confidence", 0.8)
+        
+        db_entities.append({
+            "data_source_id": ds_id,
+            "entity_type": label,
+            "raw_text": text,
+            "normalized": text,
+            "confidence": conf,
+            "source_case_id": case_id,
+            "is_resolved": False,
+            "meta": {"nlp_extracted": True, "extractor": e.get("extractor")}
+        })
+        
+        neo4j_nodes.append({
+            "id": text,
+            "name": text,
+            "label": label,
+            "case_id": case_id
+        })
+        
+    # 2. Sync to Neo4j
+    try:
+        if Neo4jClient.verify_connectivity():
+            # Create nodes
+            for node in neo4j_nodes:
+                node_query = """
+                MERGE (n:Entity {id: $id})
+                SET n.name = $name, n.type = $label
+                WITH n
+                WHERE NOT $case_id IN n.cases
+                SET n.cases = coalesce(n.cases, []) + $case_id
+                """
+                Neo4jClient.run_query(node_query, {"id": node["id"], "name": node["name"], "label": node["label"], "case_id": case_id})
+            
+            # Create relationships
+            relationships = nlp_result.get("relationships", [])
+            for rel in relationships:
+                rel_query = """
+                MATCH (source:Entity {id: $subject})
+                MATCH (target:Entity {id: $object})
+                CALL apoc.create.relationship(source, $predicate, {
+                    source_case: $case_id,
+                    confidence: $confidence,
+                    evidence: $evidence,
+                    explanation: $explanation
+                }, target) YIELD rel
+                RETURN count(rel)
+                """
+                Neo4jClient.run_query(rel_query, {
+                    "subject": rel["subject"],
+                    "object": rel["object"],
+                    "predicate": rel["predicate"].replace(" ", "_").upper(),
+                    "case_id": case_id,
+                    "confidence": rel.get("confidence", 0.8),
+                    "evidence": rel.get("evidence", {}).get("sentence", ""),
+                    "explanation": rel.get("explanation", "")
+                })
+    except Exception as e:
+        logger.warning(f"Failed to sync NLP results to Neo4j: {e}")
+
+    return db_entities, 1
 
 
 def parse_cdr_csv(content: str, case_id: Optional[str], ds_id: int) -> Tuple[List[Dict], int]:

@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  LayoutDashboard, FileText, Network, Map, GitBranch, 
+  Pin, LayoutDashboard, FileText, Network, Map, GitBranch, 
   Bot, BarChart3, Upload, CheckCircle2, ShieldAlert, ShieldCheck
 } from 'lucide-react';
 
@@ -9,14 +9,15 @@ const ROLE_MENUS = {
     {
       title: 'TACTICAL OPERATIONS',
       items: [
-        { id: 'dashboard', label: 'Investigation Workspace', icon: <LayoutDashboard size={18} /> },
-        { id: 'cases', label: 'Active Case Dossiers', icon: <FileText size={18} /> },
+        { id: 'dashboard', label: 'Criminal Pinboard', icon: <Pin size={18} /> },
+        { id: 'map', label: 'Crime Intelligence Map', icon: <Map size={18} /> },
         { id: 'network', label: 'Network & Path Finder', icon: <Network size={18} /> },
+        { id: 'cases', label: 'Active Case Dossiers', icon: <FileText size={18} /> },
         { id: 'verification', label: 'Lead Verification', icon: <CheckCircle2 size={18} /> },
       ]
     },
     {
-      title: 'AI ASSISTANT',
+      title: 'AI COPILOT & BRIEFS',
       items: [
         { id: 'copilot', label: 'Investigation Copilot', icon: <Bot size={18} /> },
         { id: 'brief', label: 'Smart Case Briefs', icon: <FileText size={18} /> },
