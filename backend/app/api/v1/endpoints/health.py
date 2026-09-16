@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 def check_health() -> HealthResponse:
     services = {}
     overall_status = "healthy"
+    data_mode = "LIVE"
+
+    # API itself is up if this handler runs
+    services["api"] = ServiceStatus(status="UP", details="FastAPI responding.")
 
     try:
         db = SessionLocal()
@@ -28,20 +32,30 @@ def check_health() -> HealthResponse:
     try:
         if MemgraphClient.verify_connectivity():
             services["memgraph"] = ServiceStatus(status="UP", details="Connected to Memgraph graph store.")
+            data_mode = "LIVE"
         else:
             services["memgraph"] = ServiceStatus(
-                status="UP",
-                details="Memgraph offline — FastAPI serving ground_truth JSON fallback.",
+                status="DOWN",
+                details="Memgraph offline — graph analytics using ground_truth JSON fallback.",
             )
-    except Exception:
+            data_mode = "FALLBACK"
+            overall_status = "degraded"
+    except Exception as e:
         services["memgraph"] = ServiceStatus(
-            status="UP",
-            details="Memgraph offline — FastAPI serving ground_truth JSON fallback.",
+            status="DOWN",
+            details=f"Memgraph offline — JSON fallback active ({e}).",
         )
+        data_mode = "FALLBACK"
+        overall_status = "degraded"
+
+    services["data_mode"] = ServiceStatus(
+        status="UP" if data_mode == "LIVE" else "DEGRADED",
+        details=("LIVE" if data_mode == "LIVE" else "DEMO / FALLBACK DATA"),
+    )
 
     return HealthResponse(
         status=overall_status,
-        version="0.2.0",
+        version="0.3.0",
         environment=settings.APP_ENV,
         services=services,
     )

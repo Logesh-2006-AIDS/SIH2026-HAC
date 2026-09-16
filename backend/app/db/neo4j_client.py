@@ -33,7 +33,8 @@ class MemgraphClient:
                     auth=auth,
                     max_connection_lifetime=30 * 60,
                     max_connection_pool_size=50,
-                    connection_acquisition_timeout=10,
+                    connection_acquisition_timeout=2,
+                    connection_timeout=2,
                 )
                 logger.info("Connected to Memgraph at %s", uri)
             except Exception as e:

@@ -1,19 +1,34 @@
 """
 ================================================================================
-SIH 2026 / INTERNAL HACKATHON DEMO - HACKATHON TARGET
+SIH 2026 — HOUSE TARGARYEN
+AI-Powered Criminal Network Intelligence Platform
 ================================================================================
-Target Event: Tomorrow's Internal Hackathon
-Project: House-targaryen--2026 (SIH26189)
-Module: Phase 3 - AI & NLP Processing Pipeline
+Module: NLP Document Intelligence Pipeline (v2)
 
-GOAL: 
-Provide a robust, high-speed, impressive NLP engine that takes raw police FIR 
-text / CDR / Bank transfer notes and extracts:
-1. Structured Entities (Suspects, Aliases, Phone Numbers, Vehicles, Accounts, Locations)
-2. Semantic Relationships (COMMUNICATES_WITH, ASSOCIATED_WITH, FINANCIAL_TRANSFER_TO)
-3. Entity Resolution & Alias Matching (Fuzzy + Phonetic + Context)
-4. Evidence Rationale & Sentence Anchoring for Law Enforcement Explainability
+Pipeline:
+  DOCUMENT → SENTENCE → ENTITY → ROLE → RELATIONSHIP → CONTEXT
+  → TEMPORAL → CONFIDENCE → PROVENANCE → VALIDATION → STAGING
+  → GRAPH → INVESTIGATOR VERIFICATION
+
+Core Principle:
+  AI EXTRACTS FACTS.          (NLP pipeline)
+  GRAPH ANALYTICS FINDS PATTERNS.   (Memgraph)
+  AI SUGGESTS LEADS.          (analyst_intelligence.py)
+  INVESTIGATOR VERIFIES THEM. (leads API)
+
+New in v2:
+  - Hybrid NER: spaCy + Indian domain heuristics
+  - Person role classification: ACCUSED / VICTIM / WITNESS / COMPLAINANT /
+    OFFICER / INVESTIGATOR / INFORMANT / UNKNOWN
+  - Semantic relationship extraction (trigger-based, not co-occurrence)
+  - Negation detection: "did not contact" → no CONTACTED edge
+  - Uncertainty detection: "allegedly" → status=ALLEGED
+  - Entity resolution: multi-signal, no auto-merge
+  - Temporal extraction: event dates per relationship
+  - Coreference resolution: "the accused", "the victim"
+  - Pre-graph validation
+  - Staging model: all AI extractions → AI_SUGGESTED
 ================================================================================
 """
 
-__version__ = "1.0.0-hackathon-demo"
+__version__ = "2.0.0"

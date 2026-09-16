@@ -59,15 +59,22 @@ def login(
         .first()
     )
 
-    # If demo database has no users yet, seed the primary investigator
-    if not user and form_data.username in ("investigator@police.gov.in", "DL-CB-9021", "admin@police.gov.in"):
+    # Local demo identities are seeded with their actual server-side role. The
+    # role is never accepted from the browser during login.
+    demo_identities = {
+        "investigator@police.gov.in": ("DL-CB-9021", "Insp. Rajesh Vardhan", UserRole.INVESTIGATOR),
+        "admin@police.gov.in": ("HT-ADMIN-001", "Station Administrator", UserRole.ADMIN),
+        "analyst@police.gov.in": ("HT-ANALYST-001", "Strategic Analyst", UserRole.ANALYST),
+    }
+    if not user and form_data.username in demo_identities:
+        badge, full_name, role = demo_identities[form_data.username]
         user = User(
-            email=form_data.username if "@" in form_data.username else "investigator@police.gov.in",
-            badge_number="DL-CB-9021",
-            full_name="Insp. Rajesh Vardhan",
+            email=form_data.username,
+            badge_number=badge,
+            full_name=full_name,
             department="Crime Branch, Delhi Police",
             hashed_password=get_password_hash(form_data.password or "investigator123"),
-            role=UserRole.INVESTIGATOR,
+            role=role,
             is_active=True,
         )
         db.add(user)

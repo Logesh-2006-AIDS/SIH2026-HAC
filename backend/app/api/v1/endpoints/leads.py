@@ -1,10 +1,13 @@
 """
 Phase 5: Lead Verification & Human-in-the-Loop API Endpoints
+
+Also accepts Analyst → Investigator intelligence leads (handoff).
+Does not redesign Investigator workflow — intel leads appear in the same queue.
 """
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, log_audit_action
@@ -13,6 +16,10 @@ from app.models.user import User
 from app.schemas.common import ResponseEnvelope
 
 router = APIRouter()
+
+# Analyst-created intelligence leads (handoff to Investigator)
+INTEL_LEADS_STORE: List[Dict[str, Any]] = []
+_INTEL_SEQ = 1
 
 # In-memory store for interactive lead actions in development
 LEADS_STORE = [
@@ -72,16 +79,41 @@ class LeadVerifyRequest(BaseModel):
     remarks: Optional[str] = "Verified by investigating officer"
 
 
+class IntelligenceLeadCreate(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    priority: str = "HIGH"
+    related_cases: List[str] = Field(default_factory=list)
+    entities: List[Any] = Field(default_factory=list)
+    relationships: List[Any] = Field(default_factory=list)
+    locations: List[Any] = Field(default_factory=list)
+    evidence: List[Any] = Field(default_factory=list)
+    reason: str = ""
+    confidence: Optional[float] = None
+    confidence_reason: Optional[str] = None
+    pattern_type: Optional[str] = None
+    created_by: str = "ANALYST"
+
+
+def _all_leads() -> List[Dict[str, Any]]:
+    return list(LEADS_STORE) + list(INTEL_LEADS_STORE)
+
+
 @router.get("/pending", response_model=ResponseEnvelope, summary="List Pending AI-Suggested Entity Merges & Leads")
 def list_pending_leads(
     status_filter: Optional[str] = Query(None, alias="status"),
+    lead_kind: Optional[str] = Query(None, description="merge|intelligence|all"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Retrieve candidate entity links awaiting investigator review."""
-    items = LEADS_STORE
+    """Retrieve candidate entity links and analyst intelligence leads."""
+    items = _all_leads()
+    if lead_kind == "intelligence":
+        items = list(INTEL_LEADS_STORE)
+    elif lead_kind == "merge":
+        items = list(LEADS_STORE)
     if status_filter:
-        items = [l for l in LEADS_STORE if l["status"] == status_filter.upper()]
+        items = [l for l in items if l.get("status") == status_filter.upper()]
 
     log_audit_action(
         db=db,
@@ -93,7 +125,63 @@ def list_pending_leads(
     return ResponseEnvelope(
         success=True,
         message=f"Found {len(items)} lead(s).",
+        data={"total": len(items), "leads": items, "items": items},
+    )
+
+
+@router.get("/intelligence", response_model=ResponseEnvelope, summary="List analyst intelligence leads")
+def list_intelligence_leads(
+    status_filter: Optional[str] = Query(None, alias="status"),
+):
+    items = INTEL_LEADS_STORE
+    if status_filter:
+        items = [l for l in items if l.get("status") == status_filter.upper()]
+    return ResponseEnvelope(
+        success=True,
+        message=f"Found {len(items)} intelligence lead(s).",
         data={"total": len(items), "leads": items},
+    )
+
+
+@router.post("/intelligence", response_model=ResponseEnvelope, summary="Create analyst intelligence lead for Investigator")
+def create_intelligence_lead(payload: IntelligenceLeadCreate):
+    """Analyst → Investigator handoff. Does not alter Investigator workflow UI beyond queue contents."""
+    global _INTEL_SEQ
+    lead_id = f"INTEL-{_INTEL_SEQ:03d}"
+    _INTEL_SEQ += 1
+    lead = {
+        "id": lead_id,
+        "lead_id": lead_id,
+        "lead_kind": "INTELLIGENCE",
+        "source": "ANALYST",
+        "title": payload.title,
+        "description": payload.description,
+        "priority": payload.priority.upper(),
+        "related_cases": payload.related_cases,
+        "entities": payload.entities,
+        "relationships": payload.relationships,
+        "locations": payload.locations,
+        "evidence": payload.evidence,
+        "reason": payload.reason,
+        "confidence": payload.confidence,
+        "confidence_reason": payload.confidence_reason,
+        "pattern_type": payload.pattern_type,
+        "created_by": payload.created_by,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "status": "PENDING",
+        # Compatibility fields for existing LeadVerification cards
+        "entity_a": payload.title,
+        "entity_b": ", ".join(payload.related_cases) or "Multi-case pattern",
+        "match_type": payload.pattern_type or "Analyst Intelligence Lead",
+        "reviewed_by": None,
+        "reviewed_at": None,
+        "remarks": None,
+    }
+    INTEL_LEADS_STORE.insert(0, lead)
+    return ResponseEnvelope(
+        success=True,
+        message=f"Intelligence lead {lead_id} sent to Investigator queue.",
+        data=lead,
     )
 
 
@@ -105,14 +193,15 @@ def verify_lead(
     current_user: User = Depends(get_current_user),
 ):
     """Approve or Reject an AI lead suggestion with investigator remarks and audit record."""
-    lead = next((l for l in LEADS_STORE if l["id"] == lead_id), None)
+    lead = next((l for l in _all_leads() if l.get("id") == lead_id or l.get("lead_id") == lead_id), None)
     if not lead:
         raise HTTPException(status_code=404, detail=f"Lead '{lead_id}' not found.")
 
-    if payload.action.upper() not in ("APPROVED", "REJECTED"):
+    action = payload.action.upper()
+    if action not in ("APPROVED", "REJECTED"):
         raise HTTPException(status_code=400, detail="Action must be 'APPROVED' or 'REJECTED'.")
 
-    lead["status"] = payload.action.upper()
+    lead["status"] = action
     lead["remarks"] = payload.remarks
     lead["reviewed_by"] = current_user.badge_number if current_user else "DL-CB-9021"
     lead["reviewed_at"] = datetime.now(timezone.utc).isoformat()
@@ -127,8 +216,7 @@ def verify_lead(
             "lead_id": lead_id,
             "decision": lead["status"],
             "remarks": payload.remarks,
-            "entity_a": lead["entity_a"],
-            "entity_b": lead["entity_b"],
+            "lead_kind": lead.get("lead_kind", "MERGE"),
         },
     )
 

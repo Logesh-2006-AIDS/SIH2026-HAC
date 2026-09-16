@@ -1,26 +1,78 @@
+@import "leaflet/dist/leaflet.css";
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #080a08;
+  --panel: #101311;
+  --panel-elevated: #161b17;
+  --parchment: #f1ebdd;
+  --muted: #8a948c;
+  --gold: #d9aa3d;
+  --gold-dim: #8c6717;
+  --signal: #d62828;
+  --ok: #5e9f68;
+  --line: rgba(217, 170, 61, 0.22);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-panel: var(--panel);
+  --color-panel-elevated: var(--panel-elevated);
+  --color-parchment: var(--parchment);
+  --color-muted: var(--muted);
+  --color-gold: var(--gold);
+  --color-gold-dim: var(--gold-dim);
+  --color-signal: var(--signal);
+  --color-ok: var(--ok);
+  --color-line: var(--line);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100%;
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-body), "Segoe UI", sans-serif;
+}
+
+::selection {
+  background: rgba(217, 170, 61, 0.35);
+  color: #fff;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(217, 170, 61, 0.35);
+  border-radius: 8px;
+}
+
+.analyst-leaflet-map .leaflet-control-zoom a {
+  background: #101311;
+  border-color: rgba(217, 170, 61, 0.35);
+  color: #f1ebdd;
+}
+
+.analyst-leaflet-map .leaflet-control-zoom a:hover {
+  background: #1b211c;
+  color: #d9aa3d;
+}
+
+.analyst-leaflet-map .leaflet-control-attribution {
+  background: rgba(16, 19, 17, 0.82);
+  color: #aab2ab;
+}
+
+.analyst-leaflet-map .leaflet-control-attribution a {
+  color: #d9aa3d;
 }

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, auth, ingest, graph, cases, leads, audit, nlp, copilot, map
+from app.api.v1.endpoints import health, auth, ingest, graph, cases, leads, audit, nlp, copilot, map, analyst, admin
 
 api_router = APIRouter()
 
@@ -13,3 +13,5 @@ api_router.include_router(audit.router, prefix="/audit", tags=["Tamper-Evident A
 api_router.include_router(nlp.router, prefix="/nlp", tags=["Phase 3 NLP & PDF Parser"])
 api_router.include_router(copilot.router, prefix="/copilot", tags=["AI Investigation Copilot"])
 api_router.include_router(map.router, prefix="/map", tags=["Crime Intelligence Map"])
+api_router.include_router(analyst.router, prefix="/analyst", tags=["Analyst Intelligence"])
+api_router.include_router(admin.router, prefix="/admin", tags=["Administration"])

@@ -15,7 +15,10 @@ export default function LeadVerification() {
     axios.get('/api/v1/leads/pending')
       .then(res => {
         if (res.data?.data) {
-          const items = Array.isArray(res.data.data) ? res.data.data : (res.data.data.items || []);
+          const raw = res.data.data;
+          const items = Array.isArray(raw)
+            ? raw
+            : (raw.leads || raw.items || []);
           setLeads(items);
         }
       })
@@ -150,8 +153,25 @@ export default function LeadVerification() {
                   {/* Evidence Citation */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#24251F' }}>
                     <FileText size={15} color="#D62828" style={{ marginTop: '0.15rem' }} />
-                    <span><strong>Supporting Evidence:</strong> {lead.evidence || 'Awaiting evidence correlation'}</span>
+                    <span>
+                      <strong>Supporting Evidence:</strong>{' '}
+                      {Array.isArray(lead.evidence) ? lead.evidence.join('; ') : (lead.evidence || 'Awaiting evidence correlation')}
+                    </span>
                   </div>
+
+                  {lead.lead_kind === 'INTELLIGENCE' && (
+                    <div style={{
+                      fontSize: '0.8rem', color: '#24251F', background: 'rgba(94,159,104,0.12)',
+                      border: '1px solid rgba(94,159,104,0.35)', borderRadius: 8, padding: '0.65rem 0.85rem',
+                    }}>
+                      <strong>Analyst Intelligence Lead</strong>
+                      {lead.reason ? <div style={{ marginTop: 4 }}><strong>Reason:</strong> {lead.reason}</div> : null}
+                      {lead.related_cases?.length ? (
+                        <div style={{ marginTop: 4 }}><strong>Related cases:</strong> {lead.related_cases.join(', ')}</div>
+                      ) : null}
+                      {lead.description ? <div style={{ marginTop: 4 }}>{lead.description}</div> : null}
+                    </div>
+                  )}
 
                   {/* Action Controls */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.65rem', borderTop: '1px solid rgba(0,0,0,0.1)' }}>

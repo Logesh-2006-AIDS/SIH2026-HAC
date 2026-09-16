@@ -130,81 +130,123 @@ def extract_entities_from_text(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def parse_fir_text(content: str, case_id: Optional[str], ds_id: int) -> Tuple[List[Dict], int]:
-    """Parse a plain-text (or extracted PDF) FIR report using the full NLP pipeline."""
+    """Parse a plain-text (or extracted PDF) FIR report using the full NLP pipeline.
+    
+    All extracted entities/relationships are staged as AI_SUGGESTED.
+    They are inserted into Memgraph with verification_status=AI_SUGGESTED
+    so investigators can verify/reject via the leads system.
+    """
     from app.nlp.pipeline import nlp_pipeline
-    from app.db.neo4j_client import Neo4jClient
-    
+    from app.nlp.staging import stage_extraction
+    from app.db.neo4j_client import MemgraphClient
+
     nlp_result = nlp_pipeline.process_document(content, document_id=f"DOC-{ds_id}")
-    
-    # 1. Map NLP entities to RawEntity format for Postgres
+    staged = stage_extraction(nlp_result)
+
+    # 1. Map validated NLP entities to RawEntity format for Postgres
     db_entities = []
-    neo4j_nodes = []
-    nlp_entities = nlp_result.get("entities", [])
-    
+    memgraph_nodes = []
+    nlp_entities = staged.get("staged_entities", [])
+
     for e in nlp_entities:
         text = e.get("text", "").strip()
-        label = e.get("label", "UNKNOWN")
+        entity_type = e.get("type", e.get("label", "UNKNOWN"))
         conf = e.get("confidence", 0.8)
-        
+        normalized = e.get("normalized_value", text)
+        prov = e.get("provenance", {})
+
+        if not text:
+            continue
+
         db_entities.append({
             "data_source_id": ds_id,
-            "entity_type": label,
+            "entity_type": entity_type,
             "raw_text": text,
-            "normalized": text,
+            "normalized": normalized,
             "confidence": conf,
             "source_case_id": case_id,
             "is_resolved": False,
-            "meta": {"nlp_extracted": True, "extractor": e.get("extractor")}
+            "meta": {
+                "nlp_extracted": True,
+                "extractor": prov.get("extraction_method"),
+                "role": e.get("role"),
+                "verification_status": "AI_SUGGESTED",
+                "sentence": prov.get("sentence", ""),
+            }
         })
-        
-        neo4j_nodes.append({
-            "id": text,
+
+        memgraph_nodes.append({
+            "id": e.get("id", text),
             "name": text,
-            "label": label,
-            "case_id": case_id
+            "type": entity_type,
+            "normalized": normalized,
+            "role": e.get("role"),
+            "case_id": case_id,
+            "confidence": conf,
+            "verification_status": "AI_SUGGESTED",
         })
-        
-    # 2. Sync to Neo4j
+
+    # 2. Sync to Memgraph (all entities tagged AI_SUGGESTED)
     try:
-        if Neo4jClient.verify_connectivity():
-            # Create nodes
-            for node in neo4j_nodes:
-                node_query = """
-                MERGE (n:Entity {id: $id})
-                SET n.name = $name, n.type = $label
-                WITH n
-                WHERE NOT $case_id IN n.cases
-                SET n.cases = coalesce(n.cases, []) + $case_id
+        if MemgraphClient.verify_connectivity():
+            # Create entity nodes
+            node_query = """
+            UNWIND $nodes AS n
+            MERGE (e:Entity {id: n.id})
+            SET e.name = n.name,
+                e.type = n.type,
+                e.normalized = n.normalized,
+                e.role = n.role,
+                e.confidence = n.confidence,
+                e.verification_status = n.verification_status
+            WITH e
+            WHERE NOT n.case_id IS NULL AND NOT n.case_id IN coalesce(e.cases, [])
+            SET e.cases = coalesce(e.cases, []) + n.case_id
+            """
+            if memgraph_nodes:
+                MemgraphClient.run_query(node_query, {"nodes": memgraph_nodes})
+
+            # Create staged relationships (AI_SUGGESTED only)
+            staged_relationships = staged.get("staged_relationships", [])
+            for rel in staged_relationships:
+                src_id = rel.get("source_entity_id") or rel.get("subject", "")
+                tgt_id = rel.get("target_entity_id") or rel.get("object", "")
+                rel_type = (rel.get("relationship_type") or rel.get("predicate", "ASSOCIATED_WITH"))
+                rel_type = rel_type.upper().replace(" ", "_")
+
+                if not src_id or not tgt_id:
+                    continue
+                # Safety: only allowed relationship type characters
+                import re as _re
+                if not _re.match(r"^[A-Z][A-Z0-9_]*$", rel_type):
+                    rel_type = "ASSOCIATED_WITH"
+
+                rel_query = f"""
+                MATCH (source:Entity {{id: $src_id}})
+                MATCH (target:Entity {{id: $tgt_id}})
+                MERGE (source)-[r:{rel_type}]->(target)
+                SET r.source_case = $case_id,
+                    r.confidence = $confidence,
+                    r.evidence = $evidence,
+                    r.status = $status,
+                    r.verification_status = 'AI_SUGGESTED',
+                    r.explanation = $explanation
                 """
-                Neo4jClient.run_query(node_query, {"id": node["id"], "name": node["name"], "label": node["label"], "case_id": case_id})
-            
-            # Create relationships
-            relationships = nlp_result.get("relationships", [])
-            for rel in relationships:
-                rel_query = """
-                MATCH (source:Entity {id: $subject})
-                MATCH (target:Entity {id: $object})
-                CALL apoc.create.relationship(source, $predicate, {
-                    source_case: $case_id,
-                    confidence: $confidence,
-                    evidence: $evidence,
-                    explanation: $explanation
-                }, target) YIELD rel
-                RETURN count(rel)
-                """
-                Neo4jClient.run_query(rel_query, {
-                    "subject": rel["subject"],
-                    "object": rel["object"],
-                    "predicate": rel["predicate"].replace(" ", "_").upper(),
+                MemgraphClient.run_query(rel_query, {
+                    "src_id": src_id,
+                    "tgt_id": tgt_id,
                     "case_id": case_id,
                     "confidence": rel.get("confidence", 0.8),
-                    "evidence": rel.get("evidence", {}).get("sentence", ""),
-                    "explanation": rel.get("explanation", "")
+                    "evidence": rel.get("evidence", {}).get("sentence", "") if isinstance(rel.get("evidence"), dict) else "",
+                    "status": rel.get("status", "UNVERIFIED"),
+                    "explanation": rel.get("explanation_summary", ""),
                 })
+
     except Exception as e:
-        logger.warning(f"Failed to sync NLP results to Neo4j: {e}")
+        logger.warning(f"Failed to sync NLP results to Memgraph: {e}")
 
     return db_entities, 1
+
 
 
 def parse_cdr_csv(content: str, case_id: Optional[str], ds_id: int) -> Tuple[List[Dict], int]:
