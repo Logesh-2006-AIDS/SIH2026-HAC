@@ -1,101 +1,114 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
+import * as mockService from '../data/mockService.js';
+import { INVESTIGATION_LEADS } from '../data/mockData.js';
 
 const InvestigationContext = createContext(null);
 
+// Lead state reducer for local verification
+function leadsReducer(state, action) {
+  switch (action.type) {
+    case 'SET_LEADS': return action.leads;
+    case 'VERIFY_LEAD':
+      return state.map(l => l.id === action.id
+        ? { ...l, status: action.status, verified_at: new Date().toLocaleTimeString(), verified_by: 'Investigator (Demo)' }
+        : l
+      );
+    case 'RESET': return INVESTIGATION_LEADS.map(l => ({ ...l }));
+    default: return state;
+  }
+}
+
 export function InvestigationProvider({ children }) {
+  // ── Core navigation state ──────────────────────────────────────────────────
   const [currentRole, setCurrentRole] = useState('INVESTIGATOR');
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedCase, setSelectedCase] = useState('103');
+  const [selectedCase, setSelectedCase] = useState('101');
   const [casesList, setCasesList] = useState([]);
   const [caseSummary, setCaseSummary] = useState(null);
+  const [investigationSection, setInvestigationSection] = useState('brief');
 
+  // ── Graph state ────────────────────────────────────────────────────────────
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [isLoadingGraph, setIsLoadingGraph] = useState(false);
   const [layoutName, setLayoutName] = useState('cose');
-
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [graphFocusEntity, setGraphFocusEntity] = useState(null);
-  const [focusMode, setFocusMode] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
   const [expandHops, setExpandHops] = useState(1);
 
+  // ── Path state ─────────────────────────────────────────────────────────────
   const [highlightedPath, setHighlightedPath] = useState([]);
   const [pathDetails, setPathDetails] = useState(null);
   const [pathMessage, setPathMessage] = useState('');
   const [pathSourceId, setPathSourceId] = useState(null);
 
+  // ── Cross-case state ───────────────────────────────────────────────────────
   const [crossCaseSelection, setCrossCaseSelection] = useState(null);
-  const [investigationSection, setInvestigationSection] = useState('brief');
 
+  // ── Patterns & leads ───────────────────────────────────────────────────────
+  const [patterns, setPatterns] = useState([]);
+  const [leads, dispatchLeads] = useReducer(leadsReducer, INVESTIGATION_LEADS.map(l => ({ ...l })));
+
+  // ── Demo state ─────────────────────────────────────────────────────────────
+  const [demoMode] = useState(true);
+  const [ingestionDone, setIngestionDone] = useState(false);
+
+  // ── Role-based default tab ─────────────────────────────────────────────────
   useEffect(() => {
     if (currentRole === 'INVESTIGATOR') setActiveTab('dashboard');
-    else if (currentRole === 'ANALYST') setActiveTab('map');
-    else if (currentRole === 'ADMIN') setActiveTab('ingest');
+    else if (currentRole === 'ANALYST') setActiveTab('analyst_dashboard');
+    else if (currentRole === 'ADMIN') setActiveTab('admin_dashboard');
   }, [currentRole]);
 
+  // ── Load cases on mount ────────────────────────────────────────────────────
   useEffect(() => {
-    axios.get('/api/v1/cases/')
-      .then((res) => {
-        if (res.data?.success && Array.isArray(res.data.data)) {
-          setCasesList(res.data.data);
-        }
-      })
-      .catch(() => {});
+    mockService.getCases().then(res => {
+      if (res.success) setCasesList(res.data);
+    });
   }, []);
 
+  // ── Load patterns when case changes ───────────────────────────────────────
+  useEffect(() => {
+    mockService.getPatterns(`CASE-${selectedCase}`).then(res => {
+      if (res.success) setPatterns(res.data.patterns || []);
+    });
+  }, [selectedCase]);
+
+  // ── Case summary refresh ──────────────────────────────────────────────────
   const refreshCaseSummary = useCallback(async (caseId) => {
     if (!caseId) return;
-    try {
-      const [caseRes, crossRes, briefRes] = await Promise.all([
-        axios.get(`/api/v1/cases/${caseId}`),
-        axios.get(`/api/v1/cases/${caseId}/cross-links`),
-        axios.get(`/api/v1/cases/${caseId}/brief`),
-      ]);
-      const dossier = caseRes.data?.data?.dossier;
-      const graphEntities = caseRes.data?.data?.graph_entities || [];
-      const graphRelations = caseRes.data?.data?.graph_relations || [];
-      const crossLinks = crossRes.data?.data?.links || [];
-      const brief = briefRes.data?.data;
-      const leads = brief?.ai_suggested_leads?.length || 0;
+    const res = await mockService.getCaseSummary(caseId);
+    if (res.success) {
+      const d = res.data;
       setCaseSummary({
         caseId,
-        dossier,
-        entityCount: graphEntities.length,
-        connectionCount: graphRelations.length,
-        crossCaseCount: crossLinks.length,
-        leadCount: leads,
+        dossier: d.dossier,
+        entityCount: d.entity_count,
+        connectionCount: d.connection_count,
+        crossCaseCount: d.cross_case_count,
+        leadCount: d.lead_count,
       });
-    } catch {
-      setCaseSummary(null);
     }
   }, []);
 
-  useEffect(() => {
-    refreshCaseSummary(selectedCase);
-  }, [selectedCase, refreshCaseSummary]);
+  useEffect(() => { refreshCaseSummary(selectedCase); }, [selectedCase, refreshCaseSummary]);
 
+  // ── Graph fetch ─────────────────────────────────────────────────────────────
   const fetchSubgraph = useCallback(async (caseId = '', entityId = null, hops = 1) => {
     setIsLoadingGraph(true);
     try {
-      let url;
-      if (entityId && focusMode) {
-        url = `/api/v1/graph/focus-subgraph?entity_id=${entityId}&hops=${hops}`;
-        if (caseId) url += `&case_id=${caseId}`;
-      } else {
-        url = caseId ? `/api/v1/graph/subgraph?case_id=${caseId}` : '/api/v1/graph/subgraph';
-      }
-      const res = await axios.get(url);
-      if (res.data?.success) {
-        setNodes(res.data.data.nodes || []);
-        setEdges(res.data.data.edges || []);
+      const res = await mockService.getSubgraph(caseId ? `CASE-${caseId.replace('CASE-', '')}` : '', entityId, hops);
+      if (res.success) {
+        setNodes(res.data.nodes || []);
+        setEdges(res.data.edges || []);
       }
     } catch (err) {
-      console.error('Failed to fetch subgraph:', err);
+      console.error('fetchSubgraph error:', err);
     } finally {
       setIsLoadingGraph(false);
     }
-  }, [focusMode]);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'network' || activeTab === 'entity') {
@@ -104,11 +117,9 @@ export function InvestigationProvider({ children }) {
     }
   }, [selectedCase, graphFocusEntity, selectedEntity?.id, focusMode, expandHops, activeTab, fetchSubgraph]);
 
+  // ── Entity selection ────────────────────────────────────────────────────────
   const selectEntity = useCallback((entity, options = {}) => {
-    if (!entity) {
-      setSelectedEntity(null);
-      return;
-    }
+    if (!entity) { setSelectedEntity(null); return; }
     setSelectedEntity(entity);
     if (options.focusGraph !== false) {
       setGraphFocusEntity(entity.id || entity.number);
@@ -116,44 +127,34 @@ export function InvestigationProvider({ children }) {
     }
   }, []);
 
+  // ── Focus entity by ID (cross-component navigation) ───────────────────────
   const focusEntityById = useCallback(async (entityId, openNetwork = true) => {
     if (!entityId) return;
-    try {
-      const res = await axios.get(`/api/v1/graph/entity/${entityId}/profile`);
-      if (res.data?.success) {
-        const ent = res.data.data.entity;
-        selectEntity(ent, { focusGraph: true });
-        if (openNetwork) setActiveTab('network');
-      } else {
-        const match = nodes.find((n) => n.id === entityId);
-        if (match) {
-          selectEntity(match, { focusGraph: true });
-          if (openNetwork) setActiveTab('network');
-        }
-      }
-    } catch {
-      const match = nodes.find((n) => n.id === entityId);
-      if (match) {
-        selectEntity(match, { focusGraph: true });
-        if (openNetwork) setActiveTab('network');
-      }
+    const res = await mockService.getEntityProfile(entityId);
+    if (res.success) {
+      selectEntity(res.data.entity, { focusGraph: true });
+      if (openNetwork) setActiveTab('network');
+    } else {
+      const match = nodes.find(n => n.id === entityId);
+      if (match) { selectEntity(match, { focusGraph: true }); if (openNetwork) setActiveTab('network'); }
     }
   }, [nodes, selectEntity]);
 
+  // ── Path finder ─────────────────────────────────────────────────────────────
   const handleFindPath = useCallback(async (sourceId, targetId) => {
     setIsLoadingGraph(true);
     try {
-      const res = await axios.get(`/api/v1/graph/shortest-path?source_id=${sourceId}&target_id=${targetId}`);
-      const data = res.data?.data;
-      if (res.data?.success && data?.path?.length) {
+      const res = await mockService.findShortestPath(sourceId, targetId);
+      const data = res.data;
+      if (res.success && data?.path?.length) {
         setHighlightedPath(data.path);
         setPathDetails(data);
-        setPathMessage(data.explanation || `Path: ${data.path.join(' → ')}`);
+        setPathMessage(data.explanation || `Path found: ${data.hop_count} hop(s)`);
         setGraphFocusEntity(null);
         setFocusMode(false);
         await fetchSubgraph(selectedCase);
       } else {
-        setPathMessage('No direct path found between the selected entities.');
+        setPathMessage('No path found between the selected entities.');
         setPathDetails(null);
       }
     } catch (err) {
@@ -168,44 +169,77 @@ export function InvestigationProvider({ children }) {
     setHighlightedPath([]);
     setPathDetails(null);
     setPathMessage('');
-    if (graphFocusEntity) {
-      fetchSubgraph(selectedCase, graphFocusEntity, expandHops);
-    }
+    if (graphFocusEntity) fetchSubgraph(selectedCase, graphFocusEntity, expandHops);
   }, [graphFocusEntity, selectedCase, expandHops, fetchSubgraph]);
 
+  // ── Lead verification (local state only) ───────────────────────────────────
+  const verifyLead = useCallback((leadId, status) => {
+    dispatchLeads({ type: 'VERIFY_LEAD', id: leadId, status });
+  }, []);
+
+  // ── Case navigation ─────────────────────────────────────────────────────────
   const continueInvestigation = useCallback(() => {
     setInvestigationSection('brief');
     setActiveTab('investigation');
   }, []);
 
   const openCase = useCallback((caseId) => {
-    setSelectedCase(caseId);
+    const num = String(caseId).replace('CASE-', '');
+    setSelectedCase(num);
     setInvestigationSection('brief');
     setActiveTab('investigation');
   }, []);
 
-  const suspectList = useMemo(() => (
+  // ── Demo reset ──────────────────────────────────────────────────────────────
+  const resetDemo = useCallback(() => {
+    setSelectedCase('101');
+    setSelectedEntity(null);
+    setGraphFocusEntity(null);
+    setFocusMode(false);
+    setExpandHops(1);
+    setHighlightedPath([]);
+    setPathDetails(null);
+    setPathMessage('');
+    setActiveTab('dashboard');
+    setIngestionDone(false);
+    setInvestigationSection('brief');
+    dispatchLeads({ type: 'RESET' });
+  }, []);
+
+  // ── Suspect list for GraphControls ─────────────────────────────────────────
+  const suspectList = useMemo(() =>
     nodes
-      .filter((n) => n.id && (n.name || n.role || String(n.id).startsWith('P')))
-      .map((n) => ({ id: n.id, name: n.name || n.id }))
-  ), [nodes]);
+      .filter(n => n.type === 'Person' && n.id)
+      .map(n => ({ id: n.id, name: n.name || n.id })),
+    [nodes]
+  );
 
   const value = {
+    // Navigation
     activeTab, setActiveTab,
     currentRole, setCurrentRole,
     selectedCase, setSelectedCase,
     casesList, caseSummary, refreshCaseSummary,
+    investigationSection, setInvestigationSection,
+    // Graph
     nodes, edges, isLoadingGraph,
     layoutName, setLayoutName,
     selectedEntity, selectEntity,
     graphFocusEntity, setGraphFocusEntity,
     focusMode, setFocusMode,
     expandHops, setExpandHops,
+    // Path
     highlightedPath, pathDetails, pathMessage, pathSourceId, setPathSourceId,
+    // Cross-case
     crossCaseSelection, setCrossCaseSelection,
-    investigationSection, setInvestigationSection,
+    // Patterns & leads
+    patterns, leads,
+    // Demo
+    demoMode, ingestionDone, setIngestionDone,
+    // Actions
     fetchSubgraph, handleFindPath, clearPath,
     focusEntityById, continueInvestigation, openCase,
+    verifyLead, resetDemo,
     suspectList,
   };
 

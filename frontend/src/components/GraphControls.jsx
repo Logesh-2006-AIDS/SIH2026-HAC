@@ -166,18 +166,85 @@ export default function GraphControls({
           </button>
         )}
 
-        {graphFocusEntity && (
-          <button type="button" onClick={onClearFocus} className="btn-secondary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem' }}>
-            Exit Focus
+        {/* Person Focus & Hop Expansion Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(0,0,0,0.4)', padding: '0.25rem 0.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <button
+            type="button"
+            onClick={onToggleFocusMode}
+            style={{
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid',
+              borderColor: focusMode ? 'rgba(217,170,61,0.5)' : 'rgba(255,255,255,0.1)',
+              background: focusMode ? 'rgba(217,170,61,0.2)' : 'transparent',
+              color: focusMode ? '#D9AA3D' : '#A6B0AA',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            {focusMode ? '🎯 Focus Mode: ON' : '🎯 Person Focus'}
           </button>
-        )}
-        <button type="button" onClick={onToggleFocusMode} className="btn-secondary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem' }}>
-          {focusMode ? 'Focus: ON' : 'Focus: OFF'}
-        </button>
-        <select value={expandHops} onChange={(e) => onExpandHops(Number(e.target.value))} style={{ background: 'rgba(16,19,17,0.85)', border: '1px solid var(--border-color)', color: '#F1EBDD', borderRadius: 8, padding: '0.4rem 0.6rem', fontSize: '0.78rem' }}>
-          <option value={1}>1-hop</option>
-          <option value={2}>2-hop expand</option>
-        </select>
+
+          <button
+            type="button"
+            onClick={() => {
+              onExpandHops(1);
+              if (!focusMode) onToggleFocusMode();
+            }}
+            style={{
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid',
+              borderColor: focusMode && expandHops === 1 ? 'rgba(78,205,196,0.5)' : 'rgba(255,255,255,0.1)',
+              background: focusMode && expandHops === 1 ? 'rgba(78,205,196,0.2)' : 'transparent',
+              color: focusMode && expandHops === 1 ? '#4ECDC4' : '#A6B0AA',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Expand 1 Hop
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onExpandHops(2);
+              if (!focusMode) onToggleFocusMode();
+            }}
+            style={{
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid',
+              borderColor: focusMode && expandHops === 2 ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.1)',
+              background: focusMode && expandHops === 2 ? 'rgba(99,102,241,0.2)' : 'transparent',
+              color: focusMode && expandHops === 2 ? '#818CF8' : '#A6B0AA',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Expand 2 Hops
+          </button>
+
+          <button
+            type="button"
+            onClick={onClearFocus}
+            style={{
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: !focusMode && !graphFocusEntity ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: !focusMode && !graphFocusEntity ? '#F1EBDD' : '#A6B0AA',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            🌐 Full Network
+          </button>
+        </div>
       </div>
 
       {/* Path Finder Dialog Modal */}

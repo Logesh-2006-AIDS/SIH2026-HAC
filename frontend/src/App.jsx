@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Sparkles, ArrowLeft, Network, Map, Bot, Upload, FileText, Database, Shield, CheckCircle, Crosshair, Search, FolderOpen } from 'lucide-react';
+import { 
+  Sparkles, ArrowLeft, Network, Map, Bot, Upload, FileText, 
+  Database, Shield, CheckCircle, Crosshair, Search, FolderOpen, 
+  AlertTriangle, BarChart3, Route, Pin
+} from 'lucide-react';
 import { InvestigationProvider, useInvestigation } from './context/InvestigationContext';
 
 import Header from './components/Header';
@@ -21,18 +25,36 @@ import CriminalBoard from './components/CriminalBoard';
 import CaseDossiers from './components/CaseDossiers';
 import LoginScreen from './components/LoginScreen';
 
+// New specialized components
+import NLPEntityExtraction from './components/NLPEntityExtraction';
+import SuspiciousPatterns from './components/SuspiciousPatterns';
+import KeyEntities from './components/KeyEntities';
+import PathFinder from './components/PathFinder';
+import InvestigationLeads from './components/InvestigationLeads';
+import AdminDashboard from './components/AdminDashboard';
+import AnalystDashboard from './components/AnalystDashboard';
+
 const PAGE_META = {
-  network:       { label: 'Link Analysis',              icon: Network },
-  map:           { label: 'Crime Intelligence Map',     icon: Map },
-  copilot:       { label: 'AI Copilot',                 icon: Bot },
-  ingest:        { label: 'Add Evidence',               icon: Upload },
-  brief:         { label: 'Case Brief',                 icon: FileText },
-  investigation: { label: 'Case Investigation',         icon: Database },
-  entity:        { label: 'Entity Investigation',       icon: Search },
-  crosscase:     { label: 'Cross-Case Intelligence',    icon: Crosshair },
-  verification:  { label: 'Lead Verification',          icon: CheckCircle },
-  report:        { label: 'Investigation Report',       icon: FileText },
-  dossiers:      { label: 'Case Dossiers',              icon: FolderOpen },
+  dashboard:         { label: 'Criminal Pinboard',          icon: Pin },
+  admin_dashboard:   { label: 'System & Security Control',  icon: Shield },
+  analyst_dashboard: { label: 'Pattern & Intelligence',     icon: BarChart3 },
+  network:           { label: 'Knowledge Graph',            icon: Network },
+  map:               { label: 'Crime Intelligence Map',     icon: Map },
+  copilot:           { label: 'AI Investigation Copilot',   icon: Bot },
+  ingest:            { label: 'Evidence Ingestion',         icon: Upload },
+  brief:             { label: 'Case Brief',                 icon: FileText },
+  investigation:     { label: 'Case Workspace',             icon: Database },
+  entity:            { label: 'Entity Investigation',       icon: Search },
+  crosscase:         { label: 'Cross-Case Intelligence',    icon: Crosshair },
+  verification:      { label: 'Lead Verification',          icon: CheckCircle },
+  leads:             { label: 'Actionable Leads',           icon: CheckCircle },
+  report:            { label: 'Investigation Report',       icon: FileText },
+  cases:             { label: 'Case Dossiers',              icon: FolderOpen },
+  dossiers:          { label: 'Case Dossiers',              icon: FolderOpen },
+  patterns:          { label: 'Suspicious Patterns',        icon: AlertTriangle },
+  nlp:               { label: 'AI/NLP Entity Extraction',   icon: Sparkles },
+  keyentities:       { label: 'Key & Bridge Entities',      icon: BarChart3 },
+  pathfinder:        { label: 'Red-String Path Finder',     icon: Route },
 };
 
 function AppInner() {
@@ -57,27 +79,26 @@ function AppInner() {
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <BackgroundNetwork />
 
-      {!isInvestigator && (
-        <Header currentRole={currentRole} setCurrentRole={setCurrentRole} selectedCase={selectedCase} setSelectedCase={setSelectedCase} />
+      {/* When not on corkboard, render top bar */}
+      {!isBoard && (
+        <InvestigatorBar
+          pageMeta={pageMeta} PageIcon={PageIcon}
+          selectedCase={selectedCase} setSelectedCase={setSelectedCase}
+          casesList={casesList} currentRole={currentRole} setCurrentRole={setCurrentRole}
+          onBack={() => setActiveTab('dashboard')}
+          isInvestigator={isInvestigator}
+        />
       )}
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', zIndex: 1 }}>
-        {!isInvestigator && (
+        {/* Sidebar visible when not on the full-screen corkboard */}
+        {!isBoard && (
           <Sidebar currentRole={currentRole} activeTab={activeTab} setActiveTab={setActiveTab} />
         )}
 
-        <main key={activeTab} className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {isInvestigator && !isBoard && (
-            <InvestigatorBar
-              pageMeta={pageMeta} PageIcon={PageIcon}
-              selectedCase={selectedCase} setSelectedCase={setSelectedCase}
-              casesList={casesList} currentRole={currentRole} setCurrentRole={setCurrentRole}
-              onBack={() => setActiveTab('dashboard')}
-            />
-          )}
-
+        <main key={activeTab} className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
           {isBoard && <CriminalBoard />}
-          {activeTab === 'dossiers' && <CaseDossiers />}
+          {(activeTab === 'dossiers' || activeTab === 'cases') && <CaseDossiers />}
 
           {activeTab === 'network' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -121,6 +142,18 @@ function AppInner() {
             </div>
           )}
 
+          {/* Operational Dashboards */}
+          {activeTab === 'admin_dashboard' && <AdminDashboard />}
+          {activeTab === 'analyst_dashboard' && <AnalystDashboard />}
+
+          {/* Core Feature Tabs */}
+          {activeTab === 'patterns' && <SuspiciousPatterns />}
+          {activeTab === 'nlp' && <NLPEntityExtraction />}
+          {activeTab === 'keyentities' && <KeyEntities />}
+          {activeTab === 'pathfinder' && <PathFinder />}
+          {activeTab === 'leads' && <InvestigationLeads />}
+          {activeTab === 'verification' && <LeadVerification />}
+
           {activeTab === 'investigation' && <CaseInvestigation />}
           {activeTab === 'entity' && <EntityInvestigation />}
           {activeTab === 'map' && <CrimeIntelligenceMap onSelectCase={openCase} selectedCase={selectedCase} />}
@@ -135,7 +168,6 @@ function AppInner() {
               onComplete={() => inv.fetchSubgraph(selectedCase, graphFocusEntity, expandHops)}
             />
           )}
-          {activeTab === 'verification' && <LeadVerification caseId={selectedCase} />}
           {activeTab === 'report' && <SmartCaseBrief selectedCase={selectedCase} reportMode />}
         </main>
       </div>
@@ -143,23 +175,41 @@ function AppInner() {
   );
 }
 
-function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, casesList, currentRole, setCurrentRole, onBack }) {
+function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, casesList, currentRole, setCurrentRole, onBack, isInvestigator }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 46,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 48,
       background: 'rgba(10,13,10,0.98)', borderBottom: '1px solid rgba(217,170,61,0.3)', zIndex: 30,
     }}>
-      <button type="button" onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}>
-        <ArrowLeft size={15} /> Investigator Board
-      </button>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <PageIcon size={15} color="#D9AA3D" />
-        <span style={{ color: '#F1EBDD', fontWeight: 800, fontSize: '0.88rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{pageMeta.label}</span>
-        <span className="badge badge-gold">Case {selectedCase}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {isInvestigator && (
+          <button type="button" onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', padding: '0.3rem 0.7rem' }}>
+            <ArrowLeft size={14} /> Pinboard
+          </button>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <PageIcon size={16} color="#D9AA3D" />
+          <span style={{ color: '#F1EBDD', fontWeight: 800, fontSize: '0.86rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            {pageMeta.label}
+          </span>
+          <span style={{
+            fontSize: '0.66rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 4,
+            background: 'rgba(217,170,61,0.15)', color: '#D9AA3D', border: '1px solid rgba(217,170,61,0.35)'
+          }}>
+            Case {selectedCase}
+          </span>
+          <span style={{
+            fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 12,
+            background: 'rgba(94,159,104,0.2)', border: '1px solid rgba(94,159,104,0.4)', color: '#4ADE80'
+          }}>
+            DEMO MODE
+          </span>
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <select value={selectedCase} onChange={(e) => setSelectedCase(e.target.value)} style={barSelect}>
-          {(casesList.length ? casesList : [{ case_number: '103' }]).map((c) => (
+          {(casesList.length ? casesList : [{ case_number: '101' }, { case_number: '102' }, { case_number: '103' }]).map((c) => (
             <option key={c.case_number} value={c.case_number}>Case {c.case_number}</option>
           ))}
         </select>
@@ -168,6 +218,17 @@ function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, ca
           <option value="ANALYST">Analyst</option>
           <option value="ADMIN">Admin</option>
         </select>
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.removeItem('sih_token');
+            localStorage.removeItem('sih_user');
+            window.location.reload();
+          }}
+          style={{ ...barSelect, cursor: 'pointer', color: '#fca5a5' }}
+        >
+          Logout
+        </button>
       </div>
     </div>
   );
@@ -175,7 +236,7 @@ function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, ca
 
 function PathBanner({ message, hops }) {
   return (
-    <div style={{ padding: '0.6rem 1rem', margin: '0 1rem', borderRadius: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#fbbf24', fontSize: '0.82rem' }}>
+    <div style={{ padding: '0.6rem 1rem', margin: '0.5rem 1rem 0', borderRadius: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#fbbf24', fontSize: '0.82rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}><Sparkles size={16} />{message}</div>
       {hops?.length > 0 && (
         <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#fde68a' }}>
@@ -192,7 +253,7 @@ function PathBanner({ message, hops }) {
 
 const barSelect = {
   background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(217,170,61,0.35)', color: '#F1EBDD',
-  padding: '0.22rem 0.55rem', borderRadius: 5, fontSize: '0.75rem', outline: 'none',
+  padding: '0.25rem 0.6rem', borderRadius: 6, fontSize: '0.75rem', outline: 'none', fontWeight: 600,
 };
 
 function AuthenticatedApp() {
@@ -220,7 +281,7 @@ function AuthenticatedApp() {
   if (checking) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#080a08', color: '#D9AA3D' }}>
-        Loading workbench…
+        Loading forensic workbench…
       </div>
     );
   }

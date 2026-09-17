@@ -1,55 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, XCircle, ShieldCheck, FileText, 
-  MessageSquare, Sparkles, RefreshCw, AlertTriangle
+  MessageSquare, Sparkles, RefreshCw, AlertTriangle, ExternalLink
 } from 'lucide-react';
-import axios from 'axios';
+import { useInvestigation } from '../context/InvestigationContext.jsx';
+import { getPendingLeads } from '../data/mockService.js';
 
 export default function LeadVerification() {
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { leads: ctxLeads, dispatchLeads, focusEntityById, setActiveTab } = useInvestigation();
+  const [localLeads, setLocalLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [remarks, setRemarks] = useState({});
 
-  const fetchLeads = () => {
-    setLoading(true);
-    axios.get('/api/v1/leads/pending')
-      .then(res => {
-        if (res.data?.data) {
-          const raw = res.data.data;
-          const items = Array.isArray(raw)
-            ? raw
-            : (raw.leads || raw.items || []);
-          setLeads(items);
+  useEffect(() => {
+    if (ctxLeads && ctxLeads.length > 0) {
+      setLocalLeads(ctxLeads);
+    } else {
+      setLoading(true);
+      getPendingLeads().then(res => {
+        if (res?.data?.leads) {
+          setLocalLeads(res.data.leads);
         }
-      })
-      .catch(err => {
-        console.error('Failed to fetch leads:', err);
-        setLeads([]);
-      })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { fetchLeads(); }, []);
+      }).finally(() => setLoading(false));
+    }
+  }, [ctxLeads]);
 
   const handleAction = (leadId, newStatus) => {
-    const remark = remarks[leadId] || '';
-    axios.post(`/api/v1/leads/${leadId}/verify`, {
-      status: newStatus,
-      remarks: remark,
-    }).then(() => {
-      setLeads(prev => prev.map(l =>
-        l.id === leadId ? { ...l, status: newStatus, verified_at: new Date().toLocaleTimeString() } : l
-      ));
-    }).catch(err => {
-      console.error('Verification failed:', err);
-      // Optimistic update even if backend unavailable (hackathon mode)
-      setLeads(prev => prev.map(l =>
-        l.id === leadId ? { ...l, status: newStatus, verified_at: new Date().toLocaleTimeString() } : l
-      ));
-    });
+    if (dispatchLeads) {
+      dispatchLeads({ type: 'VERIFY_LEAD', id: leadId, status: newStatus });
+    }
+    setLocalLeads(prev => prev.map(l =>
+      l.id === leadId ? { ...l, status: newStatus, verified_at: new Date().toLocaleTimeString(), verified_by: 'Investigator' } : l
+    ));
   };
 
-  const pendingCount = leads.filter(l => l.status === 'PENDING').length;
+  const pendingCount = localLeads.filter(l => l.status === 'PENDING' || l.status === 'AI_SUGGESTED').length;
 
   return (
     <div className="animate-fade-in" style={{ flex: 1, height: '100%', padding: '1.75rem', overflowY: 'auto', background: 'transparent', color: '#F1EBDD' }}>
@@ -69,12 +54,14 @@ export default function LeadVerification() {
             </h2>
           </div>
           <p style={{ color: '#A6B0AA', fontSize: '0.86rem' }}>
-            Law enforcement verification queue. Confirm or reject AI-predicted entity merges with evidentiary justification.
+            Law enforcement verification queue. Confirm or reject AI-predicted entity merges and multi-case links with evidentiary justification.
           </p>
         </div>
-        <button onClick={fetchLeads} className="btn-primary" style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}>
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh Queue
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.3rem 0.75rem', borderRadius: '20px', background: 'rgba(94,159,104,0.2)', color: '#4ADE80', border: '1px solid rgba(94,159,104,0.4)' }}>
+            DEMO MODE ACTIVE
+          </span>
+        </div>
       </div>
 
       {/* Leads Queue */}
@@ -92,20 +79,19 @@ export default function LeadVerification() {
             <div className="animate-spin" style={{ width: 22, height: 22, border: '3px solid rgba(217,170,61,0.3)', borderTopColor: '#D9AA3D', borderRadius: '50%', margin: '0 auto 0.75rem' }} />
             Loading verification queue...
           </div>
-        ) : leads.length === 0 ? (
+        ) : localLeads.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#6C7A73' }}>
             <AlertTriangle size={26} style={{ marginBottom: '0.5rem' }} />
             <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F1EBDD' }}>No pending leads in the verification queue</div>
-            <div style={{ fontSize: '0.8rem', color: '#A6B0AA', marginTop: '0.2rem' }}>Upload additional investigation files to populate verification leads.</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {leads.map((lead) => {
-              const isPending = lead.status === 'PENDING';
+            {localLeads.map((lead) => {
+              const isPending = lead.status === 'PENDING' || lead.status === 'AI_SUGGESTED';
               return (
                 <div key={lead.id} className="evidence-card animate-slide-up" style={{
                   padding: '1.35rem',
-                  border: lead.status === 'APPROVED' ? '2px solid #5E9F68'
+                  border: lead.status === 'VERIFIED' || lead.status === 'APPROVED' ? '2px solid #5E9F68'
                     : lead.status === 'REJECTED' ? '2px solid #C92A2A'
                     : '1px solid rgba(180, 160, 100, 0.4)',
                   display: 'flex', flexDirection: 'column', gap: '0.85rem',
@@ -117,17 +103,20 @@ export default function LeadVerification() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#24251F', fontWeight: 800 }}>
-                        {lead.id || `LEAD-${lead.id}`}
+                        {lead.id}
                       </span>
                       <span className="badge" style={{ background: 'rgba(214, 40, 40, 0.15)', color: '#900', border: '1px solid rgba(214, 40, 40, 0.3)', fontWeight: 800 }}>
-                        {lead.match_type || lead.matchType || 'Entity Resolution'}
+                        {lead.match_type || 'Entity Resolution'}
+                      </span>
+                      <span style={{ fontSize: '0.74rem', color: '#54564B', fontWeight: 700 }}>
+                        {lead.title}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <span style={{ fontSize: '0.82rem', color: '#54564B', fontWeight: 700 }}>AI Match Confidence:</span>
+                      <span style={{ fontSize: '0.82rem', color: '#54564B', fontWeight: 700 }}>AI Confidence:</span>
                       <span style={{
                         fontWeight: 800, fontSize: '0.95rem',
-                        color: (lead.similarity || lead.confidence || 0) >= 0.95 ? '#1b5e20' : '#b78103',
+                        color: (lead.similarity || lead.confidence || 0) >= 0.9 ? '#1b5e20' : '#b78103',
                       }}>
                         {Math.round((lead.similarity || lead.confidence || 0.9) * 100)}%
                       </span>
@@ -142,11 +131,11 @@ export default function LeadVerification() {
                     border: '1px solid rgba(0, 0, 0, 0.12)',
                   }}>
                     <div style={{ color: '#24251F', fontWeight: 800, fontSize: '0.92rem' }}>
-                      {lead.entity_a || lead.entityA || 'Entity A'}
+                      {lead.entity_a || (lead.entities?.[0] || 'Entity A')}
                     </div>
                     <div style={{ color: '#D62828', fontSize: '0.85rem', fontWeight: 800 }}>⟷</div>
                     <div style={{ color: '#24251F', fontWeight: 800, fontSize: '0.92rem' }}>
-                      {lead.entity_b || lead.entityB || 'Entity B'}
+                      {lead.entity_b || (lead.cases?.join(' / ') || 'Cross-Case Links')}
                     </div>
                   </div>
 
@@ -159,17 +148,12 @@ export default function LeadVerification() {
                     </span>
                   </div>
 
-                  {lead.lead_kind === 'INTELLIGENCE' && (
+                  {lead.reason && (
                     <div style={{
                       fontSize: '0.8rem', color: '#24251F', background: 'rgba(94,159,104,0.12)',
                       border: '1px solid rgba(94,159,104,0.35)', borderRadius: 8, padding: '0.65rem 0.85rem',
                     }}>
-                      <strong>Analyst Intelligence Lead</strong>
-                      {lead.reason ? <div style={{ marginTop: 4 }}><strong>Reason:</strong> {lead.reason}</div> : null}
-                      {lead.related_cases?.length ? (
-                        <div style={{ marginTop: 4 }}><strong>Related cases:</strong> {lead.related_cases.join(', ')}</div>
-                      ) : null}
-                      {lead.description ? <div style={{ marginTop: 4 }}>{lead.description}</div> : null}
+                      <strong>Reasoning:</strong> {lead.reason}
                     </div>
                   )}
 
@@ -177,7 +161,8 @@ export default function LeadVerification() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.65rem', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flex: 1, maxWidth: '420px' }}>
                       <MessageSquare size={16} color="#54564B" />
-                      <input type="text"
+                      <input
+                        type="text"
                         placeholder="Investigator remarks / reference note..."
                         value={remarks[lead.id] || ''}
                         onChange={(e) => setRemarks({ ...remarks, [lead.id]: e.target.value })}
@@ -186,24 +171,31 @@ export default function LeadVerification() {
                           width: '100%', background: 'rgba(255, 255, 255, 0.6)',
                           border: '1px solid rgba(0, 0, 0, 0.18)', borderRadius: '8px',
                           padding: '0.45rem 0.75rem', color: '#24251F', fontSize: '0.83rem', outline: 'none', fontWeight: 600,
-                        }} />
+                        }}
+                      />
                     </div>
 
                     {isPending ? (
                       <div style={{ display: 'flex', gap: '0.6rem' }}>
-                        <button onClick={() => handleAction(lead.id, 'APPROVED')} className="btn-primary"
-                          style={{ background: 'linear-gradient(135deg, #5E9F68 0%, #3e7546 100%)', color: '#fff', padding: '0.45rem 0.95rem', fontSize: '0.82rem' }}>
+                        <button
+                          onClick={() => handleAction(lead.id, 'VERIFIED')}
+                          className="btn-primary"
+                          style={{ background: 'linear-gradient(135deg, #5E9F68 0%, #3e7546 100%)', color: '#fff', padding: '0.45rem 0.95rem', fontSize: '0.82rem' }}
+                        >
                           <CheckCircle2 size={16} /><span>Approve & Merge</span>
                         </button>
-                        <button onClick={() => handleAction(lead.id, 'REJECTED')} className="btn-red"
-                          style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}>
+                        <button
+                          onClick={() => handleAction(lead.id, 'REJECTED')}
+                          className="btn-red"
+                          style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
+                        >
                           <XCircle size={16} /><span>Reject</span>
                         </button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <span className={`badge ${lead.status === 'APPROVED' ? 'badge-verified' : 'badge-danger'}`}>
-                          {lead.status} at {lead.verified_at || lead.verifiedAt || 'just now'}
+                        <span className={`badge ${lead.status === 'VERIFIED' || lead.status === 'APPROVED' ? 'badge-verified' : 'badge-danger'}`}>
+                          {lead.status} at {lead.verified_at || 'just now'}
                         </span>
                       </div>
                     )}

@@ -1,26 +1,43 @@
 import React from 'react';
 import { 
   Pin, LayoutDashboard, FileText, Network, Map, GitBranch, 
-  Bot, BarChart3, Upload, CheckCircle2, ShieldAlert, ShieldCheck
+  Bot, BarChart3, Upload, CheckCircle2, Shield, ShieldAlert, ShieldCheck,
+  AlertTriangle, Sparkles, Route, Database, Search
 } from 'lucide-react';
 
 const ROLE_MENUS = {
   INVESTIGATOR: [
     {
-      title: 'TACTICAL OPERATIONS',
+      title: 'INVESTIGATION',
       items: [
         { id: 'dashboard', label: 'Criminal Pinboard', icon: <Pin size={18} /> },
-        { id: 'map', label: 'Crime Intelligence Map', icon: <Map size={18} /> },
-        { id: 'network', label: 'Network & Path Finder', icon: <Network size={18} /> },
         { id: 'cases', label: 'Active Case Dossiers', icon: <FileText size={18} /> },
-        { id: 'verification', label: 'Lead Verification', icon: <CheckCircle2 size={18} /> },
+        { id: 'ingest', label: 'Evidence Ingestion', icon: <Upload size={18} /> },
       ]
     },
     {
-      title: 'AI COPILOT & BRIEFS',
+      title: 'NETWORK INTELLIGENCE',
       items: [
-        { id: 'copilot', label: 'Investigation Copilot', icon: <Bot size={18} /> },
-        { id: 'brief', label: 'Smart Case Briefs', icon: <FileText size={18} /> },
+        { id: 'network', label: 'Knowledge Graph', icon: <Network size={18} /> },
+        { id: 'keyentities', label: 'Key & Bridge Entities', icon: <BarChart3 size={18} /> },
+        { id: 'crosscase', label: 'Cross-Case Network', icon: <GitBranch size={18} /> },
+        { id: 'pathfinder', label: 'Red-String Path Finder', icon: <Route size={18} /> },
+      ]
+    },
+    {
+      title: 'AI FORENSIC INTELLIGENCE',
+      items: [
+        { id: 'patterns', label: 'Suspicious Patterns', icon: <AlertTriangle size={18} /> },
+        { id: 'nlp', label: 'AI/NLP Entity Extraction', icon: <Sparkles size={18} /> },
+        { id: 'copilot', label: 'AI Investigation Copilot', icon: <Bot size={18} /> },
+        { id: 'leads', label: 'Actionable Leads', icon: <CheckCircle2 size={18} /> },
+      ]
+    },
+    {
+      title: 'EVIDENCE & MAPPING',
+      items: [
+        { id: 'investigation', label: 'Case Workspace', icon: <Database size={18} /> },
+        { id: 'map', label: 'Crime Intelligence Map', icon: <Map size={18} /> },
       ]
     }
   ],
@@ -28,24 +45,34 @@ const ROLE_MENUS = {
     {
       title: 'STRATEGIC INTELLIGENCE',
       items: [
-        { id: 'map', label: 'Crime Intelligence Map', icon: <Map size={18} /> },
-        { id: 'crosscase', label: 'Cross-Case Network', icon: <GitBranch size={18} /> },
-        { id: 'priority', label: 'Centrality & Priority', icon: <BarChart3 size={18} /> },
+        { id: 'analyst_dashboard', label: 'Pattern & Cluster Analysis', icon: <BarChart3 size={18} /> },
+        { id: 'network', label: 'Full Network Graph', icon: <Network size={18} /> },
+        { id: 'keyentities', label: 'Bridge & Centrality Metrics', icon: <BarChart3 size={18} /> },
+        { id: 'crosscase', label: 'Cross-Case Intersections', icon: <GitBranch size={18} /> },
       ]
     },
     {
-      title: 'ANALYTICS',
+      title: 'PREDICTIVE & GEOSPATIAL',
       items: [
-        { id: 'network', label: 'Full Network Explore', icon: <Network size={18} /> },
+        { id: 'pathfinder', label: 'Multi-Hop Path Finder', icon: <Route size={18} /> },
+        { id: 'patterns', label: 'Pattern Detection Rules', icon: <AlertTriangle size={18} /> },
+        { id: 'map', label: 'Crime Heatmap', icon: <Map size={18} /> },
       ]
     }
   ],
   ADMIN: [
     {
-      title: 'SYSTEM OPERATIONS',
+      title: 'SYSTEM & SECURITY CONTROL',
       items: [
-        { id: 'ingest', label: 'Data Ingestion Engine', icon: <Upload size={18} /> },
-        { id: 'audit', label: 'Audit Trail & Logs', icon: <ShieldAlert size={18} /> },
+        { id: 'admin_dashboard', label: 'Command Center Console', icon: <Shield size={18} /> },
+        { id: 'ingest', label: 'Data Source Governance', icon: <Upload size={18} /> },
+      ]
+    },
+    {
+      title: 'AUDIT & FORENSIC PIPELINE',
+      items: [
+        { id: 'nlp', label: 'NLP Resolution Workbench', icon: <Sparkles size={18} /> },
+        { id: 'leads', label: 'Audit Verification Queue', icon: <ShieldCheck size={18} /> },
       ]
     }
   ]
@@ -58,13 +85,13 @@ export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
     <aside className="app-sidebar">
       <div style={{ flex: 1, padding: '1.25rem 1rem', overflowY: 'auto' }}>
         {currentMenu.map((group, gIdx) => (
-          <div key={gIdx} style={{ marginBottom: '1.75rem' }}>
+          <div key={gIdx} style={{ marginBottom: '1.5rem' }}>
             <div
               style={{
-                fontSize: '0.68rem',
+                fontSize: '0.66rem',
                 fontWeight: 800,
                 color: '#6C7A73',
-                marginBottom: '0.65rem',
+                marginBottom: '0.55rem',
                 paddingLeft: '0.75rem',
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
@@ -75,7 +102,7 @@ export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
             >
               <span>{group.title}</span>
             </div>
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
               {group.items.map((item) => {
                 const isActive = activeTab === item.id;
                 return (
@@ -86,7 +113,7 @@ export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.75rem',
-                      padding: '0.65rem 0.85rem',
+                      padding: '0.6rem 0.85rem',
                       borderRadius: '10px',
                       background: isActive
                         ? 'linear-gradient(135deg, rgba(217, 170, 61, 0.18) 0%, rgba(214, 40, 40, 0.1) 100%)'
@@ -131,10 +158,10 @@ export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
                         }}
                       />
                     )}
-                    <div style={{ color: isActive ? '#D9AA3D' : '#6C7A73', transition: 'color 0.2s ease' }}>
+                    <div style={{ color: isActive ? '#D9AA3D' : '#6C7A73', transition: 'color 0.2s ease', display: 'flex', alignItems: 'center' }}>
                       {item.icon}
                     </div>
-                    <span style={{ fontSize: '0.86rem' }}>{item.label}</span>
+                    <span style={{ fontSize: '0.84rem' }}>{item.label}</span>
                   </button>
                 );
               })}
@@ -144,13 +171,13 @@ export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
       </div>
 
       {/* Security Footer Badge */}
-      <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8, 10, 9, 0.7)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.73rem', color: '#5E9F68', fontWeight: 700 }}>
+      <div style={{ padding: '0.85rem 1.15rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8, 10, 9, 0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.72rem', color: '#4ADE80', fontWeight: 700 }}>
           <ShieldCheck size={14} />
           <span>Evidence Chain: VERIFIED</span>
         </div>
-        <div style={{ fontSize: '0.68rem', color: '#6C7A73', textAlign: 'center', marginTop: '0.2rem' }}>
-          SIH 2026 Forensic Console v3.0
+        <div style={{ fontSize: '0.65rem', color: '#6C7A73', textAlign: 'center', marginTop: '0.2rem' }}>
+          SIH 2026 Forensic Console • Demo
         </div>
       </div>
     </aside>

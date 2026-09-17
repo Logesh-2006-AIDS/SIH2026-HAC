@@ -2,12 +2,12 @@ import React, { useMemo, useState } from 'react';
 import {
   Shield, Bot, Map, Network, Upload, FileText,
   Crosshair, CheckCircle2, Search, Database, Lightbulb, ArrowRight,
-  FolderOpen, Clock, AlertTriangle,
+  FolderOpen, Clock, AlertTriangle, Sparkles, BarChart3, Route
 } from 'lucide-react';
 import { useInvestigation } from '../context/InvestigationContext';
 
 /**
- * Investigator Board — corkboard of workflow steps (not disconnected apps).
+ * Investigator Board — corkboard of workflow steps with connected red strings.
  */
 export default function CriminalBoard() {
   const {
@@ -21,37 +21,41 @@ export default function CriminalBoard() {
   const dossier = caseSummary?.dossier;
 
   const NOTES = useMemo(() => ([
-    { id: 'dossiers', label: 'Case Dossiers', icon: FolderOpen, tone: 'cream', pin: 'gold', x: 4, y: 10, rot: -2, w: 140 },
-    { id: 'investigation', label: 'Case Brief', icon: FileText, tone: 'yellow', pin: 'red', x: 22, y: 8, rot: 1.5, w: 128, section: 'brief' },
-    { id: 'entity', label: 'Entity Investigation', icon: Search, tone: 'orange', pin: 'red', x: 40, y: 10, rot: -1, w: 156 },
-    { id: 'network', label: 'Link Analysis', icon: Network, tone: 'cream', pin: 'blue', x: 5, y: 32, rot: 2, w: 132 },
-    { id: 'crosscase', label: 'Cross-Case', icon: Crosshair, tone: 'yellow', pin: 'red', x: 24, y: 36, rot: -1.5, w: 128 },
-    { id: 'investigation-timeline', label: 'Timeline', icon: Clock, tone: 'blue', pin: 'gold', x: 42, y: 34, rot: 1, w: 120, section: 'timeline', tab: 'investigation' },
-    { id: 'investigation-evidence', label: 'Evidence', icon: Shield, tone: 'cream', pin: 'blue', x: 6, y: 54, rot: -2, w: 120, section: 'evidence', tab: 'investigation' },
-    { id: 'copilot', label: 'AI Copilot', kind: 'copilot', pin: 'gold', x: 64, y: 22, rot: 1, w: 180 },
-    { id: 'investigation-leads', label: 'Potential Leads', icon: AlertTriangle, tone: 'orange', pin: 'red', x: 24, y: 58, rot: 1.5, w: 148, section: 'leads', tab: 'investigation' },
-    { id: 'verification', label: 'Lead Verification', icon: CheckCircle2, tone: 'yellow', pin: 'gold', x: 44, y: 62, rot: -1, w: 152 },
-    { id: 'ingest', label: 'Add Evidence', icon: Upload, tone: 'blue', pin: 'blue', x: 6, y: 74, rot: 2, w: 136 },
-    { id: 'map', label: 'Crime Intelligence Map', kind: 'map', pin: 'blue', x: 62, y: 56, rot: -0.8, w: 200 },
-    { id: 'report', label: 'Investigation Report', icon: FileText, tone: 'cream', pin: 'gold', x: 42, y: 78, rot: -1.5, w: 158 },
+    { id: 'dossiers', label: 'Case Dossiers', icon: FolderOpen, tone: 'cream', pin: 'gold', x: 3, y: 10, rot: -2, w: 135 },
+    { id: 'investigation', label: 'Case Brief', icon: FileText, tone: 'yellow', pin: 'red', x: 19, y: 8, rot: 1.5, w: 125, section: 'brief' },
+    { id: 'nlp', label: 'NLP Extraction', icon: Sparkles, tone: 'blue', pin: 'gold', x: 34, y: 8, rot: -1.5, w: 130 },
+    { id: 'entity', label: 'Entity Investigation', icon: Search, tone: 'orange', pin: 'red', x: 50, y: 10, rot: 1, w: 145 },
+    
+    { id: 'network', label: 'Knowledge Graph', icon: Network, tone: 'cream', pin: 'blue', x: 4, y: 32, rot: 2, w: 135 },
+    { id: 'keyentities', label: 'Bridge Entities', icon: BarChart3, tone: 'yellow', pin: 'gold', x: 19, y: 32, rot: -1, w: 130 },
+    { id: 'crosscase', label: 'Cross-Case', icon: Crosshair, tone: 'yellow', pin: 'red', x: 34, y: 34, rot: 1, w: 125 },
+    { id: 'pathfinder', label: 'Path Finder', icon: Route, tone: 'orange', pin: 'red', x: 49, y: 34, rot: -2, w: 125 },
+
+    { id: 'patterns', label: 'Suspicious Patterns', icon: AlertTriangle, tone: 'orange', pin: 'red', x: 4, y: 55, rot: 1.5, w: 145 },
+    { id: 'copilot', label: 'AI Copilot', kind: 'copilot', pin: 'gold', x: 67, y: 22, rot: 1, w: 180 },
+    { id: 'leads', label: 'Actionable Leads', icon: CheckCircle2, tone: 'yellow', pin: 'gold', x: 22, y: 58, rot: -1, w: 140 },
+    { id: 'investigation-evidence', label: 'Evidence & Records', icon: Shield, tone: 'cream', pin: 'blue', x: 38, y: 56, rot: 2, w: 135, section: 'evidence', tab: 'investigation' },
+
+    { id: 'ingest', label: 'Evidence Ingestion', icon: Upload, tone: 'blue', pin: 'blue', x: 4, y: 76, rot: -2, w: 135 },
+    { id: 'map', label: 'Crime Intelligence Map', kind: 'map', pin: 'blue', x: 65, y: 56, rot: -0.8, w: 200 },
+    { id: 'report', label: 'Investigation Report', icon: FileText, tone: 'cream', pin: 'gold', x: 38, y: 78, rot: -1.5, w: 145 },
   ]), []);
 
   const PINS = useMemo(() => ({
     hub: { x: 48, y: 26 },
-    dossiers: { x: 10, y: 14 }, investigation: { x: 28, y: 12 }, entity: { x: 48, y: 14 },
-    network: { x: 10, y: 36 }, crosscase: { x: 30, y: 40 }, 'investigation-timeline': { x: 48, y: 38 },
-    'investigation-evidence': { x: 12, y: 58 }, copilot: { x: 74, y: 30 },
-    'investigation-leads': { x: 32, y: 62 }, verification: { x: 52, y: 66 },
-    ingest: { x: 12, y: 78 }, map: { x: 72, y: 64 }, report: { x: 50, y: 82 },
+    dossiers: { x: 9, y: 14 }, investigation: { x: 25, y: 12 }, nlp: { x: 40, y: 12 }, entity: { x: 57, y: 14 },
+    network: { x: 10, y: 36 }, keyentities: { x: 25, y: 36 }, crosscase: { x: 40, y: 38 }, pathfinder: { x: 55, y: 38 },
+    patterns: { x: 11, y: 60 }, copilot: { x: 76, y: 30 }, leads: { x: 29, y: 63 }, 'investigation-evidence': { x: 44, y: 61 },
+    ingest: { x: 10, y: 80 }, map: { x: 75, y: 64 }, report: { x: 45, y: 82 },
   }), []);
 
   const ROPES = useMemo(() => ([
-    ['hub', 'dossiers'], ['hub', 'investigation'], ['hub', 'entity'], ['hub', 'network'],
-    ['hub', 'crosscase'], ['hub', 'copilot'], ['hub', 'map'], ['hub', 'verification'],
-    ['dossiers', 'investigation'], ['investigation', 'entity'], ['entity', 'network'],
-    ['network', 'crosscase'], ['crosscase', 'investigation-timeline'],
-    ['investigation-evidence', 'investigation-leads'], ['investigation-leads', 'verification'],
-    ['verification', 'report'], ['ingest', 'investigation-evidence'], ['copilot', 'map'],
+    ['hub', 'dossiers'], ['hub', 'investigation'], ['hub', 'nlp'], ['hub', 'network'],
+    ['hub', 'crosscase'], ['hub', 'copilot'], ['hub', 'map'], ['hub', 'leads'],
+    ['dossiers', 'investigation'], ['investigation', 'nlp'], ['nlp', 'entity'], ['entity', 'network'],
+    ['network', 'keyentities'], ['keyentities', 'crosscase'], ['crosscase', 'pathfinder'],
+    ['patterns', 'leads'], ['leads', 'investigation-evidence'], ['investigation-evidence', 'report'],
+    ['ingest', 'patterns'], ['copilot', 'map'],
   ]), []);
 
   const toPath = (a, b, i) => {
@@ -75,10 +79,16 @@ export default function CriminalBoard() {
           <span style={{ color: '#F1EBDD', fontWeight: 800, fontSize: '0.82rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Investigator Workbench
           </span>
+          <span style={{
+            fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 12,
+            background: 'rgba(94,159,104,0.2)', border: '1px solid rgba(94,159,104,0.4)', color: '#4ADE80'
+          }}>
+            DEMO MODE
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <select value={selectedCase} onChange={(e) => setSelectedCase(e.target.value)} style={selectStyle}>
-            {(casesList.length ? casesList : [{ case_number: selectedCase }]).map((c) => (
+            {(casesList.length ? casesList : [{ case_number: '101' }, { case_number: '102' }, { case_number: '103' }]).map((c) => (
               <option key={c.case_number} value={c.case_number}>Case {c.case_number}</option>
             ))}
           </select>
@@ -104,7 +114,7 @@ export default function CriminalBoard() {
         </div>
       </div>
 
-      {/* Active Investigation */}
+      {/* Active Investigation Banner */}
       <div style={{
         margin: '0.5rem 1rem 0', padding: '0.85rem 1.1rem', borderRadius: 10,
         background: 'linear-gradient(135deg, rgba(20,23,21,0.95), rgba(8,10,9,0.98))',
@@ -113,18 +123,18 @@ export default function CriminalBoard() {
         <div>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#D9AA3D', letterSpacing: '0.08em' }}>ACTIVE INVESTIGATION</div>
           <div style={{ fontSize: '1rem', fontWeight: 800, color: '#F1EBDD' }}>
-            CASE {selectedCase} — {dossier?.crime_category || dossier?.title?.split('(')[0]?.trim() || 'Loading…'}
+            CASE {selectedCase} — {dossier?.crime_category || dossier?.title?.split('(')[0]?.trim() || 'Coastal Smuggling Network'}
           </div>
           <div style={{ fontSize: '0.72rem', color: '#A6B0AA', marginTop: 2 }}>
             Status: {(dossier?.status || 'ACTIVE').replace(/_/g, ' ')}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 18, fontSize: '0.78rem' }}>
-          <Metric label="Entities" value={caseSummary?.entityCount ?? '—'} />
-          <Metric label="Relationships" value={caseSummary?.connectionCount ?? '—'} />
-          <Metric label="Cross-Case" value={caseSummary?.crossCaseCount ?? '—'} />
-          <Metric label="Leads" value={caseSummary?.leadCount ?? '—'} />
-          <Metric label="Evidence" value={caseSummary?.connectionCount != null ? Math.max(1, Math.ceil(caseSummary.connectionCount / 2)) : '—'} />
+          <Metric label="Entities" value={caseSummary?.entityCount ?? 24} />
+          <Metric label="Relationships" value={caseSummary?.connectionCount ?? 38} />
+          <Metric label="Cross-Case" value={caseSummary?.crossCaseCount ?? 3} />
+          <Metric label="Patterns" value={6} />
+          <Metric label="Leads" value={caseSummary?.leadCount ?? 4} />
         </div>
         <button type="button" className="btn-red" onClick={continueInvestigation} style={{ padding: '0.55rem 1.1rem', fontSize: '0.82rem', fontWeight: 800 }}>
           Continue Investigation <ArrowRight size={14} />
@@ -158,11 +168,11 @@ export default function CriminalBoard() {
               })}
             </svg>
 
-            <button type="button" className="pinned-card wanted-poster board-wanted" style={{ left: '40%', top: '18%', width: 150, transform: 'rotate(-1deg)', border: 'none', cursor: 'pointer' }}
+            <button type="button" className="pinned-card wanted-poster board-wanted" style={{ left: '42%', top: '18%', width: 145, transform: 'rotate(-1deg)', border: 'none', cursor: 'pointer' }}
               onClick={continueInvestigation} onMouseEnter={() => setHovered('hub')} onMouseLeave={() => setHovered(null)}>
               <span className="cork-pushpin red" style={{ left: '50%', top: -6, transform: 'translateX(-50%)' }} />
               <div className="wanted-header" style={{ fontSize: '1.15rem' }}>CASE {selectedCase}</div>
-              <div className="wanted-photo-frame" style={{ height: 72 }}><div className="board-silhouette" /></div>
+              <div className="wanted-photo-frame" style={{ height: 70 }}><div className="board-silhouette" /></div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.1em' }}>ACTIVE HUB</div>
             </button>
 
@@ -179,7 +189,7 @@ export default function CriminalBoard() {
                       openCase(selectedCase);
                       return;
                     }
-                    if (note.id === 'dossiers') return setActiveTab('dossiers');
+                    if (note.id === 'dossiers') return setActiveTab('cases');
                     if (note.id === 'investigation') {
                       sessionStorage.setItem('sih_section', 'brief');
                       return openCase(selectedCase);
@@ -196,7 +206,7 @@ export default function CriminalBoard() {
                   ) : note.kind === 'map' ? (
                     <div className="board-map-card">
                       <div className="board-mini-map"><Map size={36} color="#38bdf8" style={{ margin: 'auto', display: 'block', marginTop: 28 }} /></div>
-                      <div className="board-map-label"><Map size={14} /><span>Crime Intelligence Map</span></div>
+                      <div className="board-map-label"><Map size={14} /><span>Crime Map</span></div>
                     </div>
                   ) : (
                     <div className="board-sticky-body"><Icon size={16} strokeWidth={2.2} /><span>{note.label}</span></div>

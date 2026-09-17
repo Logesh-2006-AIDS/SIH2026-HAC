@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
-  FolderOpen, Clock, Users, GitBranch, FileText, Network, Shield, AlertTriangle, ArrowRight,
+  FolderOpen, Clock, Users, GitBranch, FileText, Network, Shield, AlertTriangle, ArrowRight, ExternalLink
 } from 'lucide-react';
 import { useInvestigation } from '../context/InvestigationContext';
+import { getCaseDetail, getCaseTimeline, getCrossLinks, getCaseBrief } from '../data/mockService';
 
 const SECTIONS = [
   { id: 'brief', label: 'Case Brief', icon: FileText },
@@ -40,15 +40,15 @@ export default function CaseInvestigation() {
     if (!selectedCase) return;
     setLoading(true);
     Promise.all([
-      axios.get(`/api/v1/cases/${selectedCase}`),
-      axios.get(`/api/v1/cases/${selectedCase}/timeline`),
-      axios.get(`/api/v1/cases/${selectedCase}/cross-links`),
-      axios.get(`/api/v1/cases/${selectedCase}/brief`),
+      getCaseDetail(selectedCase),
+      getCaseTimeline(selectedCase),
+      getCrossLinks(selectedCase),
+      getCaseBrief(selectedCase),
     ]).then(([c, t, x, b]) => {
-      if (c.data?.success) setCaseData(c.data.data);
-      if (t.data?.success) setTimeline(t.data.data.events || []);
-      if (x.data?.success) setCrossLinks(x.data.data.links || []);
-      if (b.data?.success) setBrief(b.data.data);
+      if (c?.data) setCaseData(c.data);
+      if (t?.data?.events) setTimeline(t.data.events);
+      if (x?.data?.links) setCrossLinks(x.data.links);
+      if (b?.data) setBrief(b.data);
     }).finally(() => setLoading(false));
   }, [selectedCase]);
 
@@ -100,29 +100,41 @@ export default function CaseInvestigation() {
             <p style={{ margin: 0, fontSize: '0.78rem', color: '#A6B0AA' }}>{dossier.title}</p>
           </div>
         </div>
-        <span className="badge badge-gold">{dossier.status?.replace(/_/g, ' ') || 'ACTIVE'}</span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span className="badge badge-gold">{dossier.category}</span>
+          <span className="badge badge-danger">{dossier.status}</span>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 4, padding: '0 1.5rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto', background: 'rgba(8,10,9,0.6)' }}>
-        {SECTIONS.map((s) => {
-          const Icon = s.icon;
-          const active = section === s.id;
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: 'rgba(8,10,9,0.5)', padding: '0 1rem', overflowX: 'auto' }}>
+        {SECTIONS.map((sec) => {
+          const Icon = sec.icon;
+          const active = section === sec.id;
           return (
-            <button key={s.id} type="button" onClick={() => handleSection(s.id)} style={{
-              padding: '0.75rem 1rem', border: 'none', background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap',
-              color: active ? '#D9AA3D' : '#6C7A73', fontWeight: active ? 800 : 500, fontSize: '0.82rem',
-              borderBottom: active ? '2px solid #D62828' : '2px solid transparent', display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <Icon size={14} />{s.label}
+            <button
+              key={sec.id}
+              type="button"
+              onClick={() => handleSection(sec.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '0.75rem 1rem',
+                border: 'none', background: 'transparent',
+                color: active ? '#D9AA3D' : '#A6B0AA',
+                borderBottom: active ? '2px solid #D9AA3D' : '2px solid transparent',
+                fontWeight: active ? 800 : 500, fontSize: '0.8rem', cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Icon size={14} /> {sec.label}
             </button>
           );
         })}
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-        {section === 'brief' && <BriefSection dossier={dossier} brief={brief} graphNodes={graphNodes} graphEdges={graphEdges} crossLinks={crossLinks} />}
+        {section === 'brief' && <BriefSection dossier={dossier} brief={brief} graphNodes={graphNodes} />}
         {section === 'entities' && <EntitiesSection nodes={graphNodes} onSelect={handleEntityClick} onGraph={handleViewOnGraph} />}
-        {section === 'timeline' && <TimelineSection events={timeline} />}
+        {section === 'timeline' && <TimelineSection events={timeline} onGraph={handleViewOnGraph} />}
         {section === 'crosscase' && <CrossCaseSection links={crossLinks} caseNumber={selectedCase} onViewGraph={handleCrossCaseGraph} />}
         {section === 'evidence' && <EvidenceSection edges={graphEdges} nodes={graphNodes} />}
         {section === 'leads' && <LeadsSection leads={brief?.ai_suggested_leads || []} onGraph={handleViewOnGraph} nodes={graphNodes} />}
@@ -132,21 +144,28 @@ export default function CaseInvestigation() {
   );
 }
 
-function BriefSection({ dossier, brief, graphNodes, graphEdges, crossLinks }) {
+function BriefSection({ dossier, brief, graphNodes }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: 900 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 10 }}>
-        <InfoCard label="Crime Type" value={dossier.crime_category} />
-        <InfoCard label="Location" value={dossier.jurisdiction} />
-        <InfoCard label="Incident Date" value={dossier.incident_date ? new Date(dossier.incident_date).toLocaleDateString() : '—'} />
-        <InfoCard label="Connections" value={graphEdges.length} />
-        <InfoCard label="Cross-Case Links" value={crossLinks.length} />
-        <InfoCard label="Potential Leads" value={brief?.ai_suggested_leads?.length ?? '—'} />
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '1rem' }}>
+      <div className="forensic-panel" style={{ padding: '1rem', gridColumn: 'span 2' }}>
+        <h4 style={{ color: '#D9AA3D', fontWeight: 800, marginBottom: 8 }}>Incident Summary</h4>
+        <p style={{ fontSize: '0.85rem', color: '#A6B0AA', lineHeight: 1.6 }}>{dossier.summary}</p>
       </div>
-      <div className="evidence-card" style={{ position: 'relative', padding: '1rem' }}>
-        <div className="pin-detail" />
-        <h3 style={{ color: '#24251F', fontWeight: 800, marginBottom: 8 }}>Investigation Intelligence</h3>
-        <p style={{ color: '#24251F', lineHeight: 1.6 }}>{dossier.summary}</p>
+      <div className="forensic-panel" style={{ padding: '1rem' }}>
+        <h4 style={{ color: '#D9AA3D', fontWeight: 800, marginBottom: 8 }}>Key Parameters</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.82rem' }}>
+          <div><strong>Officer:</strong> {dossier.investigating_officer}</div>
+          <div><strong>FIR Date:</strong> {dossier.fir_date}</div>
+          <div><strong>Jurisdiction:</strong> {dossier.jurisdiction}</div>
+          <div><strong>Risk Level:</strong> <span style={{ color: '#D62828', fontWeight: 700 }}>{dossier.risk_level}</span></div>
+        </div>
+      </div>
+      <div className="forensic-panel" style={{ padding: '1rem' }}>
+        <h4 style={{ color: '#D9AA3D', fontWeight: 800, marginBottom: 8 }}>Network Footprint</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <InfoCard label="Entities" value={graphNodes.length} />
+          <InfoCard label="Cross-Case Links" value={brief?.cross_case_connections?.total_shared_entities ?? 0} />
+        </div>
       </div>
       <div className="forensic-panel" style={{ padding: '1rem' }}>
         <h4 style={{ color: '#D9AA3D', fontWeight: 800, marginBottom: 8 }}>Primary Persons</h4>
@@ -194,14 +213,37 @@ function EntitiesSection({ nodes, onSelect, onGraph }) {
   ));
 }
 
-function TimelineSection({ events }) {
+function TimelineSection({ events, onGraph }) {
   if (!events.length) return <div style={{ color: '#A6B0AA' }}>No timeline events available for this case.</div>;
   return events.map((ev, idx) => (
     <div key={idx} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
       <div style={{ width: 10, height: 10, borderRadius: '50%', background: ev.event_type === 'CASE' ? '#D62828' : '#D9AA3D', marginTop: 6, flexShrink: 0 }} />
       <div className="forensic-panel" style={{ flex: 1, padding: '0.75rem 1rem' }}>
-        <div style={{ fontSize: '0.72rem', color: '#D9AA3D', fontWeight: 700 }}>{ev.date ? new Date(ev.date).toLocaleDateString() : 'Date N/A'}</div>
-        <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>{ev.title}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '0.72rem', color: '#D9AA3D', fontWeight: 700 }}>
+            {ev.date ? new Date(ev.date).toLocaleDateString() : 'Date N/A'}
+          </div>
+          {onGraph && (
+            <button
+              onClick={() => onGraph(ev.entity_id || 'PERSON-001')}
+              style={{
+                fontSize: '0.68rem',
+                color: '#D9AA3D',
+                background: 'rgba(217,170,61,0.15)',
+                border: '1px solid rgba(217,170,61,0.35)',
+                borderRadius: '4px',
+                padding: '0.15rem 0.45rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem',
+              }}
+            >
+              Focus Entity <ExternalLink size={10} />
+            </button>
+          )}
+        </div>
+        <div style={{ fontWeight: 800, fontSize: '0.88rem', marginTop: 3 }}>{ev.title}</div>
         <div style={{ fontSize: '0.8rem', color: '#A6B0AA', marginTop: 4 }}>{ev.description}</div>
         <div style={{ fontSize: '0.68rem', color: '#6C7A73', marginTop: 4 }}>Source: {ev.evidence_source} · {Math.round((ev.confidence || 0.9) * 100)}%</div>
       </div>
@@ -265,6 +307,34 @@ function LeadsSection({ leads, onGraph, nodes }) {
 }
 
 function ReportSection({ brief, dossier, crossLinks, caseNumber }) {
+  const handleExport = () => {
+    const reportText = `# SIH26189 CRIMINAL INTELLIGENCE REPORT
+Case: CASE-${caseNumber}
+Title: ${dossier.title || 'Case Investigation'}
+Investigating Officer: ${dossier.investigating_officer || 'Inspector K. Vijayalakshmi'}
+Status: ${dossier.status || 'ACTIVE'}
+
+## 1. Executive Summary
+${dossier.summary || 'Multi-jurisdiction smuggling network identified.'}
+
+## 2. Key Bridge Entities
+${brief?.key_entities?.persons?.map(p => `- ${p.name} (Role: Suspect / Coordinator)`).join('\n') || '- Ravi Kumar'}
+
+## 3. Cross-Case Correlations
+${crossLinks.map(l => `- ${l.name} (${l.type}): Shared across Cases ${l.shared_cases?.join(', ')}`).join('\n')}
+
+## 4. Court-Ready Actionable Leads
+${brief?.ai_suggested_leads?.map(l => `- [${l.status}] ${l.entity}: ${l.reason}`).join('\n') || 'All leads pending verification'}
+`;
+    const blob = new Blob([reportText], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Investigation_Report_CASE_${caseNumber}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ maxWidth: 800 }}>
       <h3 style={{ fontWeight: 800, color: '#D9AA3D', marginBottom: '1rem' }}>Investigation Intelligence Report</h3>
@@ -275,8 +345,8 @@ function ReportSection({ brief, dossier, crossLinks, caseNumber }) {
         <strong>Cross-Case:</strong> {crossLinks.length} shared entities<br />
         <strong>Leads:</strong> {brief?.ai_suggested_leads?.length || 0} AI-suggested (pending verification)
       </div>
-      <button type="button" className="btn-red" onClick={() => window.open(`/api/v1/cases/${caseNumber}/export?format=markdown`, '_blank')}>
-        Export Court Brief
+      <button type="button" className="btn-red" onClick={handleExport}>
+        Download Court-Ready Brief
       </button>
     </div>
   );
