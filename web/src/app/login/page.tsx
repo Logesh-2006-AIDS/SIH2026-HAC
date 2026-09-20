@@ -13,7 +13,7 @@ const ROLES = [
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("analyst@police.gov.in");
-  const [password, setPassword] = useState("investigator123");
+  const [password, setPassword] = useState("analyst123");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -140,3 +140,5 @@ export default function LoginPage() {
     </main>
   );
 }
+
+

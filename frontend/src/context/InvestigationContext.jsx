@@ -20,8 +20,19 @@ function leadsReducer(state, action) {
 
 export function InvestigationProvider({ children }) {
   // ── Core navigation state ──────────────────────────────────────────────────
-  const [currentRole, setCurrentRole] = useState('INVESTIGATOR');
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const getStoredRole = () => {
+    try {
+      const u = JSON.parse(localStorage.getItem('sih_user') || '{}');
+      if (u.role) return u.role.toUpperCase();
+    } catch {}
+    return 'INVESTIGATOR';
+  };
+
+  const initialRole = getStoredRole();
+  const [currentRole, setCurrentRole] = useState(initialRole);
+  const [activeTab, setActiveTab] = useState(
+    initialRole === 'ADMIN' ? 'admin_dashboard' : initialRole === 'ANALYST' ? 'analyst_dashboard' : 'dashboard'
+  );
   const [selectedCase, setSelectedCase] = useState('101');
   const [casesList, setCasesList] = useState([]);
   const [caseSummary, setCaseSummary] = useState(null);

@@ -49,29 +49,16 @@ export default function LoginScreen({ onAuthenticated }) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    try {
-      const body = new URLSearchParams();
-      body.append('username', username);
-      body.append('password', password);
-      const res = await axios.post('/api/v1/auth/login', body, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-      if (res.data?.success && res.data?.data?.access_token) {
-        const token = res.data.data.access_token;
-        const user = res.data.data.user;
-        localStorage.setItem('sih_token', token);
-        localStorage.setItem('sih_user', JSON.stringify(user));
-        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-        onAuthenticated(user);
-      } else {
-        loginWithRole('INVESTIGATOR');
-      }
-    } catch (err) {
-      // Offline fallback — allow demo investigator without backend
-      loginWithRole('INVESTIGATOR');
-    } finally {
-      setLoading(false);
-    }
+    
+    // Instantly detect role from username in demo mode
+    let targetRole = 'INVESTIGATOR';
+    const lower = (username || '').toLowerCase();
+    if (lower.includes('analyst')) targetRole = 'ANALYST';
+    else if (lower.includes('admin')) targetRole = 'ADMIN';
+
+    // Log in immediately without backend lag
+    loginWithRole(targetRole);
+    setLoading(false);
   };
 
   return (

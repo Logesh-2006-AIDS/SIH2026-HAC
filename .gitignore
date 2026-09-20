@@ -56,3 +56,4 @@ data/redis/
 # Logs
 *.log
 logs/
+.vercel
