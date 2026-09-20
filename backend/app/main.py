@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.db.init_db import init_postgres
 from app.db.neo4j_client import MemgraphClient
 
 logging.basicConfig(
@@ -16,6 +17,10 @@ logger = logging.getLogger("sih-platform")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting AI-Powered Criminal Network Analysis Platform...")
+    try:
+        init_postgres()
+    except Exception as e:
+        logger.warning("PostgreSQL schema initialization: %s", e)
     try:
         if MemgraphClient.verify_connectivity():
             logger.info("Memgraph connection established.")

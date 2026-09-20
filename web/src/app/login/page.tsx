@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,60 +6,65 @@ import { BadgeCheck, Lock, Shield, ArrowRight, Eye, EyeOff } from "lucide-react"
 
 const ROLES = [
   { id: "investigator", label: "Investigator", dest: "/dashboard", role: "INVESTIGATOR" },
-  { id: "analyst", label: "Analyst", dest: "/analyst", role: "ANALYST" },
-  { id: "admin", label: "Station Admin", dest: "/admin", role: "ADMIN" },
+  { id: "analyst",      label: "Analyst",       dest: "/analyst",   role: "ANALYST"       },
+  { id: "admin",        label: "Station Admin", dest: "/admin",     role: "ADMIN"         },
 ];
+
+// Demo credentials — no backend required
+const DEMO_USERS: Record<string, { email: string; password: string; role: string; name: string }> = {
+  investigator: { email: "investigator@police.gov.in", password: "investigator123", role: "INVESTIGATOR", name: "Insp. Rajesh Vardhan" },
+  analyst:      { email: "analyst@police.gov.in",      password: "analyst123",      role: "ANALYST",      name: "Dr. Priya Sankar"   },
+  admin:        { email: "admin@police.gov.in",        password: "admin123",        role: "ADMIN",        name: "Supt. K. Rao"       },
+};
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("analyst@police.gov.in");
-  const [password, setPassword] = useState("analyst123");
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [activeRole, setActiveRole] = useState("analyst");
+  const [username, setUsername] = useState("investigator@police.gov.in");
+  const [password, setPassword] = useState("investigator123");
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [activeRole, setActiveRole] = useState("investigator");
+
+  // One-click role login
+  const quickLogin = (roleId: string) => {
+    const u = DEMO_USERS[roleId];
+    if (!u) return;
+    setUsername(u.email);
+    setPassword(u.password);
+    setActiveRole(roleId);
+    const user = { email: u.email, role: u.role, full_name: u.name };
+    localStorage.setItem("sih_token", "demo-token");
+    localStorage.setItem("sih_user", JSON.stringify(user));
+    if (u.role === "ADMIN") router.push("/admin");
+    else if (u.role === "ANALYST") router.push("/analyst");
+    else router.push("/dashboard");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    try {
-      const body = new URLSearchParams();
-      body.append("username", username);
-      body.append("password", password);
-      const res = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
 
-      let user: Record<string, unknown> | null = null;
-      let token = "";
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.success && json?.data?.access_token) {
-          token = json.data.access_token;
-          user = json.data.user;
-        }
-      }
+    const match = Object.values(DEMO_USERS).find(
+      (u) => u.email.toLowerCase() === username.toLowerCase() && u.password === password
+    );
 
-      if (!user) {
-        setError("Incorrect badge / email or password.");
-        return;
-      }
-
-      localStorage.setItem("sih_token", token);
-      localStorage.setItem("sih_user", JSON.stringify(user));
-
-      const role = String(user.role || "INVESTIGATOR").toUpperCase();
-      if (role === "ADMIN") router.push("/admin");
-      else if (role === "ANALYST") router.push("/analyst");
-      else router.push("/dashboard");
-    } catch {
-      setError("Unable to reach authentication service.");
-    } finally {
+    if (!match) {
+      setError("Incorrect badge / email or password.");
       setLoading(false);
+      return;
     }
+
+    const user = { email: match.email, role: match.role, full_name: match.name };
+    localStorage.setItem("sih_token", "demo-token");
+    localStorage.setItem("sih_user", JSON.stringify(user));
+
+    if (match.role === "ADMIN") router.push("/admin");
+    else if (match.role === "ANALYST") router.push("/analyst");
+    else router.push("/dashboard");
+
+    setLoading(false);
   };
 
   return (
@@ -90,7 +95,7 @@ export default function LoginPage() {
             <button
               key={role.id}
               type="button"
-              onClick={() => setActiveRole(role.id)}
+              onClick={() => quickLogin(role.id)}
               className={`rounded-lg border px-2 py-2 text-left text-[11px] font-bold ${
                 activeRole === role.id
                   ? "border-gold/70 bg-gold/15 text-gold"
@@ -133,12 +138,14 @@ export default function LoginPage() {
           disabled={loading}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-signal px-4 py-3 text-sm font-bold text-white disabled:opacity-70"
         >
-          {loading ? "Authenticating…" : "Enter Workbench"}
+          {loading ? "Authenticating..." : "Enter Workbench"}
           <ArrowRight size={16} />
         </button>
+
+        <p className="mt-4 text-center text-[10px] text-muted">
+          Demo: investigator123 / analyst123 / admin123
+        </p>
       </form>
     </main>
   );
 }
-
-

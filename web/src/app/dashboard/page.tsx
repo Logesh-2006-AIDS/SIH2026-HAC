@@ -1,28 +1,25 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import InvestigatorBoard from "@/components/investigator/InvestigatorBoard";
 
-export default function DashboardStub() {
+export default function InvestigatorDashboard() {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
-    if (!localStorage.getItem("sih_user")) router.replace("/login");
+    const raw = localStorage.getItem("sih_user");
+    if (!raw) { router.replace("/login"); return; }
+    try {
+      const role = String(JSON.parse(raw).role || "").toUpperCase();
+      if (role === "ADMIN") { router.replace("/admin"); return; }
+      if (role === "ANALYST") { router.replace("/analyst"); return; }
+    } catch { router.replace("/login"); return; }
+    setReady(true);
   }, [router]);
 
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-ink px-6 text-parchment">
-      <div className="max-w-lg border border-[var(--line)] bg-panel p-8 text-center">
-        <p className="text-xs tracking-[0.2em] text-gold uppercase">Investigator</p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">Station Board</h1>
-        <p className="mt-3 text-sm text-muted">
-          Investigator workflow remains in the existing Vite console. Analyst work lives at /analyst.
-        </p>
-        <div className="mt-6 flex justify-center gap-4 text-sm text-gold">
-          <Link href="/analyst">Open Analyst</Link>
-          <Link href="/login">Login</Link>
-        </div>
-      </div>
-    </main>
-  );
+  return ready
+    ? <InvestigatorBoard />
+    : <div className="flex min-h-screen items-center justify-center bg-ink text-parchment text-sm">Loading workbench…</div>;
 }

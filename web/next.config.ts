@@ -1,14 +1,8 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://127.0.0.1:8001/api/:path*",
-      },
-    ];
-  },
-};
+// API requests are handled by the route handler in `src/app/api/v1`.
+// Keeping the proxy inside Next lets the same relative URLs work locally and
+// on Vercel, without publishing a localhost rewrite in production.
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
