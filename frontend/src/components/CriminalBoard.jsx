@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Shield, Bot, Map, Network, Upload, FileText,
-  Crosshair, CheckCircle2, Search, Database, Lightbulb, ArrowRight,
+  Shield, Bot, Network, Upload, FileText,
+  Crosshair, CheckCircle2, Database, Lightbulb, ArrowRight,
   FolderOpen, Clock, AlertTriangle, Sparkles, BarChart3, Route
 } from 'lucide-react';
 import { useInvestigation } from '../context/InvestigationContext';
@@ -21,41 +21,36 @@ export default function CriminalBoard() {
   const dossier = caseSummary?.dossier;
 
   const NOTES = useMemo(() => ([
-    { id: 'dossiers', label: 'Case Dossiers', icon: FolderOpen, tone: 'cream', pin: 'gold', x: 3, y: 10, rot: -2, w: 135 },
-    { id: 'investigation', label: 'Case Brief', icon: FileText, tone: 'yellow', pin: 'red', x: 19, y: 8, rot: 1.5, w: 125, section: 'brief' },
-    { id: 'nlp', label: 'NLP Extraction', icon: Sparkles, tone: 'blue', pin: 'gold', x: 34, y: 8, rot: -1.5, w: 130 },
-    { id: 'entity', label: 'Entity Investigation', icon: Search, tone: 'orange', pin: 'red', x: 50, y: 10, rot: 1, w: 145 },
+    { id: 'dossiers', label: 'Case Dossiers', icon: FolderOpen, tone: 'cream', pin: 'gold', x: 4, y: 10, rot: -2, w: 135 },
+    { id: 'ingest', label: 'Evidence Ingestion', icon: Upload, tone: 'blue', pin: 'blue', x: 20, y: 8, rot: 1.5, w: 135 },
+    { id: 'nlp', label: 'NLP Extraction', icon: Sparkles, tone: 'blue', pin: 'gold', x: 36, y: 8, rot: -1.5, w: 130 },
+    { id: 'investigation', label: 'Case Workspace', icon: Database, tone: 'yellow', pin: 'red', x: 52, y: 10, rot: 1, w: 135, section: 'evidence' },
     
-    { id: 'network', label: 'Knowledge Graph', icon: Network, tone: 'cream', pin: 'blue', x: 4, y: 32, rot: 2, w: 135 },
-    { id: 'keyentities', label: 'Bridge Entities', icon: BarChart3, tone: 'yellow', pin: 'gold', x: 19, y: 32, rot: -1, w: 130 },
-    { id: 'crosscase', label: 'Cross-Case', icon: Crosshair, tone: 'yellow', pin: 'red', x: 34, y: 34, rot: 1, w: 125 },
-    { id: 'pathfinder', label: 'Path Finder', icon: Route, tone: 'orange', pin: 'red', x: 49, y: 34, rot: -2, w: 125 },
+    { id: 'network', label: 'Knowledge Graph', icon: Network, tone: 'cream', pin: 'blue', x: 4, y: 34, rot: 2, w: 135 },
+    { id: 'pathfinder', label: 'Path Finder', icon: Route, tone: 'orange', pin: 'red', x: 19, y: 32, rot: -2, w: 125 },
+    { id: 'keyentities', label: 'Bridge Entities', icon: BarChart3, tone: 'yellow', pin: 'gold', x: 34, y: 34, rot: -1, w: 130 },
+    { id: 'crosscase', label: 'Cross-Case', icon: Crosshair, tone: 'yellow', pin: 'red', x: 49, y: 34, rot: 1, w: 125 },
 
-    { id: 'patterns', label: 'Suspicious Patterns', icon: AlertTriangle, tone: 'orange', pin: 'red', x: 4, y: 55, rot: 1.5, w: 145 },
-    { id: 'copilot', label: 'AI Copilot', kind: 'copilot', pin: 'gold', x: 67, y: 22, rot: 1, w: 180 },
-    { id: 'leads', label: 'Actionable Leads', icon: CheckCircle2, tone: 'yellow', pin: 'gold', x: 22, y: 58, rot: -1, w: 140 },
-    { id: 'investigation-evidence', label: 'Evidence & Records', icon: Shield, tone: 'cream', pin: 'blue', x: 38, y: 56, rot: 2, w: 135, section: 'evidence', tab: 'investigation' },
-
-    { id: 'ingest', label: 'Evidence Ingestion', icon: Upload, tone: 'blue', pin: 'blue', x: 4, y: 76, rot: -2, w: 135 },
-    { id: 'map', label: 'Crime Heatmap', kind: 'map', pin: 'blue', x: 65, y: 56, rot: -0.8, w: 200 },
-    { id: 'report', label: 'Investigation Report', icon: FileText, tone: 'cream', pin: 'gold', x: 38, y: 78, rot: -1.5, w: 145 },
+    { id: 'patterns', label: 'Suspicious Patterns', icon: AlertTriangle, tone: 'orange', pin: 'red', x: 4, y: 58, rot: 1.5, w: 145 },
+    { id: 'leads', label: 'Actionable Leads', icon: CheckCircle2, tone: 'yellow', pin: 'gold', x: 20, y: 58, rot: -1, w: 140 },
+    { id: 'report', label: 'Investigation Report', icon: FileText, tone: 'cream', pin: 'gold', x: 36, y: 58, rot: -1.5, w: 145 },
+    { id: 'copilot', label: 'AI Copilot', kind: 'copilot', pin: 'gold', x: 67, y: 26, rot: 1, w: 180 },
   ]), []);
 
   const PINS = useMemo(() => ({
     hub: { x: 48, y: 26 },
-    dossiers: { x: 9, y: 14 }, investigation: { x: 25, y: 12 }, nlp: { x: 40, y: 12 }, entity: { x: 57, y: 14 },
-    network: { x: 10, y: 36 }, keyentities: { x: 25, y: 36 }, crosscase: { x: 40, y: 38 }, pathfinder: { x: 55, y: 38 },
-    patterns: { x: 11, y: 60 }, copilot: { x: 76, y: 30 }, leads: { x: 29, y: 63 }, 'investigation-evidence': { x: 44, y: 61 },
-    ingest: { x: 10, y: 80 }, map: { x: 75, y: 64 }, report: { x: 45, y: 82 },
+    dossiers: { x: 10, y: 14 }, ingest: { x: 26, y: 12 }, nlp: { x: 42, y: 12 }, investigation: { x: 58, y: 14 },
+    network: { x: 10, y: 38 }, pathfinder: { x: 25, y: 36 }, keyentities: { x: 40, y: 38 }, crosscase: { x: 55, y: 38 },
+    patterns: { x: 10, y: 62 }, leads: { x: 26, y: 62 }, report: { x: 42, y: 62 },
+    copilot: { x: 76, y: 34 },
   }), []);
 
   const ROPES = useMemo(() => ([
-    ['hub', 'dossiers'], ['hub', 'investigation'], ['hub', 'nlp'], ['hub', 'network'],
-    ['hub', 'crosscase'], ['hub', 'copilot'], ['hub', 'map'], ['hub', 'leads'],
-    ['dossiers', 'investigation'], ['investigation', 'nlp'], ['nlp', 'entity'], ['entity', 'network'],
-    ['network', 'keyentities'], ['keyentities', 'crosscase'], ['crosscase', 'pathfinder'],
-    ['patterns', 'leads'], ['leads', 'investigation-evidence'], ['investigation-evidence', 'report'],
-    ['ingest', 'patterns'], ['copilot', 'map'],
+    ['hub', 'dossiers'], ['hub', 'network'], ['hub', 'leads'], ['hub', 'crosscase'], ['hub', 'copilot'],
+    ['dossiers', 'ingest'], ['ingest', 'nlp'], ['nlp', 'network'],
+    ['network', 'pathfinder'], ['pathfinder', 'keyentities'], ['keyentities', 'crosscase'],
+    ['crosscase', 'patterns'], ['patterns', 'leads'], ['leads', 'investigation'], ['investigation', 'report'],
+    ['copilot', 'leads'], ['copilot', 'patterns'],
   ]), []);
 
   const toPath = (a, b, i) => {
@@ -202,11 +197,6 @@ export default function CriminalBoard() {
                     <div className="board-copilot-card">
                       <Bot size={28} color="#34d399" />
                       <div className="board-copilot-label"><Bot size={14} /><span>AI Copilot</span></div>
-                    </div>
-                  ) : note.kind === 'map' ? (
-                    <div className="board-map-card">
-                      <div className="board-mini-map"><Map size={36} color="#38bdf8" style={{ margin: 'auto', display: 'block', marginTop: 28 }} /></div>
-                      <div className="board-map-label"><Map size={14} /><span>Crime Map</span></div>
                     </div>
                   ) : (
                     <div className="board-sticky-body"><Icon size={16} strokeWidth={2.2} /><span>{note.label}</span></div>

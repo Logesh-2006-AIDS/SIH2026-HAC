@@ -34,52 +34,17 @@ const ROLE_MENUS = {
       ]
     },
     {
-      title: 'EVIDENCE & MAPPING',
+      title: 'CASE RECORDS & REPORTS',
       items: [
         { id: 'investigation', label: 'Case Workspace', icon: <Database size={18} /> },
-        { id: 'map', label: 'Crime Heatmap', icon: <Map size={18} /> },
-      ]
-    }
-  ],
-  ANALYST: [
-    {
-      title: 'STRATEGIC INTELLIGENCE',
-      items: [
-        { id: 'analyst_dashboard', label: 'Pattern & Cluster Analysis', icon: <BarChart3 size={18} /> },
-        { id: 'network', label: 'Full Network Graph', icon: <Network size={18} /> },
-        { id: 'keyentities', label: 'Bridge & Centrality Metrics', icon: <BarChart3 size={18} /> },
-        { id: 'crosscase', label: 'Cross-Case Intersections', icon: <GitBranch size={18} /> },
-      ]
-    },
-    {
-      title: 'PREDICTIVE & GEOSPATIAL',
-      items: [
-        { id: 'pathfinder', label: 'Multi-Hop Path Finder', icon: <Route size={18} /> },
-        { id: 'patterns', label: 'Pattern Detection Rules', icon: <AlertTriangle size={18} /> },
-        { id: 'map', label: 'Crime Heatmap', icon: <Map size={18} /> },
-      ]
-    }
-  ],
-  ADMIN: [
-    {
-      title: 'SYSTEM & SECURITY CONTROL',
-      items: [
-        { id: 'admin_dashboard', label: 'Command Center Console', icon: <Shield size={18} /> },
-        { id: 'ingest', label: 'Data Source Governance', icon: <Upload size={18} /> },
-      ]
-    },
-    {
-      title: 'AUDIT & FORENSIC PIPELINE',
-      items: [
-        { id: 'nlp', label: 'NLP Resolution Workbench', icon: <Sparkles size={18} /> },
-        { id: 'leads', label: 'Audit Verification Queue', icon: <ShieldCheck size={18} /> },
+        { id: 'report', label: 'Investigation Report', icon: <FileText size={18} /> },
       ]
     }
   ]
 };
 
 export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
-  const currentMenu = ROLE_MENUS[currentRole] || ROLE_MENUS.INVESTIGATOR;
+  const currentMenu = ROLE_MENUS.INVESTIGATOR;
 
   return (
     <aside className="app-sidebar">

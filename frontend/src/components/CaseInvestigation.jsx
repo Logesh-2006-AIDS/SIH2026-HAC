@@ -7,13 +7,12 @@ import { getCaseDetail, getCaseTimeline, getCrossLinks, getCaseBrief } from '../
 
 const SECTIONS = [
   { id: 'brief', label: 'Case Brief', icon: FileText },
-  { id: 'entities', label: 'Entities', icon: Users, redirect: 'entity' },
-  { id: 'network', label: 'Network', icon: Network, redirect: 'network' },
   { id: 'timeline', label: 'Timeline', icon: Clock },
-  { id: 'crosscase', label: 'Cross-Case', icon: GitBranch, redirect: 'crosscase' },
-  { id: 'evidence', label: 'Evidence', icon: Shield },
-  { id: 'leads', label: 'Leads', icon: AlertTriangle, redirect: 'leads' },
-  { id: 'report', label: 'Report', icon: FileText, redirect: 'report' },
+  { id: 'evidence', label: 'Evidence & Records', icon: Shield },
+  { id: 'network', label: 'Knowledge Graph', icon: Network, redirect: 'network' },
+  { id: 'crosscase', label: 'Cross-Case Links', icon: GitBranch, redirect: 'crosscase' },
+  { id: 'leads', label: 'Actionable Leads', icon: AlertTriangle, redirect: 'leads' },
+  { id: 'report', label: 'Case Report', icon: FileText, redirect: 'report' },
 ];
 
 export default function CaseInvestigation() {

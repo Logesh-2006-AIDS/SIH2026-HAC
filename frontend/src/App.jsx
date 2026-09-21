@@ -18,9 +18,7 @@ import CrossCasePanel from './components/CrossCasePanel';
 import SmartCaseBrief from './components/SmartCaseBrief';
 
 import CaseInvestigation from './components/CaseInvestigation';
-import EntityInvestigation from './components/EntityInvestigation';
 import DataIngestion from './components/DataIngestion';
-import CrimeMap from './components/analyst/CrimeMap';
 import CriminalBoard from './components/CriminalBoard';
 import CaseDossiers from './components/CaseDossiers';
 import LoginScreen from './components/LoginScreen';
@@ -41,12 +39,10 @@ const PAGE_META = {
   admin_dashboard:   { label: 'System & Security Control',  icon: Shield },
   analyst_dashboard: { label: 'Pattern & Intelligence',     icon: BarChart3 },
   network:           { label: 'Knowledge Graph',            icon: Network },
-  map:               { label: 'Crime Heatmap',             icon: Map },
   copilot:           { label: 'AI Investigation Copilot',   icon: Bot },
   ingest:            { label: 'Evidence Ingestion',         icon: Upload },
   brief:             { label: 'Case Brief',                 icon: FileText },
   investigation:     { label: 'Case Workspace',             icon: Database },
-  entity:            { label: 'Entity Investigation',       icon: Search },
   crosscase:         { label: 'Cross-Case Intelligence',    icon: Crosshair },
   leads:             { label: 'Actionable Leads',           icon: CheckCircle },
   report:            { label: 'Investigation Report',       icon: FileText },
@@ -231,8 +227,6 @@ function AppInner({ onSignOut }) {
 
 
           {activeTab === 'investigation' && <CaseInvestigation />}
-          {activeTab === 'entity' && <EntityInvestigation />}
-          {activeTab === 'map' && <CrimeMap />}
           {activeTab === 'crosscase' && <CrossCasePanel onFocusEntity={focusEntityById} selectedCase={selectedCase} />}
           {activeTab === 'copilot' && (
             <AICopilot onFocusEntity={focusEntityById} contextCase={selectedCase} contextEntity={selectedEntity?.id} />
