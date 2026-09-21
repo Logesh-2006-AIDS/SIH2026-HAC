@@ -21,10 +21,16 @@ function leadsReducer(state, action) {
 export function InvestigationProvider({ children }) {
   // ── Core navigation state ──────────────────────────────────────────────────
   const getStoredRole = () => {
+    const path = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
     try {
       const u = JSON.parse(localStorage.getItem('sih_user') || '{}');
+      if (path.startsWith('/admin') && u.role === 'ADMIN') return 'ADMIN';
+      if (path.startsWith('/analyst') && u.role === 'ANALYST') return 'ANALYST';
+      if ((path.startsWith('/dashboard') || path.startsWith('/investigator')) && u.role === 'INVESTIGATOR') return 'INVESTIGATOR';
       if (u.role) return u.role.toUpperCase();
     } catch {}
+    if (path.startsWith('/admin')) return 'ADMIN';
+    if (path.startsWith('/analyst')) return 'ANALYST';
     return 'INVESTIGATOR';
   };
 
@@ -65,11 +71,43 @@ export function InvestigationProvider({ children }) {
   const [demoMode] = useState(true);
   const [ingestionDone, setIngestionDone] = useState(false);
 
-  // ── Role-based default tab ─────────────────────────────────────────────────
+  // ── Sync with browser history back/forward ──────────────────────────────────
   useEffect(() => {
-    if (currentRole === 'INVESTIGATOR') setActiveTab('dashboard');
-    else if (currentRole === 'ANALYST') setActiveTab('analyst_dashboard');
-    else if (currentRole === 'ADMIN') setActiveTab('admin_dashboard');
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase();
+      if (path.startsWith('/admin')) {
+        setCurrentRole('ADMIN');
+        setActiveTab('admin_dashboard');
+      } else if (path.startsWith('/analyst')) {
+        setCurrentRole('ANALYST');
+        setActiveTab('analyst_dashboard');
+      } else if (path.startsWith('/dashboard') || path.startsWith('/investigator')) {
+        setCurrentRole('INVESTIGATOR');
+        setActiveTab('dashboard');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // ── Role-based default tab and URL sync ─────────────────────────────────────
+  useEffect(() => {
+    if (currentRole === 'INVESTIGATOR') {
+      setActiveTab('dashboard');
+      if (!window.location.pathname.startsWith('/dashboard') && !window.location.pathname.startsWith('/investigator')) {
+        window.history.pushState({}, '', '/dashboard');
+      }
+    } else if (currentRole === 'ANALYST') {
+      setActiveTab('analyst_dashboard');
+      if (!window.location.pathname.startsWith('/analyst')) {
+        window.history.pushState({}, '', '/analyst');
+      }
+    } else if (currentRole === 'ADMIN') {
+      setActiveTab('admin_dashboard');
+      if (!window.location.pathname.startsWith('/admin')) {
+        window.history.pushState({}, '', '/admin');
+      }
+    }
   }, [currentRole]);
 
   // ── Load cases on mount ────────────────────────────────────────────────────

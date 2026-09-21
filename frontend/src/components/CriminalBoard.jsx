@@ -37,7 +37,7 @@ export default function CriminalBoard() {
     { id: 'investigation-evidence', label: 'Evidence & Records', icon: Shield, tone: 'cream', pin: 'blue', x: 38, y: 56, rot: 2, w: 135, section: 'evidence', tab: 'investigation' },
 
     { id: 'ingest', label: 'Evidence Ingestion', icon: Upload, tone: 'blue', pin: 'blue', x: 4, y: 76, rot: -2, w: 135 },
-    { id: 'map', label: 'Crime Intelligence Map', kind: 'map', pin: 'blue', x: 65, y: 56, rot: -0.8, w: 200 },
+    { id: 'map', label: 'Crime Heatmap', kind: 'map', pin: 'blue', x: 65, y: 56, rot: -0.8, w: 200 },
     { id: 'report', label: 'Investigation Report', icon: FileText, tone: 'cream', pin: 'gold', x: 38, y: 78, rot: -1.5, w: 145 },
   ]), []);
 

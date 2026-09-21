@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { 
-  Sparkles, ArrowLeft, Network, Map, Bot, Upload, FileText, 
-  Database, Shield, CheckCircle, Crosshair, Search, FolderOpen, 
-  AlertTriangle, BarChart3, Route, Pin
+import {
+  Sparkles, ArrowLeft, Network, Map, Bot, Upload, FileText,
+  Database, Shield, CheckCircle, Crosshair, Search, FolderOpen,
+  AlertTriangle, BarChart3, Route, Pin, LogOut
 } from 'lucide-react';
 import { InvestigationProvider, useInvestigation } from './context/InvestigationContext';
 
-import Header from './components/Header';
+
 import Sidebar from './components/Sidebar';
 import GraphCanvas from './components/GraphCanvas';
 import GraphControls from './components/GraphControls';
@@ -16,21 +16,23 @@ import BackgroundNetwork from './components/BackgroundNetwork';
 import AICopilot from './components/AICopilot';
 import CrossCasePanel from './components/CrossCasePanel';
 import SmartCaseBrief from './components/SmartCaseBrief';
-import LeadVerification from './components/LeadVerification';
+
 import CaseInvestigation from './components/CaseInvestigation';
 import EntityInvestigation from './components/EntityInvestigation';
 import DataIngestion from './components/DataIngestion';
-import CrimeIntelligenceMap from './components/CrimeIntelligenceMap';
+import CrimeMap from './components/analyst/CrimeMap';
 import CriminalBoard from './components/CriminalBoard';
 import CaseDossiers from './components/CaseDossiers';
 import LoginScreen from './components/LoginScreen';
 
-// New specialized components
+// Core specialized investigation components
 import NLPEntityExtraction from './components/NLPEntityExtraction';
 import SuspiciousPatterns from './components/SuspiciousPatterns';
 import KeyEntities from './components/KeyEntities';
 import PathFinder from './components/PathFinder';
 import InvestigationLeads from './components/InvestigationLeads';
+
+// Upgraded Operational Dashboards
 import AdminDashboard from './components/AdminDashboard';
 import AnalystDashboard from './components/AnalystDashboard';
 
@@ -39,14 +41,13 @@ const PAGE_META = {
   admin_dashboard:   { label: 'System & Security Control',  icon: Shield },
   analyst_dashboard: { label: 'Pattern & Intelligence',     icon: BarChart3 },
   network:           { label: 'Knowledge Graph',            icon: Network },
-  map:               { label: 'Crime Intelligence Map',     icon: Map },
+  map:               { label: 'Crime Heatmap',             icon: Map },
   copilot:           { label: 'AI Investigation Copilot',   icon: Bot },
   ingest:            { label: 'Evidence Ingestion',         icon: Upload },
   brief:             { label: 'Case Brief',                 icon: FileText },
   investigation:     { label: 'Case Workspace',             icon: Database },
   entity:            { label: 'Entity Investigation',       icon: Search },
   crosscase:         { label: 'Cross-Case Intelligence',    icon: Crosshair },
-  verification:      { label: 'Lead Verification',          icon: CheckCircle },
   leads:             { label: 'Actionable Leads',           icon: CheckCircle },
   report:            { label: 'Investigation Report',       icon: FileText },
   cases:             { label: 'Case Dossiers',              icon: FolderOpen },
@@ -57,7 +58,56 @@ const PAGE_META = {
   pathfinder:        { label: 'Red-String Path Finder',     icon: Route },
 };
 
-function AppInner() {
+function RoleSwitcherBar({ currentRole, setCurrentRole, onSignOut }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 40,
+      background: 'rgba(10,13,10,0.98)', borderBottom: '1px solid rgba(217,170,61,0.25)', zIndex: 40,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 22, height: 22, borderRadius: 5, background: 'linear-gradient(135deg,#d9aa3d,#8a6515)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000'
+        }}>
+          <Shield size={13} />
+        </div>
+        <span style={{ color: '#D9AA3D', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          HOUSE TARGARYEN
+        </span>
+        <span style={{
+          fontSize: '0.65rem', fontWeight: 800, padding: '0.12rem 0.45rem', borderRadius: 10,
+          background: currentRole === 'ADMIN' ? 'rgba(214,40,40,0.2)' : 'rgba(217,170,61,0.18)',
+          border: currentRole === 'ADMIN' ? '1px solid rgba(214,40,40,0.45)' : '1px solid rgba(217,170,61,0.35)',
+          color: currentRole === 'ADMIN' ? '#fca5a5' : '#D9AA3D'
+        }}>
+          {currentRole} CONSOLE
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span style={{ fontSize: '0.7rem', color: '#8a948c' }}>Switch Role:</span>
+        <select
+          value={currentRole}
+          onChange={(e) => setCurrentRole(e.target.value)}
+          style={{ ...barSelect, color: '#D9AA3D', cursor: 'pointer' }}
+        >
+          <option value="ADMIN">Admin Console</option>
+          <option value="ANALYST">Analyst Console</option>
+          <option value="INVESTIGATOR">Investigator Workbench</option>
+        </select>
+        <button
+          type="button"
+          onClick={onSignOut}
+          style={{ ...barSelect, cursor: 'pointer', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: 4 }}
+        >
+          <LogOut size={12} /> Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AppInner({ onSignOut }) {
   const inv = useInvestigation();
   const {
     activeTab, setActiveTab, currentRole, setCurrentRole,
@@ -70,8 +120,33 @@ function AppInner() {
     setInvestigationSection, suspectList,
   } = inv;
 
-  const isInvestigator = currentRole === 'INVESTIGATOR';
-  const isBoard = isInvestigator && activeTab === 'dashboard';
+  // 1. ADMIN ROLE VIEW (NEW Console from web/)
+  if (currentRole === 'ADMIN') {
+    return (
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+        <RoleSwitcherBar currentRole={currentRole} setCurrentRole={setCurrentRole} onSignOut={onSignOut} />
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+          <AdminDashboard onSignOut={onSignOut} />
+        </div>
+      </div>
+    );
+  }
+
+  // 2. ANALYST ROLE VIEW (NEW Console from web/)
+  if (currentRole === 'ANALYST') {
+    return (
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+        <RoleSwitcherBar currentRole={currentRole} setCurrentRole={setCurrentRole} onSignOut={onSignOut} />
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+          <AnalystDashboard onSignOut={onSignOut} />
+        </div>
+      </div>
+    );
+  }
+
+  // 3. INVESTIGATOR ROLE VIEW (MAIN WORKING APPLICATION - 100% PRESERVED)
+  const isInvestigator = true;
+  const isBoard = activeTab === 'dashboard';
   const pageMeta = PAGE_META[activeTab] || { label: activeTab, icon: Shield };
   const PageIcon = pageMeta.icon;
 
@@ -87,6 +162,7 @@ function AppInner() {
           casesList={casesList} currentRole={currentRole} setCurrentRole={setCurrentRole}
           onBack={() => setActiveTab('dashboard')}
           isInvestigator={isInvestigator}
+          onSignOut={onSignOut}
         />
       )}
 
@@ -142,9 +218,9 @@ function AppInner() {
             </div>
           )}
 
-          {/* Operational Dashboards */}
-          {activeTab === 'admin_dashboard' && <AdminDashboard />}
-          {activeTab === 'analyst_dashboard' && <AnalystDashboard />}
+          {/* Operational Dashboards within investigator context if opened */}
+          {activeTab === 'admin_dashboard' && <AdminDashboard onSignOut={onSignOut} />}
+          {activeTab === 'analyst_dashboard' && <AnalystDashboard onSignOut={onSignOut} />}
 
           {/* Core Feature Tabs */}
           {activeTab === 'patterns' && <SuspiciousPatterns />}
@@ -152,11 +228,11 @@ function AppInner() {
           {activeTab === 'keyentities' && <KeyEntities />}
           {activeTab === 'pathfinder' && <PathFinder />}
           {activeTab === 'leads' && <InvestigationLeads />}
-          {activeTab === 'verification' && <LeadVerification />}
+
 
           {activeTab === 'investigation' && <CaseInvestigation />}
           {activeTab === 'entity' && <EntityInvestigation />}
-          {activeTab === 'map' && <CrimeIntelligenceMap onSelectCase={openCase} selectedCase={selectedCase} />}
+          {activeTab === 'map' && <CrimeMap />}
           {activeTab === 'crosscase' && <CrossCasePanel onFocusEntity={focusEntityById} selectedCase={selectedCase} />}
           {activeTab === 'copilot' && (
             <AICopilot onFocusEntity={focusEntityById} contextCase={selectedCase} contextEntity={selectedEntity?.id} />
@@ -175,7 +251,7 @@ function AppInner() {
   );
 }
 
-function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, casesList, currentRole, setCurrentRole, onBack, isInvestigator }) {
+function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, casesList, currentRole, setCurrentRole, onBack, isInvestigator, onSignOut }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 48,
@@ -183,7 +259,7 @@ function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, ca
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {isInvestigator && (
-          <button type="button" onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', padding: '0.3rem 0.7rem' }}>
+          <button type="button" onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', padding: '0.3rem 0.7rem', cursor: 'pointer' }}>
             <ArrowLeft size={14} /> Pinboard
           </button>
         )}
@@ -220,11 +296,7 @@ function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, ca
         </select>
         <button
           type="button"
-          onClick={() => {
-            localStorage.removeItem('sih_token');
-            localStorage.removeItem('sih_user');
-            window.location.reload();
-          }}
+          onClick={onSignOut}
           style={{ ...barSelect, cursor: 'pointer', color: '#fca5a5' }}
         >
           Logout
@@ -260,6 +332,13 @@ function AuthenticatedApp() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
 
+  const handleSignOut = () => {
+    localStorage.removeItem('sih_token');
+    localStorage.removeItem('sih_user');
+    window.history.pushState({}, '', '/login');
+    setUser(null);
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('sih_token');
     const raw = localStorage.getItem('sih_user');
@@ -292,7 +371,7 @@ function AuthenticatedApp() {
 
   return (
     <InvestigationProvider>
-      <AppInner />
+      <AppInner onSignOut={handleSignOut} />
     </InvestigationProvider>
   );
 }

@@ -7,13 +7,13 @@ import { getCaseDetail, getCaseTimeline, getCrossLinks, getCaseBrief } from '../
 
 const SECTIONS = [
   { id: 'brief', label: 'Case Brief', icon: FileText },
-  { id: 'entities', label: 'Entities', icon: Users },
-  { id: 'network', label: 'Network', icon: Network },
+  { id: 'entities', label: 'Entities', icon: Users, redirect: 'entity' },
+  { id: 'network', label: 'Network', icon: Network, redirect: 'network' },
   { id: 'timeline', label: 'Timeline', icon: Clock },
-  { id: 'crosscase', label: 'Cross-Case', icon: GitBranch },
+  { id: 'crosscase', label: 'Cross-Case', icon: GitBranch, redirect: 'crosscase' },
   { id: 'evidence', label: 'Evidence', icon: Shield },
-  { id: 'leads', label: 'Potential Leads', icon: AlertTriangle },
-  { id: 'report', label: 'Report', icon: FileText },
+  { id: 'leads', label: 'Leads', icon: AlertTriangle, redirect: 'leads' },
+  { id: 'report', label: 'Report', icon: FileText, redirect: 'report' },
 ];
 
 export default function CaseInvestigation() {
@@ -57,8 +57,9 @@ export default function CaseInvestigation() {
   const graphEdges = caseData?.graph_relations || [];
 
   const handleSection = (id) => {
-    if (id === 'network') {
-      setActiveTab('network');
+    const sec = SECTIONS.find(s => s.id === id);
+    if (sec?.redirect) {
+      setActiveTab(sec.redirect);
       return;
     }
     setInvestigationSection(id);
@@ -133,12 +134,8 @@ export default function CaseInvestigation() {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
         {section === 'brief' && <BriefSection dossier={dossier} brief={brief} graphNodes={graphNodes} />}
-        {section === 'entities' && <EntitiesSection nodes={graphNodes} onSelect={handleEntityClick} onGraph={handleViewOnGraph} />}
         {section === 'timeline' && <TimelineSection events={timeline} onGraph={handleViewOnGraph} />}
-        {section === 'crosscase' && <CrossCaseSection links={crossLinks} caseNumber={selectedCase} onViewGraph={handleCrossCaseGraph} />}
         {section === 'evidence' && <EvidenceSection edges={graphEdges} nodes={graphNodes} />}
-        {section === 'leads' && <LeadsSection leads={brief?.ai_suggested_leads || []} onGraph={handleViewOnGraph} nodes={graphNodes} />}
-        {section === 'report' && <ReportSection brief={brief} dossier={dossier} crossLinks={crossLinks} caseNumber={selectedCase} />}
       </div>
     </div>
   );

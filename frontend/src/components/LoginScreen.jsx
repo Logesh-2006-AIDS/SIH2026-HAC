@@ -1,215 +1,249 @@
 import React, { useState } from 'react';
-import { Shield, Lock, BadgeCheck, Sparkles, UserCheck, ArrowRight } from 'lucide-react';
-import axios from 'axios';
+import { Shield, BadgeCheck, Lock, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 
-/**
- * Investigator login — supporting instant one-click Demo login
- */
+const ROLES = [
+  { id: 'investigator', label: 'Investigator', dest: '/dashboard', role: 'INVESTIGATOR' },
+  { id: 'analyst',      label: 'Analyst',       dest: '/analyst',   role: 'ANALYST'       },
+  { id: 'admin',        label: 'Station Admin', dest: '/admin',     role: 'ADMIN'         },
+];
+
+const DEMO_USERS = {
+  investigator: {
+    id: 1,
+    email: 'investigator@police.gov.in',
+    password: 'investigator123',
+    role: 'INVESTIGATOR',
+    name: 'Insp. Rajesh Vardhan',
+    full_name: 'Insp. Rajesh Vardhan',
+    badge_number: 'DL-CB-9021',
+    department: 'Narcotics & Special Cell, Chennai Unit',
+  },
+  analyst: {
+    id: 2,
+    email: 'analyst@police.gov.in',
+    password: 'analyst123',
+    role: 'ANALYST',
+    name: 'Dr. Priya Sankar',
+    full_name: 'Dr. Priya Sankar',
+    badge_number: 'INT-908',
+    department: 'Criminal Intelligence & Analytics Wing',
+  },
+  admin: {
+    id: 3,
+    email: 'admin@police.gov.in',
+    password: 'admin123',
+    role: 'ADMIN',
+    name: 'Supt. K. Rao',
+    full_name: 'Supt. K. Rao',
+    badge_number: 'HQ-001',
+    department: 'State Crime Records Bureau',
+  },
+};
+
 export default function LoginScreen({ onAuthenticated }) {
+  const [activeRole, setActiveRole] = useState('investigator');
   const [username, setUsername] = useState('investigator@police.gov.in');
   const [password, setPassword] = useState('investigator123');
-  const [error, setError] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const loginWithRole = (role = 'INVESTIGATOR') => {
-    const userProfiles = {
-      INVESTIGATOR: {
-        id: 1,
-        email: 'investigator@police.gov.in',
-        full_name: 'Insp. Rajesh Vardhan',
-        badge_number: 'DL-CB-9021',
-        role: 'INVESTIGATOR',
-        department: 'Narcotics & Special Cell, Chennai Unit',
-      },
-      ANALYST: {
-        id: 2,
-        email: 'analyst@forensics.gov.in',
-        full_name: 'Dr. Priya Sankar',
-        badge_number: 'INT-908',
-        role: 'ANALYST',
-        department: 'Criminal Intelligence & Analytics Wing',
-      },
-      ADMIN: {
-        id: 3,
-        email: 'admin@police.gov.in',
-        full_name: 'Superintendent K. Rao',
-        badge_number: 'HQ-001',
-        role: 'ADMIN',
-        department: 'State Crime Records Bureau',
-      },
-    };
-
-    const demoUser = userProfiles[role] || userProfiles.INVESTIGATOR;
+  const completeLogin = (userProfile, roleId) => {
     localStorage.setItem('sih_token', 'demo-token');
-    localStorage.setItem('sih_user', JSON.stringify(demoUser));
-    onAuthenticated(demoUser);
+    localStorage.setItem('sih_user', JSON.stringify(userProfile));
+
+    const dest = roleId === 'admin' || userProfile.role === 'ADMIN'
+      ? '/admin'
+      : roleId === 'analyst' || userProfile.role === 'ANALYST'
+        ? '/analyst'
+        : '/dashboard';
+
+    window.history.pushState({}, '', dest);
+    if (onAuthenticated) {
+      onAuthenticated(userProfile);
+    }
+  };
+
+  const quickLogin = (roleId) => {
+    const u = DEMO_USERS[roleId];
+    if (!u) return;
+    setUsername(u.email);
+    setPassword(u.password);
+    setActiveRole(roleId);
+    completeLogin(u, roleId);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
-    // Instantly detect role from username in demo mode
-    let targetRole = 'INVESTIGATOR';
-    const lower = (username || '').toLowerCase();
-    if (lower.includes('analyst')) targetRole = 'ANALYST';
-    else if (lower.includes('admin')) targetRole = 'ADMIN';
 
-    // Log in immediately without backend lag
-    loginWithRole(targetRole);
+    const match = Object.values(DEMO_USERS).find(
+      (u) =>
+        (u.email.toLowerCase() === username.trim().toLowerCase() ||
+         u.badge_number.toLowerCase() === username.trim().toLowerCase()) &&
+        u.password === password
+    );
+
+    if (!match) {
+      const lower = username.toLowerCase();
+      let fallbackKey = 'investigator';
+      if (lower.includes('admin')) fallbackKey = 'admin';
+      else if (lower.includes('analyst')) fallbackKey = 'analyst';
+
+      if (password === 'demo' || password === 'password' || password.endsWith('123')) {
+        const fallbackUser = DEMO_USERS[fallbackKey];
+        completeLogin(fallbackUser, fallbackKey);
+        setLoading(false);
+        return;
+      }
+
+      setError('Incorrect badge / email or password. Demo passwords: investigator123 / analyst123 / admin123');
+      setLoading(false);
+      return;
+    }
+
+    const roleKey = match.role.toLowerCase();
+    completeLogin(match, roleKey);
     setLoading(false);
   };
 
   return (
-    <div style={{
-      height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'radial-gradient(ellipse at 50% 20%, #1a1510 0%, #080a08 70%)', color: '#F1EBDD',
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }}>
-      <div className="forensic-panel" style={{
-        width: 420, maxWidth: '92vw', padding: '2rem', border: '1px solid rgba(217,170,61,0.4)',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem' }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 10,
-            background: 'linear-gradient(135deg,#d9aa3d,#8a6515)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000',
-          }}>
+    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-ink px-4 text-parchment font-sans select-none">
+      {/* Cinematic Ambient Background Gradients */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(ellipse at 20% 20%, rgba(217,170,61,0.12), transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(214,40,40,0.1), transparent 50%), radial-gradient(circle at 50% 50%, rgba(8,10,8,0.85) 0%, rgba(8,10,8,0.98) 100%)',
+        }}
+      />
+
+      {/* Grid pattern overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 opacity-15"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(217,170,61,0.3) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+
+      {/* Login Card */}
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-panel/95 p-7 backdrop-blur-xl shadow-2xl transition-all">
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold text-ink font-bold shadow-lg">
             <Shield size={22} />
           </div>
           <div>
-            <div style={{ fontWeight: 900, fontSize: '1.05rem', letterSpacing: '0.06em', color: '#F1EBDD' }}>
-              HOUSE TARGARYEN
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#D9AA3D', fontWeight: 700 }}>
-              AI Criminal Network Analysis Platform • SIH26189
-            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-parchment font-display">House Targaryen</h1>
+            <p className="text-xs text-muted font-medium">Forensic Intelligence Access • SIH 2026</p>
           </div>
         </div>
 
-        {/* Quick Demo Access Bar */}
-        <div style={{
-          marginBottom: '1.25rem',
-          padding: '0.85rem',
-          borderRadius: '8px',
-          background: 'rgba(217, 170, 61, 0.1)',
-          border: '1px solid rgba(217, 170, 61, 0.3)',
-        }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#D9AA3D', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Sparkles size={13} /> One-Click Demo Mode Access
+        {/* Quick One-Click Role Selector */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold tracking-wide text-muted uppercase flex items-center gap-1">
+              <Sparkles size={12} className="text-gold" /> One-Click Role Access
+            </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }}>
-            <button
-              type="button"
-              onClick={() => loginWithRole('INVESTIGATOR')}
-              style={{
-                padding: '0.5rem 0.3rem',
-                borderRadius: '6px',
-                background: 'linear-gradient(135deg, #D62828 0%, #A31B1B 100%)',
-                border: 'none',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '0.72rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.2rem',
-              }}
-            >
-              <UserCheck size={12} /> Investigator
-            </button>
-            <button
-              type="button"
-              onClick={() => loginWithRole('ANALYST')}
-              style={{
-                padding: '0.5rem 0.3rem',
-                borderRadius: '6px',
-                background: 'rgba(217,170,61,0.2)',
-                border: '1px solid rgba(217,170,61,0.4)',
-                color: '#D9AA3D',
-                fontWeight: 700,
-                fontSize: '0.72rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.2rem',
-              }}
-            >
-              Analyst
-            </button>
-            <button
-              type="button"
-              onClick={() => loginWithRole('ADMIN')}
-              style={{
-                padding: '0.5rem 0.3rem',
-                borderRadius: '6px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: '#F1EBDD',
-                fontWeight: 700,
-                fontSize: '0.72rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.2rem',
-              }}
-            >
-              Admin Control
-            </button>
+          <div className="grid grid-cols-3 gap-2">
+            {ROLES.map((role) => (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => quickLogin(role.id)}
+                className={`rounded-lg border px-2.5 py-2 text-center text-xs font-bold transition-all duration-150 cursor-pointer ${
+                  activeRole === role.id
+                    ? 'border-gold/80 bg-gold/15 text-gold shadow-sm'
+                    : 'border-white/10 text-muted hover:border-white/20 hover:text-parchment'
+                }`}
+              >
+                {role.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0', color: '#6C7A73', fontSize: '0.7rem' }}>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-          <span>OR SIGN IN WITH CREDENTIALS</span>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+        <div className="relative my-4 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10" />
+          </div>
+          <span className="relative bg-panel px-2 text-[10px] font-semibold text-muted uppercase tracking-wider">
+            Or credentials sign-in
+          </span>
         </div>
 
+        {/* Login Form */}
         <form onSubmit={handleSubmit}>
-          <label style={labelStyle}>Badge / Email</label>
-          <div style={inputWrap}>
-            <BadgeCheck size={14} color="#D9AA3D" />
-            <input value={username} onChange={(e) => setUsername(e.target.value)} style={inputStyle} autoComplete="username" />
+          {/* Username / Badge input */}
+          <div className="mb-3">
+            <label className="mb-1 block text-[11px] font-bold tracking-wide text-muted uppercase">
+              Badge / Official Email
+            </label>
+            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 transition focus-within:border-gold/60">
+              <BadgeCheck size={16} className="text-gold shrink-0" />
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. investigator@police.gov.in"
+                className="w-full bg-transparent text-sm text-parchment outline-none placeholder:text-muted/60"
+                autoComplete="username"
+              />
+            </div>
           </div>
 
-          <label style={labelStyle}>Password</label>
-          <div style={inputWrap}>
-            <Lock size={14} color="#D9AA3D" />
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} autoComplete="current-password" />
+          {/* Password input */}
+          <div className="mb-3">
+            <label className="mb-1 block text-[11px] font-bold tracking-wide text-muted uppercase">
+              Password
+            </label>
+            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 transition focus-within:border-gold/60">
+              <Lock size={16} className="text-gold shrink-0" />
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter secure password"
+                className="w-full bg-transparent text-sm text-parchment outline-none placeholder:text-muted/60"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                className="text-muted hover:text-parchment transition p-0.5 cursor-pointer"
+              >
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
-          {error && <div style={{ color: '#f87171', fontSize: '0.78rem', marginBottom: 12 }}>{error}</div>}
+          {error && (
+            <div className="mb-3 rounded-lg border border-signal/40 bg-signal/10 px-3 py-2 text-xs text-red-200">
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center', marginTop: 10, opacity: loading ? 0.7 : 1 }}>
-            {loading ? 'Authenticating…' : 'Enter Secure Workspace'}
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-signal px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+          >
+            {loading ? 'Authenticating…' : 'Enter Forensic Workbench'}
+            <ArrowRight size={16} />
           </button>
+
+          <p className="mt-4 text-center text-[11px] text-muted font-mono">
+            Demo: <code className="text-gold/90">investigator123</code> / <code className="text-gold/90">analyst123</code> / <code className="text-gold/90">admin123</code>
+          </p>
         </form>
 
-        <div style={{ marginTop: 14, fontSize: '0.68rem', color: '#6C7A73', lineHeight: 1.5, textAlign: 'center' }}>
-          SIH 2026 • AI-Powered Criminal Network Analysis Platform • House Targaryen
+        <div className="mt-4 pt-3 border-t border-white/5 text-center text-[10px] text-muted tracking-wider">
+          HOUSE TARGARYEN • AI CRIMINAL NETWORK ANALYSIS PLATFORM • SIH 2026
         </div>
       </div>
-    </div>
+    </main>
   );
 }
-
-const labelStyle = {
-  display: 'block', fontSize: '0.7rem', color: '#A6B0AA', fontWeight: 700,
-  letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4,
-};
-
-const inputWrap = {
-  display: 'flex', alignItems: 'center', gap: 8,
-  background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(217,170,61,0.25)',
-  borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 12,
-};
-
-const inputStyle = {
-  background: 'transparent', border: 'none', color: '#F1EBDD',
-  fontSize: '0.85rem', width: '100%', outline: 'none',
-};

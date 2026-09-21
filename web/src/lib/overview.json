@@ -1,0 +1,465 @@
+{
+  "memgraph_live": false,
+  "data_mode": "FALLBACK",
+  "label": "DEMO / FALLBACK DATA",
+  "summary": {
+    "total_cases": 5,
+    "active_crime_zones": 4,
+    "increasing_zones": 1,
+    "decreasing_zones": 2,
+    "repeated_crime_zones": 2,
+    "cross_case_connections": 19,
+    "important_network_entities": 11
+  },
+  "crime_trend_snapshot": [
+    {
+      "crime_type": "Extortion",
+      "total": 1,
+      "previous": 0,
+      "current": 1,
+      "change_pct": null,
+      "direction": "increasing",
+      "monthly": [
+        {
+          "month": "2025-04",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "crime_type": "Cyber Fraud",
+      "total": 1,
+      "previous": 0,
+      "current": 1,
+      "change_pct": null,
+      "direction": "increasing",
+      "monthly": [
+        {
+          "month": "2025-05",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "crime_type": "Arms Act 1959",
+      "total": 1,
+      "previous": 0,
+      "current": 1,
+      "change_pct": null,
+      "direction": "increasing",
+      "monthly": [
+        {
+          "month": "2025-06",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "crime_type": "Organized Auto Theft",
+      "total": 1,
+      "previous": 0,
+      "current": 1,
+      "change_pct": null,
+      "direction": "increasing",
+      "monthly": [
+        {
+          "month": "2025-06",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "crime_type": "PMLA 2002",
+      "total": 1,
+      "previous": 0,
+      "current": 1,
+      "change_pct": null,
+      "direction": "increasing",
+      "monthly": [
+        {
+          "month": "2025-07",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "geographic_intelligence": [
+    {
+      "name": "Delhi",
+      "cases": 3,
+      "trend": "decreasing",
+      "band": "VERY_HIGH"
+    },
+    {
+      "name": "Mumbai",
+      "cases": 2,
+      "trend": "stable",
+      "band": "HIGH"
+    },
+    {
+      "name": "Meerut",
+      "cases": 1,
+      "trend": "increasing",
+      "band": "MEDIUM"
+    },
+    {
+      "name": "Kolkata",
+      "cases": 1,
+      "trend": "decreasing",
+      "band": "MEDIUM"
+    }
+  ],
+  "key_patterns": [
+    {
+      "pattern_id": "PAT-LOC-delhi",
+      "type": "Repeated Location",
+      "title": "Repeated activity in Delhi",
+      "what": "3 cases linked to Delhi",
+      "where": "Delhi",
+      "when": "2025-04 \u2192 2025-05 \u2192 2025-07",
+      "case_count": 3,
+      "cases": [
+        "101",
+        "102",
+        "105"
+      ],
+      "entities": [],
+      "trend": "decreasing",
+      "why": "Multiple cases map to the same geographic region/location nodes in the dataset.",
+      "evidence": [
+        "Location registry",
+        "FIR jurisdiction / incident locations"
+      ],
+      "confidence": 0.85,
+      "confidence_reason": "Based on count of linked cases at this location (not a model score)."
+    },
+    {
+      "pattern_id": "PAT-LOC-mumbai",
+      "type": "Repeated Location",
+      "title": "Repeated activity in Mumbai",
+      "what": "2 cases linked to Mumbai",
+      "where": "Mumbai",
+      "when": "2025-05 \u2192 2025-06",
+      "case_count": 2,
+      "cases": [
+        "102",
+        "104"
+      ],
+      "entities": [],
+      "trend": "stable",
+      "why": "Multiple cases map to the same geographic region/location nodes in the dataset.",
+      "evidence": [
+        "Location registry",
+        "FIR jurisdiction / incident locations"
+      ],
+      "confidence": 0.75,
+      "confidence_reason": "Based on count of linked cases at this location (not a model score)."
+    },
+    {
+      "pattern_id": "PAT-TREND-Extortion",
+      "type": "Crime Trend",
+      "title": "Extortion is increasing",
+      "what": "Extortion: 0 \u2192 1 cases across comparison periods",
+      "where": "Filtered geography",
+      "when": "Period split of filtered incident dates",
+      "case_count": 1,
+      "cases": [],
+      "entities": [],
+      "trend": "increasing",
+      "why": "Period comparison change_pct=None",
+      "evidence": [
+        "Case incident_date",
+        "crime_category"
+      ],
+      "confidence": 0.5,
+      "confidence_reason": "Derived from period case counts only."
+    },
+    {
+      "pattern_id": "PAT-TREND-Cyber_Fraud",
+      "type": "Crime Trend",
+      "title": "Cyber Fraud is increasing",
+      "what": "Cyber Fraud: 0 \u2192 1 cases across comparison periods",
+      "where": "Filtered geography",
+      "when": "Period split of filtered incident dates",
+      "case_count": 1,
+      "cases": [],
+      "entities": [],
+      "trend": "increasing",
+      "why": "Period comparison change_pct=None",
+      "evidence": [
+        "Case incident_date",
+        "crime_category"
+      ],
+      "confidence": 0.5,
+      "confidence_reason": "Derived from period case counts only."
+    },
+    {
+      "pattern_id": "PAT-TREND-Arms_Act_195",
+      "type": "Crime Trend",
+      "title": "Arms Act 1959 is increasing",
+      "what": "Arms Act 1959: 0 \u2192 1 cases across comparison periods",
+      "where": "Filtered geography",
+      "when": "Period split of filtered incident dates",
+      "case_count": 1,
+      "cases": [],
+      "entities": [],
+      "trend": "increasing",
+      "why": "Period comparison change_pct=None",
+      "evidence": [
+        "Case incident_date",
+        "crime_category"
+      ],
+      "confidence": 0.5,
+      "confidence_reason": "Derived from period case counts only."
+    }
+  ],
+  "cross_case_signals": [
+    {
+      "cluster_id": "Person-P002",
+      "shared_entity": {
+        "id": "P002",
+        "name": "Vikram Singh",
+        "type": "Person"
+      },
+      "related_cases": [
+        "101",
+        "102",
+        "103"
+      ],
+      "connection_strength": "HIGH",
+      "evidence": "FIR / entity registry",
+      "shared": {
+        "people": [
+          {
+            "id": "P002",
+            "name": "Vikram Singh"
+          },
+          {
+            "id": "P008",
+            "name": "Manish Tiwari"
+          },
+          {
+            "id": "P011",
+            "name": "Unknown (Burner)"
+          }
+        ],
+        "phones": [
+          {
+            "id": "+91-98765-32100",
+            "name": "+91-98765-32100"
+          },
+          {
+            "id": "+91-87654-32100",
+            "name": "+91-87654-32100"
+          },
+          {
+            "id": "+91-98110-99999",
+            "name": "+91-98110-99999"
+          },
+          {
+            "id": "+91-98765-32101",
+            "name": "+91-98765-32101"
+          }
+        ],
+        "vehicles": [
+          {
+            "id": "V005",
+            "name": "DL-05-XY-7890"
+          }
+        ],
+        "organizations": [],
+        "locations": []
+      }
+    },
+    {
+      "cluster_id": "Phone-+91-98765-32100",
+      "shared_entity": {
+        "id": "+91-98765-32100",
+        "name": "+91-98765-32100",
+        "type": "Phone"
+      },
+      "related_cases": [
+        "101",
+        "102",
+        "103"
+      ],
+      "connection_strength": "HIGH",
+      "evidence": "CDR / phone registry",
+      "shared": {
+        "people": [
+          {
+            "id": "P002",
+            "name": "Vikram Singh"
+          },
+          {
+            "id": "P008",
+            "name": "Manish Tiwari"
+          },
+          {
+            "id": "P011",
+            "name": "Unknown (Burner)"
+          }
+        ],
+        "phones": [
+          {
+            "id": "+91-98765-32100",
+            "name": "+91-98765-32100"
+          },
+          {
+            "id": "+91-87654-32100",
+            "name": "+91-87654-32100"
+          },
+          {
+            "id": "+91-98110-99999",
+            "name": "+91-98110-99999"
+          },
+          {
+            "id": "+91-98765-32101",
+            "name": "+91-98765-32101"
+          }
+        ],
+        "vehicles": [
+          {
+            "id": "V005",
+            "name": "DL-05-XY-7890"
+          }
+        ],
+        "organizations": [],
+        "locations": []
+      }
+    },
+    {
+      "cluster_id": "Phone-+91-98765-32101",
+      "shared_entity": {
+        "id": "+91-98765-32101",
+        "name": "+91-98765-32101",
+        "type": "Phone"
+      },
+      "related_cases": [
+        "101",
+        "102",
+        "103"
+      ],
+      "connection_strength": "HIGH",
+      "evidence": "CDR / phone registry",
+      "shared": {
+        "people": [
+          {
+            "id": "P002",
+            "name": "Vikram Singh"
+          },
+          {
+            "id": "P008",
+            "name": "Manish Tiwari"
+          },
+          {
+            "id": "P011",
+            "name": "Unknown (Burner)"
+          }
+        ],
+        "phones": [
+          {
+            "id": "+91-98765-32100",
+            "name": "+91-98765-32100"
+          },
+          {
+            "id": "+91-87654-32100",
+            "name": "+91-87654-32100"
+          },
+          {
+            "id": "+91-98110-99999",
+            "name": "+91-98110-99999"
+          },
+          {
+            "id": "+91-98765-32101",
+            "name": "+91-98765-32101"
+          }
+        ],
+        "vehicles": [
+          {
+            "id": "V005",
+            "name": "DL-05-XY-7890"
+          }
+        ],
+        "organizations": [],
+        "locations": []
+      }
+    },
+    {
+      "cluster_id": "Person-P001",
+      "shared_entity": {
+        "id": "P001",
+        "name": "Ravi Kumar",
+        "type": "Person"
+      },
+      "related_cases": [
+        "101",
+        "105"
+      ],
+      "connection_strength": "MEDIUM",
+      "evidence": "FIR / entity registry",
+      "shared": {
+        "people": [
+          {
+            "id": "P001",
+            "name": "Ravi Kumar"
+          }
+        ],
+        "phones": [
+          {
+            "id": "+91-98110-44501",
+            "name": "+91-98110-44501"
+          },
+          {
+            "id": "+91-98110-44502",
+            "name": "+91-98110-44502"
+          }
+        ],
+        "vehicles": [],
+        "organizations": [
+          {
+            "id": "O001",
+            "name": "Apex Global Logistics Pvt Ltd"
+          }
+        ],
+        "locations": [
+          {
+            "id": "L002",
+            "name": "Karol Bagh, New Delhi"
+          },
+          {
+            "id": "L004",
+            "name": "Okhla Industrial Area, Delhi"
+          }
+        ]
+      }
+    }
+  ],
+  "period": {
+    "previous": "2025-04-12 \u2192 2025-05-28",
+    "current": "2025-06-08 \u2192 2025-07-05",
+    "previous_case_count": 2,
+    "current_case_count": 3
+  },
+  "filters": {
+    "crime_type": "All",
+    "start": null,
+    "end": null,
+    "geography": "All",
+    "status": "All",
+    "geography_level": "city"
+  },
+  "crime_types": [
+    "Arms Act 1959",
+    "Cyber Fraud",
+    "Extortion",
+    "Organized Auto Theft",
+    "PMLA 2002"
+  ],
+  "geographies": [
+    "Delhi",
+    "Maharashtra",
+    "Uttar Pradesh",
+    "West Bengal"
+  ]
+}

@@ -1,0 +1,410 @@
+{
+  "memgraph_live": false,
+  "data_mode": "FALLBACK",
+  "label": "DEMO / FALLBACK DATA",
+  "mode": "density",
+  "mode_meta": {
+    "title": "Crime Density",
+    "legend": [
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "VERY_HIGH"
+    ],
+    "explanation": "Intensity = region case count / max region case count in the filtered set."
+  },
+  "filters": {
+    "crime_type": "All",
+    "start": null,
+    "end": null,
+    "geography": "All",
+    "status": "All",
+    "geography_level": "city"
+  },
+  "period": {
+    "previous": "2025-04-12 \u2192 2025-05-28",
+    "current": "2025-06-08 \u2192 2025-07-05",
+    "previous_case_count": 2,
+    "current_case_count": 3
+  },
+  "totals": {
+    "regions": 4,
+    "visible_regions": 4,
+    "cases": 5,
+    "max_density": 3,
+    "recorded_coordinate_points": 8
+  },
+  "spatial_precision": {
+    "primary_mode": "point_heatmap",
+    "recorded_coordinate_points": 8,
+    "unlocated_cases": 0,
+    "description": "Point heatmap uses only latitude/longitude recorded on source location entities. Region density aggregates state labels from case and location data."
+  },
+  "regions": [
+    {
+      "id": "delhi",
+      "name": "Delhi",
+      "state": "Delhi",
+      "city": "Delhi",
+      "lat": 28.7041,
+      "lon": 77.1025,
+      "case_count": 3,
+      "cases": [
+        "101",
+        "102",
+        "105"
+      ],
+      "prev_count": 2,
+      "curr_count": 1,
+      "change_pct": -50.0,
+      "trend": "decreasing",
+      "density": {
+        "intensity": 1.0,
+        "band": "VERY_HIGH",
+        "label": "Very High"
+      },
+      "repeated": true,
+      "months_covered": [
+        "2025-04",
+        "2025-05",
+        "2025-07"
+      ],
+      "sub_locations": [
+        {
+          "id": "L001",
+          "name": "Rohini, New Delhi",
+          "case_count": 1,
+          "cases": [
+            "101"
+          ]
+        },
+        {
+          "id": "L002",
+          "name": "Karol Bagh, New Delhi",
+          "case_count": 2,
+          "cases": [
+            "101",
+            "105"
+          ]
+        },
+        {
+          "id": "L004",
+          "name": "Okhla Industrial Area, Delhi",
+          "case_count": 2,
+          "cases": [
+            "101",
+            "105"
+          ]
+        },
+        {
+          "id": "L007",
+          "name": "Pahar Ganj, New Delhi",
+          "case_count": 1,
+          "cases": [
+            "105"
+          ]
+        }
+      ],
+      "visible": true,
+      "display_value": 3,
+      "display_band": "VERY_HIGH"
+    },
+    {
+      "id": "mumbai",
+      "name": "Mumbai",
+      "state": "Maharashtra",
+      "city": "Mumbai",
+      "lat": 19.0596,
+      "lon": 72.8295,
+      "case_count": 2,
+      "cases": [
+        "102",
+        "104"
+      ],
+      "prev_count": 1,
+      "curr_count": 1,
+      "change_pct": 0.0,
+      "trend": "stable",
+      "density": {
+        "intensity": 0.667,
+        "band": "HIGH",
+        "label": "High"
+      },
+      "repeated": true,
+      "months_covered": [
+        "2025-05",
+        "2025-06"
+      ],
+      "sub_locations": [
+        {
+          "id": "L003",
+          "name": "Bandra West, Mumbai",
+          "case_count": 1,
+          "cases": [
+            "102"
+          ]
+        },
+        {
+          "id": "L006",
+          "name": "Andheri East, Mumbai",
+          "case_count": 1,
+          "cases": [
+            "104"
+          ]
+        }
+      ],
+      "visible": true,
+      "display_value": 2,
+      "display_band": "HIGH"
+    },
+    {
+      "id": "meerut",
+      "name": "Meerut",
+      "state": "Uttar Pradesh",
+      "city": "Meerut",
+      "lat": 28.9845,
+      "lon": 77.7064,
+      "case_count": 1,
+      "cases": [
+        "103"
+      ],
+      "prev_count": 0,
+      "curr_count": 1,
+      "change_pct": null,
+      "trend": "increasing",
+      "density": {
+        "intensity": 0.333,
+        "band": "MEDIUM",
+        "label": "Medium"
+      },
+      "repeated": false,
+      "months_covered": [
+        "2025-06"
+      ],
+      "sub_locations": [
+        {
+          "id": "L005",
+          "name": "Meerut, Uttar Pradesh",
+          "case_count": 1,
+          "cases": [
+            "103"
+          ]
+        }
+      ],
+      "visible": true,
+      "display_value": 1,
+      "display_band": "MEDIUM"
+    },
+    {
+      "id": "kolkata",
+      "name": "Kolkata",
+      "state": "West Bengal",
+      "city": "Kolkata",
+      "lat": 22.5726,
+      "lon": 88.3639,
+      "case_count": 1,
+      "cases": [
+        "102"
+      ],
+      "prev_count": 1,
+      "curr_count": 0,
+      "change_pct": -100.0,
+      "trend": "decreasing",
+      "density": {
+        "intensity": 0.333,
+        "band": "MEDIUM",
+        "label": "Medium"
+      },
+      "repeated": false,
+      "months_covered": [
+        "2025-05"
+      ],
+      "sub_locations": [
+        {
+          "id": "L008",
+          "name": "Salt Lake City, Kolkata",
+          "case_count": 1,
+          "cases": [
+            "102"
+          ]
+        }
+      ],
+      "visible": true,
+      "display_value": 1,
+      "display_band": "MEDIUM"
+    }
+  ],
+  "points": [
+    {
+      "id": "L001",
+      "name": "Rohini, New Delhi",
+      "state": "Delhi",
+      "city": "Delhi",
+      "lat": 28.7041,
+      "lon": 77.1025,
+      "case_count": 1,
+      "cases": [
+        {
+          "case_number": "101",
+          "title": "Armed Robbery & Extortion Syndicate (M/s Royal Jewellers)",
+          "crime_category": "Extortion / Armed Robbery / MCOCA",
+          "incident_date": "2025-04-12T21:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    },
+    {
+      "id": "L002",
+      "name": "Karol Bagh, New Delhi",
+      "state": "Delhi",
+      "city": "Delhi",
+      "lat": 28.6511,
+      "lon": 77.1907,
+      "case_count": 2,
+      "cases": [
+        {
+          "case_number": "101",
+          "title": "Armed Robbery & Extortion Syndicate (M/s Royal Jewellers)",
+          "crime_category": "Extortion / Armed Robbery / MCOCA",
+          "incident_date": "2025-04-12T21:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        },
+        {
+          "case_number": "105",
+          "title": "Commercial Hawala Operations & Shell Company Layering",
+          "crime_category": "PMLA 2002 / FEMA / Hawala",
+          "incident_date": "2025-07-05T10:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    },
+    {
+      "id": "L003",
+      "name": "Bandra West, Mumbai",
+      "state": "Maharashtra",
+      "city": "Mumbai",
+      "lat": 19.0596,
+      "lon": 72.8295,
+      "case_count": 1,
+      "cases": [
+        {
+          "case_number": "102",
+          "title": "Cyber Phishing & Darknet Crypto Laundering Ring",
+          "crime_category": "Cyber Fraud / PMLA 2002 / IT Act",
+          "incident_date": "2025-05-28T15:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    },
+    {
+      "id": "L004",
+      "name": "Okhla Industrial Area, Delhi",
+      "state": "Delhi",
+      "city": "Delhi",
+      "lat": 28.5355,
+      "lon": 77.271,
+      "case_count": 2,
+      "cases": [
+        {
+          "case_number": "101",
+          "title": "Armed Robbery & Extortion Syndicate (M/s Royal Jewellers)",
+          "crime_category": "Extortion / Armed Robbery / MCOCA",
+          "incident_date": "2025-04-12T21:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        },
+        {
+          "case_number": "105",
+          "title": "Commercial Hawala Operations & Shell Company Layering",
+          "crime_category": "PMLA 2002 / FEMA / Hawala",
+          "incident_date": "2025-07-05T10:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    },
+    {
+      "id": "L005",
+      "name": "Meerut, Uttar Pradesh",
+      "state": "Uttar Pradesh",
+      "city": "Meerut",
+      "lat": 28.9845,
+      "lon": 77.7064,
+      "case_count": 1,
+      "cases": [
+        {
+          "case_number": "103",
+          "title": "Illicit Firearms Smuggling (NH-58 Transit Interception)",
+          "crime_category": "Arms Act 1959 / UAPA / Conspiracy",
+          "incident_date": "2025-06-08T23:30:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    },
+    {
+      "id": "L006",
+      "name": "Andheri East, Mumbai",
+      "state": "Maharashtra",
+      "city": "Mumbai",
+      "lat": 19.1136,
+      "lon": 72.8697,
+      "case_count": 1,
+      "cases": [
+        {
+          "case_number": "104",
+          "title": "Inter-State Luxury Vehicle Theft & Plate Cloning Syndicate",
+          "crime_category": "Organized Auto Theft / Cheating",
+          "incident_date": "2025-06-22T16:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    },
+    {
+      "id": "L007",
+      "name": "Pahar Ganj, New Delhi",
+      "state": "Delhi",
+      "city": "Delhi",
+      "lat": 28.6432,
+      "lon": 77.212,
+      "case_count": 1,
+      "cases": [
+        {
+          "case_number": "105",
+          "title": "Commercial Hawala Operations & Shell Company Layering",
+          "crime_category": "PMLA 2002 / FEMA / Hawala",
+          "incident_date": "2025-07-05T10:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    },
+    {
+      "id": "L008",
+      "name": "Salt Lake City, Kolkata",
+      "state": "West Bengal",
+      "city": "Kolkata",
+      "lat": 22.5726,
+      "lon": 88.3639,
+      "case_count": 1,
+      "cases": [
+        {
+          "case_number": "102",
+          "title": "Cyber Phishing & Darknet Crypto Laundering Ring",
+          "crime_category": "Cyber Fraud / PMLA 2002 / IT Act",
+          "incident_date": "2025-05-28T15:00:00Z",
+          "status": "UNDER_INVESTIGATION"
+        }
+      ]
+    }
+  ],
+  "crime_types": [
+    "Arms Act 1959",
+    "Cyber Fraud",
+    "Extortion",
+    "Organized Auto Theft",
+    "PMLA 2002"
+  ],
+  "geographies": [
+    "Delhi",
+    "Maharashtra",
+    "Uttar Pradesh",
+    "West Bengal"
+  ]
+}

@@ -37,7 +37,7 @@ const ROLE_MENUS = {
       title: 'EVIDENCE & MAPPING',
       items: [
         { id: 'investigation', label: 'Case Workspace', icon: <Database size={18} /> },
-        { id: 'map', label: 'Crime Intelligence Map', icon: <Map size={18} /> },
+        { id: 'map', label: 'Crime Heatmap', icon: <Map size={18} /> },
       ]
     }
   ],
