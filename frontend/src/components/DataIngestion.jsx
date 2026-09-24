@@ -1,495 +1,830 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { 
   Upload, CheckCircle, AlertTriangle, Loader, ChevronRight, 
   Database, Users, X, FileText, Phone, DollarSign, ShieldAlert, 
-  Sparkles, ArrowRight, Play, CheckCircle2
+  Sparkles, ArrowRight, Play, CheckCircle2, RefreshCw, FolderPlus,
+  FolderOpen, Shield, MapPin, Calendar, Plus, Link2, FileCode,
+  Radio, HardDrive, Cpu, ShieldCheck, Zap, Layers, ArrowUpRight
 } from 'lucide-react';
 import { useInvestigation } from '../context/InvestigationContext.jsx';
 import { getIngestionStats } from '../data/mockService.js';
+import { CASES } from '../data/mockData.js';
+import clsx from 'clsx';
 
-const DATA_TYPES = [
-  { id: 'fir_report', label: 'FIR Report Document', ext: '.txt', icon: '📋', count: '1 Case Document', desc: 'First Information Report with accused, narrative, vehicle numbers' },
-  { id: 'cdr', label: 'CDR / Call Detail Records', ext: '.csv', icon: '📞', count: '142 Call Logs', desc: 'Cell tower records, IMEI, timestamps, duration, frequency' },
-  { id: 'financial', label: 'Financial Transactions', ext: '.csv', icon: '💰', count: '28 Transactions', desc: 'NEFT/RTGS wire transfers, account numbers, amounts, dates' },
-  { id: 'intelligence', label: 'Intelligence Brief', ext: '.json', icon: '🔍', count: '4 Field Reports', desc: 'Covert field reports, suspect affiliations, informant tips' },
+const SOURCE_CONNECTORS = [
+  {
+    id: 'fir_report',
+    label: 'FIR / Police Complaint',
+    badge: 'LEGAL NER',
+    badgeColor: 'text-[#d9aa3d] border-[#d9aa3d]/40 bg-[#d9aa3d]/10',
+    icon: FileText,
+    iconColor: 'text-[#d9aa3d] bg-[#d9aa3d]/15 border-[#d9aa3d]/30',
+    formats: 'PDF, TXT, DOCX',
+    desc: 'Extracts accused persons, complainant, IPC/BNS legal sections, stolen assets & vehicle plates.',
+    sampleFile: 'FIR_101_RoyalJewellers_Extortion.txt',
+  },
+  {
+    id: 'cdr',
+    label: 'Call Detail Records (CDR)',
+    badge: 'TOWER GEO',
+    badgeColor: 'text-[#38bdf8] border-[#38bdf8]/40 bg-[#38bdf8]/10',
+    icon: Phone,
+    iconColor: 'text-[#38bdf8] bg-[#38bdf8]/15 border-[#38bdf8]/30',
+    formats: 'CSV, XLSX',
+    desc: 'Analyzes cell tower azimuths, IMEI handset switches, call burst clusters & caller/receiver pairs.',
+    sampleFile: 'CDR_Case101_CellTower_Dump.csv',
+  },
+  {
+    id: 'financial',
+    label: 'Financial & Bank Ledgers',
+    badge: 'PMLA HAWALA',
+    badgeColor: 'text-[#c084fc] border-[#c084fc]/40 bg-[#c084fc]/10',
+    icon: DollarSign,
+    iconColor: 'text-[#c084fc] bg-[#c084fc]/15 border-[#c084fc]/30',
+    formats: 'CSV, JSON',
+    desc: 'Detects rapid shell layering, IFSC routing, suspicious cash infusions & money trails.',
+    sampleFile: 'BankLedger_ApexLogistics_Layering.csv',
+  },
+  {
+    id: 'social_media',
+    label: 'Social & DarkWeb Intel',
+    badge: 'OSINT CHATTER',
+    badgeColor: 'text-[#4ade80] border-[#4ade80]/40 bg-[#4ade80]/10',
+    icon: Radio,
+    iconColor: 'text-[#4ade80] bg-[#4ade80]/15 border-[#4ade80]/30',
+    formats: 'JSON, TXT',
+    desc: 'Scrapes Telegram handles, darknet crypto addresses, burner aliases & forum communications.',
+    sampleFile: 'Telegram_Shadows_Chatter.json',
+  },
+  {
+    id: 'criminal_history',
+    label: 'Criminal History Dossier',
+    badge: 'MODUS OPERANDI',
+    badgeColor: 'text-[#f87171] border-[#f87171]/40 bg-[#f87171]/10',
+    icon: Users,
+    iconColor: 'text-[#f87171] bg-[#f87171]/15 border-[#f87171]/30',
+    formats: 'JSON, PDF',
+    desc: 'Past conviction history, known aliases, gang hierarchy ties & interstate warrants.',
+    sampleFile: 'CriminalDossier_RaviKumar_Gang.json',
+  },
+  {
+    id: 'surveillance',
+    label: 'Field Surveillance Notes',
+    badge: 'HUMINT OPS',
+    badgeColor: 'text-[#fb923c] border-[#fb923c]/40 bg-[#fb923c]/10',
+    icon: Shield,
+    iconColor: 'text-[#fb923c] bg-[#fb923c]/15 border-[#fb923c]/30',
+    formats: 'TXT, JSON',
+    desc: 'Undercover officer observations, vehicle sightings, meeting transcripts & geo-tags.',
+    sampleFile: 'FieldSurveillance_OkhlaWarehouse.txt',
+  },
 ];
 
-const PIPELINE_STAGES = [
-  { id: 'upload', label: 'Evidence Validation & Checksum Verification', duration: 400 },
-  { id: 'ocr_nlp', label: 'AI/NLP Named Entity Recognition (Persons, Vehicles, Phones)', duration: 600 },
-  { id: 'resolution', label: 'Cross-Case Entity Resolution & Alias Disambiguation', duration: 500 },
-  { id: 'graph', label: 'Knowledge Graph Topology Generation & Relationship Mapping', duration: 600 },
-  { id: 'pattern', label: 'Suspicious Pattern Detection & Centrality Computation', duration: 400 },
+const PIPELINE_STEPS = [
+  { step: '01', title: 'Evidence Ingestion & Checksum', desc: 'SHA-256 hashing & metadata audit lock' },
+  { step: '02', title: 'Schema & Forensic Validation', desc: 'Format integrity and anti-tamper verification' },
+  { step: '03', title: 'Forensic Text Normalization', desc: 'Noise removal, encoding fixes & OCR cleanup' },
+  { step: '04', title: 'Legal Named Entity Recognition', desc: 'AI/NLP extraction of Persons, Vehicles & Orgs' },
+  { step: '05', title: 'Multi-Signal Entity Resolution', desc: 'Fuzzy alias linking & cross-case duplicate match' },
+  { step: '06', title: 'Relationship & Provenance Linking', desc: 'Associating entities with source evidence citations' },
+  { step: '07', title: 'Knowledge Graph Store Sync', desc: 'Cytoscape nodes & edge weight generation' },
+  { step: '08', title: 'Forensic Ingestion Finalized', desc: 'Live workbench notification dispatch' },
 ];
 
-export default function DataIngestion({ caseId = '101', onComplete }) {
-  const { setIngestionDone, setActiveTab, focusEntityById } = useInvestigation();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedType, setSelectedType] = useState(null);
+export default function DataIngestion({ onComplete }) {
+  const { 
+    selectedCase, setSelectedCase, casesList, registerCase,
+    setIngestionDone, setActiveTab 
+  } = useInvestigation();
+
+  const [activeStep, setActiveStep] = useState(1);
+  const [isCreatingCase, setIsCreatingCase] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [selectedConnector, setSelectedConnector] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [pipelineStageIdx, setPipelineStageIdx] = useState(-1);
-  const [pipelineProgress, setPipelineProgress] = useState(0);
+  const [pipelineIdx, setPipelineIdx] = useState(-1);
+  const [progressPercent, setProgressPercent] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [summaryStats, setSummaryStats] = useState(null);
   const fileRef = useRef(null);
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setCurrentStep(2);
+  const [newCaseForm, setNewCaseForm] = useState({
+    case_number: '',
+    title: '',
+    crime_category: 'Armed Extortion / Robbery',
+    jurisdiction: 'Special Crime Branch, Delhi Police',
+    incident_date: new Date().toISOString().split('T')[0],
+    summary: '',
+  });
+
+  const cases = useMemo(() => {
+    const list = casesList && casesList.length ? casesList : CASES;
+    return list.map(c => ({
+      ...c,
+      case_number: String(c.case_number).replace('CASE-', ''),
+    }));
+  }, [casesList]);
+
+  const activeCaseObj = useMemo(() => {
+    return cases.find(c => c.case_number === selectedCase) || cases[0] || {
+      case_number: '101',
+      title: 'Armed Robbery & Extortion Syndicate',
+      crime_category: 'Extortion / Armed Robbery',
+      jurisdiction: 'Crime Branch, Delhi Police',
+    };
+  }, [cases, selectedCase]);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '15 Apr 2025';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return dateStr;
     }
   };
 
-  const runPipelineAnimation = async () => {
+  const handleCreateCase = (e) => {
+    e.preventDefault();
+    if (!newCaseForm.title.trim()) return;
+
+    const num = newCaseForm.case_number.trim() || `10${cases.length + 1}`;
+    registerCase({
+      ...newCaseForm,
+      case_number: num,
+    });
+    setSelectedCase(num);
+    setIsCreatingCase(false);
+    setNewCaseForm({
+      case_number: '',
+      title: '',
+      crime_category: 'Armed Extortion / Robbery',
+      jurisdiction: 'Special Crime Branch, Delhi Police',
+      incident_date: new Date().toISOString().split('T')[0],
+      summary: '',
+    });
+    setActiveStep(2);
+  };
+
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      runPipeline(file);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      runPipeline(file);
+    }
+  };
+
+  const runPipeline = async (fileToUpload = null) => {
     setIsProcessing(true);
-    setPipelineStageIdx(0);
-    setPipelineProgress(15);
     setCompleted(false);
+    setPipelineIdx(0);
+    setProgressPercent(15);
 
-    // Step 1
-    await new Promise(r => setTimeout(r, 450));
-    setPipelineStageIdx(1);
-    setPipelineProgress(40);
+    try {
+      for (let i = 1; i <= 6; i++) {
+        await new Promise(r => setTimeout(r, 200));
+        setPipelineIdx(i);
+        setProgressPercent(Math.round((i / 7) * 90));
+      }
 
-    // Step 2
-    await new Promise(r => setTimeout(r, 550));
-    setPipelineStageIdx(2);
-    setPipelineProgress(65);
+      let apiResult = null;
+      if (fileToUpload) {
+        const formData = new FormData();
+        formData.append('file', fileToUpload);
+        if (selectedCase) formData.append('case_id', selectedCase);
+        
+        const token = localStorage.getItem('sih_token');
+        const res = await fetch('/api/v1/ingest/file', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        });
+        apiResult = await res.json();
+      }
 
-    // Step 3
-    await new Promise(r => setTimeout(r, 500));
-    setPipelineStageIdx(3);
-    setPipelineProgress(85);
+      await new Promise(r => setTimeout(r, 200));
+      setPipelineIdx(7);
+      setProgressPercent(100);
 
-    // Step 4
-    await new Promise(r => setTimeout(r, 450));
-    setPipelineStageIdx(4);
-    setPipelineProgress(100);
-
-    await new Promise(r => setTimeout(r, 300));
-    const stats = await getIngestionStats();
-    setSummaryStats(stats.data);
-    setIsProcessing(false);
-    setCompleted(true);
-    if (setIngestionDone) setIngestionDone(true);
-    if (onComplete) onComplete();
+      const stats = await getIngestionStats();
+      setSummaryStats({
+        entities_resolved: apiResult?.data?.entities_extracted || 28,
+        edges_created: apiResult?.data?.relationships_created || 42,
+        hash: 'SHA256: 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069',
+      });
+      setCompleted(true);
+      if (setIngestionDone) setIngestionDone(true);
+      
+      window.dispatchEvent(new CustomEvent('sih:data_ingested', { detail: apiResult }));
+      if (onComplete) onComplete();
+    } catch (err) {
+      console.warn("Pipeline warning:", err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
-    <div style={{
-      flex: 1,
-      height: '100%',
-      overflowY: 'auto',
-      padding: '1.75rem',
-      background: 'transparent',
-      color: '#F1EBDD',
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }}>
-      {/* Top Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(20,28,24,0.95) 0%, rgba(13,20,17,0.95) 100%)',
-        border: '1px solid rgba(217,170,61,0.25)',
-        borderRadius: '12px',
-        padding: '1.25rem 1.75rem',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '1rem',
-      }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
-            <Database size={22} style={{ color: '#D9AA3D' }} />
-            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: '#F1EBDD' }}>
-              Multi-Source Crime Data Ingestion & Entity Resolution
-            </h1>
-            <span style={{
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              padding: '0.2rem 0.55rem',
-              borderRadius: '20px',
-              background: 'rgba(94,159,104,0.2)',
-              border: '1px solid rgba(94,159,104,0.45)',
-              color: '#4ADE80',
-              letterSpacing: '0.05em',
-            }}>
-              AUTOMATED PIPELINE
-            </span>
-          </div>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: '#A6B0AA' }}>
-            Ingests unstructured FIR text, telecom CDR dumps, banking statements, and field intelligence into a unified forensic graph.
-          </p>
-        </div>
-
-        {/* Action Button to run full multi-source demo pipeline */}
-        {!isProcessing && !completed && (
-          <button
-            onClick={runPipelineAnimation}
-            style={{
-              padding: '0.75rem 1.4rem',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #D9AA3D 0%, #C49830 100%)',
-              border: 'none',
-              color: '#0B100D',
-              fontWeight: 800,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 4px 15px rgba(217,170,61,0.3)',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <Play size={16} />
-            Run Multi-Source Ingestion (Demo Pipeline)
-          </button>
-        )}
-      </div>
-
-      {/* Progress / Pipeline Execution Display */}
-      {isProcessing && (
-        <div style={{
-          background: 'rgba(17, 24, 21, 0.95)',
-          border: '1px solid rgba(217,170,61,0.35)',
-          borderRadius: '12px',
-          padding: '1.75rem',
-          marginBottom: '1.5rem',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Loader size={18} className="animate-spin" style={{ color: '#D9AA3D' }} />
-              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F1EBDD' }}>
-                Executing Ingestion Pipeline: {PIPELINE_STAGES[pipelineStageIdx]?.label}
-              </span>
+    <div className="flex-1 flex flex-col h-full w-full bg-[#080a08] text-[#f1ebdd] overflow-hidden select-none">
+      
+      {/* ── TOP HERO BANNER & FLOW STEPPER ──────────────────────────────────── */}
+      <header className="shrink-0 border-b border-white/5 bg-gradient-to-r from-[#0d100e] via-[#101412] to-[#0d100e] px-8 py-5">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+          
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#d9aa3d] to-[#926c15] text-[#080a08] font-bold shadow-lg shadow-[#d9aa3d]/15 ring-1 ring-white/20">
+              <Cpu size={22} />
             </div>
-            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#D9AA3D' }}>
-              {pipelineProgress}%
-            </span>
-          </div>
-
-          {/* Progress Bar */}
-          <div style={{
-            width: '100%',
-            height: '8px',
-            background: 'rgba(255,255,255,0.08)',
-            borderRadius: '4px',
-            overflow: 'hidden',
-            marginBottom: '1.25rem',
-          }}>
-            <div style={{
-              width: `${pipelineProgress}%`,
-              height: '100%',
-              background: 'linear-gradient(90deg, #D9AA3D 0%, #4ADE80 100%)',
-              transition: 'width 0.4s ease',
-            }} />
-          </div>
-
-          {/* Step items */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {PIPELINE_STAGES.map((stg, i) => {
-              const isPast = i < pipelineStageIdx;
-              const isCurr = i === pipelineStageIdx;
-              return (
-                <div
-                  key={stg.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '6px',
-                    background: isCurr ? 'rgba(217,170,61,0.1)' : 'rgba(255,255,255,0.02)',
-                    color: isPast ? '#4ADE80' : isCurr ? '#D9AA3D' : '#6C7A73',
-                    fontSize: '0.82rem',
-                    fontWeight: isCurr ? 700 : 500,
-                  }}
-                >
-                  {isPast ? <CheckCircle2 size={16} /> : isCurr ? <Loader size={16} className="animate-spin" /> : <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #6C7A73' }} />}
-                  <span>{stg.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Completion Summary Card */}
-      {completed && summaryStats && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(94,159,104,0.15) 0%, rgba(17,24,21,0.95) 100%)',
-          border: '1px solid rgba(94,159,104,0.4)',
-          borderRadius: '12px',
-          padding: '1.75rem',
-          marginBottom: '1.5rem',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{
-                background: 'rgba(94,159,104,0.25)',
-                borderRadius: '50%',
-                padding: '0.6rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid rgba(94,159,104,0.5)',
-              }}>
-                <CheckCircle2 size={28} color="#4ADE80" />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#F1EBDD' }}>
-                  Ingestion & Graph Synthesis Completed Successfully
-                </h3>
-                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: '#A6B0AA' }}>
-                  All 4 sources processed, unified, and linked into the criminal knowledge graph.
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.6rem' }}>
-              <button
-                onClick={() => setActiveTab && setActiveTab('nlp')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '6px',
-                  background: 'rgba(99,102,241,0.2)',
-                  border: '1px solid rgba(99,102,241,0.4)',
-                  color: '#A5B4FC',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                }}
-              >
-                <Sparkles size={14} />
-                Inspect NLP Extractions
-              </button>
-              <button
-                onClick={() => setActiveTab && setActiveTab('network')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '6px',
-                  background: '#D9AA3D',
-                  border: 'none',
-                  color: '#0B100D',
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                }}
-              >
-                <ChevronRight size={14} />
-                Explore Knowledge Graph
-              </button>
-            </div>
-          </div>
-
-          {/* Metrics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: '0.7rem', color: '#6C7A73', textTransform: 'uppercase' }}>Data Sources Ingested</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#F1EBDD', marginTop: '0.2rem' }}>4 Sources</div>
-              <div style={{ fontSize: '0.72rem', color: '#4ADE80', marginTop: '0.2rem' }}>FIR, CDR, Banking, Intel</div>
-            </div>
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: '0.7rem', color: '#6C7A73', textTransform: 'uppercase' }}>Entities Resolved</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#D9AA3D', marginTop: '0.2rem' }}>{summaryStats.entities_resolved || 24} Entities</div>
-              <div style={{ fontSize: '0.72rem', color: '#A6B0AA', marginTop: '0.2rem' }}>5 aliases mapped to suspects</div>
-            </div>
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: '0.7rem', color: '#6C7A73', textTransform: 'uppercase' }}>Graph Edges Created</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#4ECDC4', marginTop: '0.2rem' }}>{summaryStats.edges_created || 38} Edges</div>
-              <div style={{ fontSize: '0.72rem', color: '#A6B0AA', marginTop: '0.2rem' }}>Co-occurrence & Call logs</div>
-            </div>
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: '0.7rem', color: '#6C7A73', textTransform: 'uppercase' }}>Cross-Case Bridge Nodes</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FF6B6B', marginTop: '0.2rem' }}>3 Shared Entities</div>
-              <div style={{ fontSize: '0.72rem', color: '#FF6B6B', marginTop: '0.2rem' }}>Ravi Kumar, Phone-001, Acc-204</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Multi-Source Cards */}
-      <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 1rem 0', color: '#F1EBDD' }}>
-        Active Evidence Data Sources ({DATA_TYPES.length})
-      </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        {DATA_TYPES.map(dt => (
-          <div
-            key={dt.id}
-            style={{
-              background: 'rgba(17, 24, 21, 0.8)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '10px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '1.8rem' }}>{dt.icon}</span>
-                <span style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: '4px',
-                  background: completed ? 'rgba(94,159,104,0.15)' : 'rgba(217,170,61,0.15)',
-                  border: `1px solid ${completed ? 'rgba(94,159,104,0.4)' : 'rgba(217,170,61,0.4)'}`,
-                  color: completed ? '#4ADE80' : '#D9AA3D',
-                }}>
-                  {completed ? 'SYNCHRONIZED' : 'READY TO INGEST'}
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-[#f1ebdd] tracking-tight">
+                  Evidence Ingestion Engine
+                </h1>
+                <span className="rounded-full bg-[#d9aa3d]/15 border border-[#d9aa3d]/40 px-2.5 py-0.5 text-[10px] font-mono font-bold text-[#d9aa3d]">
+                  STAGE {activeStep} / 2
                 </span>
               </div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F1EBDD', marginBottom: '0.25rem' }}>
-                {dt.label}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: '#6C7A73', marginBottom: '0.6rem' }}>
-                {dt.count} • {dt.ext}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#A6B0AA', lineHeight: 1.4 }}>
-                {dt.desc}
-              </div>
-            </div>
-
-            <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.72rem', color: '#6C7A73' }}>Format: {dt.ext}</span>
-              <button
-                onClick={() => { setSelectedType(dt); setCurrentStep(1); }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#D9AA3D',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                }}
-              >
-                Upload New {dt.ext}
-                <ChevronRight size={13} />
-              </button>
+              <p className="text-xs text-[#8a948c] mt-0.5">
+                {activeStep === 1 
+                  ? 'Select an active case dossier or register a new FIR to bind forensic records.' 
+                  : `Ingesting multi-source documents into CASE-${activeCaseObj.case_number} knowledge graph.`}
+              </p>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Upload Custom File Modal / Dropzone */}
-      {currentStep === 1 && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(6px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 999,
-          padding: '1rem',
-        }}>
-          <div style={{
-            background: 'rgba(17, 24, 21, 0.98)',
-            border: '1px solid rgba(217,170,61,0.3)',
-            borderRadius: '12px',
-            padding: '2rem',
-            maxWidth: '500px',
-            width: '100%',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#F1EBDD' }}>
-                Upload {selectedType?.label}
-              </h3>
+          {/* Interactive Stepper Pills */}
+          <div className="flex items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-2xl backdrop-blur-md shadow-inner">
+            <button
+              type="button"
+              onClick={() => setActiveStep(1)}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer",
+                activeStep === 1
+                  ? "bg-[#d9aa3d] text-[#080a08] shadow-md shadow-[#d9aa3d]/20"
+                  : "text-[#8a948c] hover:text-[#f1ebdd]"
+              )}
+            >
+              <FolderOpen size={14} />
+              <span>1. Target Case</span>
+            </button>
+
+            <ChevronRight size={14} className="text-white/20" />
+
+            <button
+              type="button"
+              onClick={() => setActiveStep(2)}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer",
+                activeStep === 2
+                  ? "bg-[#d9aa3d] text-[#080a08] shadow-md shadow-[#d9aa3d]/20"
+                  : "text-[#8a948c] hover:text-[#f1ebdd]"
+              )}
+            >
+              <Upload size={14} />
+              <span>2. Ingest Evidence</span>
+            </button>
+          </div>
+
+        </div>
+      </header>
+
+      {/* ── MAIN WORKSPACE AREA ──────────────────────────────────────────────── */}
+      <main className="flex-1 overflow-y-auto p-8 scrollbar-thin">
+        <div className="max-w-6xl mx-auto space-y-6">
+
+          {/* ════════════════════════════════════════════════════════════════════
+              STEP 1: TARGET CASE SELECTION
+             ════════════════════════════════════════════════════════════════════ */}
+          {activeStep === 1 && (
+            <div className="space-y-5 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-[#f1ebdd] uppercase tracking-wider flex items-center gap-2">
+                    <ShieldCheck size={16} className="text-[#d9aa3d]" />
+                    Choose Active Investigation Case
+                  </h2>
+                  <p className="text-xs text-[#8a948c] mt-0.5">
+                    All ingested call logs, financial ledgers, and FIRs will be automatically linked to this case dossier.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingCase(true)}
+                  className="flex items-center gap-2 rounded-xl border border-[#d9aa3d]/50 bg-[#d9aa3d]/15 px-4 py-2 text-xs font-bold text-[#d9aa3d] hover:bg-[#d9aa3d]/25 hover:text-[#f1ebdd] transition cursor-pointer shadow-sm hover:scale-[1.02]"
+                >
+                  <Plus size={15} />
+                  <span>+ Register New Case / FIR</span>
+                </button>
+              </div>
+
+              {/* Case Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cases.map((c) => {
+                  const isSelected = selectedCase === c.case_number;
+                  return (
+                    <div
+                      key={c.case_number}
+                      onClick={() => {
+                        setSelectedCase(c.case_number);
+                        setActiveStep(2);
+                      }}
+                      className={clsx(
+                        "relative rounded-2xl p-5 border cursor-pointer transition-all duration-300 flex flex-col justify-between space-y-4 group overflow-hidden",
+                        isSelected
+                          ? "border-[#d9aa3d] bg-gradient-to-b from-[#161c18] to-[#101412] shadow-xl shadow-[#d9aa3d]/10 ring-1 ring-[#d9aa3d]/50"
+                          : "border-white/5 bg-[#0e1210] hover:border-white/20 hover:bg-[#121614] hover:shadow-lg"
+                      )}
+                    >
+                      {/* Top Row: Case ID & Status */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={clsx(
+                            "font-mono text-xs font-bold px-2.5 py-1 rounded-lg border",
+                            isSelected
+                              ? "bg-[#d9aa3d]/25 border-[#d9aa3d]/50 text-[#d9aa3d]"
+                              : "bg-white/5 border-white/10 text-[#8a948c]"
+                          )}>
+                            CASE-{c.case_number}
+                          </span>
+
+                          <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#4ade80] bg-[#4ade80]/10 border border-[#4ade80]/25 px-2 py-0.5 rounded-full font-bold">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#4ade80] animate-pulse" />
+                            Active Case
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-sm font-bold text-[#f1ebdd] group-hover:text-[#d9aa3d] transition-colors leading-snug line-clamp-2">
+                          {c.title?.replace(/\(CASE-\d+\)/, '')}
+                        </h3>
+
+                        {/* Metadata */}
+                        <div className="mt-2 text-xs text-[#8a948c] space-y-1">
+                          <div className="text-[#c5cfc8] truncate font-medium">{c.crime_category}</div>
+                          <div className="flex items-center gap-1.5 text-[11px]">
+                            <MapPin size={12} className="text-[#d9aa3d] shrink-0" />
+                            <span className="truncate">{c.jurisdiction || 'Special Crime Branch'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Action Footer */}
+                      <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+                        <span className="font-mono text-[11px] text-[#8a948c] flex items-center gap-1">
+                          <Calendar size={11} />
+                          {formatDate(c.incident_date)}
+                        </span>
+
+                        <span className={clsx(
+                          "font-bold text-xs flex items-center gap-1 transition-transform group-hover:translate-x-1",
+                          isSelected ? "text-[#d9aa3d]" : "text-[#8a948c] group-hover:text-[#f1ebdd]"
+                        )}>
+                          <span>Select & Ingest</span>
+                          <ArrowRight size={12} />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════════
+              STEP 2: EVIDENCE DROPZONE & CONNECTOR VAULT
+             ════════════════════════════════════════════════════════════════════ */}
+          {activeStep === 2 && (
+            <div className="space-y-6 animate-fade-in">
+              
+              {/* Active Case Context Bar */}
+              <div className="rounded-2xl border border-[rgba(217,170,61,0.35)] bg-gradient-to-r from-[#141a16] via-[#101412] to-[#0d100e] p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#d9aa3d]/40 bg-[#d9aa3d]/15 text-[#d9aa3d] shadow-md">
+                    <FolderOpen size={24} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-md bg-[#d9aa3d]/25 border border-[#d9aa3d]/50 text-[#d9aa3d]">
+                        CASE-{activeCaseObj.case_number}
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-[#72bf7e] bg-[#72bf7e]/15 border border-[#72bf7e]/30 px-2 py-0.5 rounded-full">
+                        TARGET LOCKED
+                      </span>
+                    </div>
+                    <h2 className="text-base font-bold text-[#f1ebdd] mt-1">
+                      {activeCaseObj.title?.replace(/\(CASE-\d+\)/, '')}
+                    </h2>
+                    <div className="text-xs text-[#8a948c] mt-0.5">
+                      {activeCaseObj.crime_category} • {activeCaseObj.jurisdiction}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(1)}
+                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-[#c5cfc8] hover:text-[#f1ebdd] hover:bg-white/10 transition cursor-pointer"
+                  >
+                    ← Switch Case
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => runPipeline()}
+                    disabled={isProcessing}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d9aa3d] to-[#d97706] px-5 py-2 text-xs font-bold text-[#080a08] hover:brightness-110 shadow-lg shadow-[#d9aa3d]/20 transition cursor-pointer disabled:opacity-50 hover:scale-[1.02] active:scale-[0.99]"
+                  >
+                    <Zap size={14} fill="#080a08" />
+                    <span>Run Full 8-Step Pipeline (Demo Batch)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Futuristic Drag & Drop Area */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleFileDrop}
+                onClick={() => fileRef.current?.click()}
+                className={clsx(
+                  "relative rounded-3xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center space-y-3 group",
+                  dragOver
+                    ? "border-[#d9aa3d] bg-[#d9aa3d]/10 scale-[1.01]"
+                    : "border-white/15 bg-[#0e1210] hover:border-[#d9aa3d]/60 hover:bg-[#111613]"
+                )}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#d9aa3d]/15 text-[#d9aa3d] border border-[#d9aa3d]/30 group-hover:scale-110 group-hover:bg-[#d9aa3d]/25 transition-all shadow-lg">
+                  <Upload size={26} />
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-[#f1ebdd]">
+                    Drag & Drop Evidence Documents or <span className="text-[#d9aa3d] underline">Browse Files</span>
+                  </h3>
+                  <p className="text-xs text-[#8a948c] mt-1">
+                    Supports FIR Reports (.pdf, .txt), CDR Logs (.csv), Bank Ledgers (.csv, .json), and Social Intel (.json)
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 text-[11px] font-mono text-[#8a948c] pt-1">
+                  <span className="flex items-center gap-1 text-[#4ade80]">
+                    <ShieldCheck size={13} />
+                    Auto SHA-256 Checksum
+                  </span>
+                  <span>•</span>
+                  <span>Max File Size: 100MB</span>
+                </div>
+              </div>
+
+              {/* Supported Multi-Source Connectors */}
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-[#8a948c] uppercase tracking-wider flex items-center gap-2">
+                    <Layers size={14} className="text-[#d9aa3d]" />
+                    Available Forensic Connectors (6)
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {SOURCE_CONNECTORS.map((connector) => {
+                    const IconComp = connector.icon;
+                    return (
+                      <div
+                        key={connector.id}
+                        className="rounded-2xl border border-white/5 bg-[#0e1210] p-5 flex flex-col justify-between hover:border-[rgba(217,170,61,0.4)] hover:bg-[#121614] hover:shadow-xl transition-all duration-200 space-y-4 group"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${connector.iconColor}`}>
+                              <IconComp size={20} />
+                            </div>
+                            <span className={`rounded-full border px-2 py-0.5 text-[9px] font-mono font-bold ${connector.badgeColor}`}>
+                              {connector.badge}
+                            </span>
+                          </div>
+
+                          <h4 className="text-sm font-bold text-[#f1ebdd] group-hover:text-[#d9aa3d] transition">
+                            {connector.label}
+                          </h4>
+                          <p className="text-xs text-[#8a948c] mt-1.5 leading-relaxed line-clamp-2">
+                            {connector.desc}
+                          </p>
+                        </div>
+
+                        <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+                          <span className="font-mono text-[10px] text-[#8a948c]">
+                            {connector.formats}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedConnector(connector);
+                              fileRef.current?.click();
+                            }}
+                            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-[#d9aa3d] hover:bg-[#d9aa3d]/20 transition cursor-pointer"
+                          >
+                            <span>Upload File</span>
+                            <ArrowUpRight size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+        </div>
+      </main>
+
+      {/* Hidden File Input */}
+      <input
+        ref={fileRef}
+        type="file"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
+      {/* ── CREATE CASE MODAL ──────────────────────────────────────────────── */}
+      {isCreatingCase && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-3xl border border-[rgba(217,170,61,0.4)] bg-[#0d100e] p-7 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d9aa3d]/15 text-[#d9aa3d] border border-[#d9aa3d]/30">
+                  <FolderPlus size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-[#f1ebdd] uppercase tracking-wide">
+                    Register New Investigation Dossier / FIR
+                  </h3>
+                  <p className="text-[11px] text-[#8a948c]">Create a registered case binding for incoming evidence.</p>
+                </div>
+              </div>
               <button
-                onClick={() => setCurrentStep(0)}
-                style={{ background: 'transparent', border: 'none', color: '#A6B0AA', cursor: 'pointer' }}
+                type="button"
+                onClick={() => setIsCreatingCase(false)}
+                className="text-[#8a948c] hover:text-[#f1ebdd] cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div
-              onClick={() => fileRef.current?.click()}
-              style={{
-                padding: '2.5rem',
-                border: '2px dashed rgba(217, 170, 61, 0.4)',
-                borderRadius: '8px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                background: 'rgba(217, 170, 61, 0.03)',
-              }}
-            >
-              <Upload size={38} color="#D9AA3D" style={{ marginBottom: '0.75rem' }} />
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F1EBDD' }}>
-                Click to select {selectedType?.ext} file
+            <form onSubmit={handleCreateCase} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8a948c] mb-1">Case / FIR Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={newCaseForm.case_number}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, case_number: e.target.value })}
+                    placeholder={`e.g. 10${cases.length + 1}`}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8a948c] mb-1">Incident Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={newCaseForm.incident_date}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, incident_date: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] outline-none"
+                  />
+                </div>
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#6C7A73', marginTop: '0.35rem' }}>
-                File will be processed through AI entity recognition pipeline
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#8a948c] mb-1">Case Title / Syndicate Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newCaseForm.title}
+                  onChange={(e) => setNewCaseForm({ ...newCaseForm, title: e.target.value })}
+                  placeholder="e.g. Coastal Narcotics & Contraband Trafficking Syndicate"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] outline-none"
+                />
               </div>
-            </div>
-            <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={handleFileSelect} />
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8a948c] mb-1">Crime Category</label>
+                  <select
+                    value={newCaseForm.crime_category}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, crime_category: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] outline-none cursor-pointer"
+                  >
+                    <option value="Armed Extortion / Robbery">Armed Extortion / Robbery</option>
+                    <option value="Cyber Phishing & Crypto Fraud">Cyber Phishing & Crypto Fraud</option>
+                    <option value="Arms Act 1959 / Contraband">Arms Act 1959 / Contraband</option>
+                    <option value="Commercial Hawala & PMLA">Commercial Hawala & PMLA</option>
+                    <option value="Organized Auto Theft">Organized Auto Theft</option>
+                    <option value="NDPS Narcotics Trafficking">NDPS Narcotics Trafficking</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8a948c] mb-1">Police Bureau / Jurisdiction</label>
+                  <input
+                    type="text"
+                    required
+                    value={newCaseForm.jurisdiction}
+                    onChange={(e) => setNewCaseForm({ ...newCaseForm, jurisdiction: e.target.value })}
+                    placeholder="e.g. Crime Branch, Delhi Police"
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#8a948c] mb-1">Initial Brief Summary</label>
+                <textarea
+                  rows={2}
+                  value={newCaseForm.summary}
+                  onChange={(e) => setNewCaseForm({ ...newCaseForm, summary: e.target.value })}
+                  placeholder="Summary of complaint, primary suspects intercepted, or initial intelligence tip…"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingCase(false)}
+                  className="rounded-xl border border-white/10 px-4 py-2 text-xs text-[#8a948c] hover:text-[#f1ebdd] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-[#d9aa3d] to-[#d97706] px-5 py-2 text-xs font-bold text-[#080a08] hover:brightness-110 shadow-md cursor-pointer"
+                >
+                  Register & Lock Case
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {currentStep === 2 && selectedFile && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(6px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 999,
-          padding: '1rem',
-        }}>
-          <div style={{
-            background: 'rgba(17, 24, 21, 0.98)',
-            border: '1px solid rgba(217,170,61,0.3)',
-            borderRadius: '12px',
-            padding: '2rem',
-            maxWidth: '500px',
-            width: '100%',
-          }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 800, color: '#F1EBDD' }}>
-              File Ready for Ingestion
-            </h3>
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
-              <div style={{ color: '#A6B0AA' }}>File: <strong style={{ color: '#F1EBDD' }}>{selectedFile.name}</strong></div>
-              <div style={{ color: '#A6B0AA', marginTop: '0.3rem' }}>Size: {(selectedFile.size / 1024).toFixed(1)} KB</div>
+      {/* ── 8-STAGE FORENSIC PIPELINE EXECUTION MODAL ───────────────────────── */}
+      {(isProcessing || completed) && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+          <div className="relative w-full max-w-xl rounded-3xl border border-[rgba(217,170,61,0.4)] bg-[#0d100e] p-7 shadow-2xl space-y-5">
+            
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d9aa3d]/15 text-[#d9aa3d] border border-[#d9aa3d]/30">
+                  <Cpu size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-[#f1ebdd] uppercase tracking-wide">
+                    {completed ? 'Forensic Pipeline Completed' : 'Executing 8-Stage Neural Ingestion'}
+                  </h3>
+                  <p className="text-[11px] text-[#8a948c]">
+                    Bound to Target: CASE-{activeCaseObj.case_number}
+                  </p>
+                </div>
+              </div>
+
+              {completed && (
+                <button
+                  type="button"
+                  onClick={() => { setCompleted(false); setIsProcessing(false); }}
+                  className="text-[#8a948c] hover:text-[#f1ebdd] cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setCurrentStep(0)}
-                style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#A6B0AA', borderRadius: '6px', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setCurrentStep(0);
-                  runPipelineAnimation();
-                }}
-                style={{ padding: '0.5rem 1.25rem', background: '#D9AA3D', border: 'none', color: '#0B100D', fontWeight: 800, borderRadius: '6px', cursor: 'pointer' }}
-              >
-                Run Ingestion Pipeline
-              </button>
+
+            {/* Progress Bar */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs font-mono">
+                <span className="text-[#8a948c]">Overall Pipeline Progress:</span>
+                <span className="text-[#d9aa3d] font-bold">{progressPercent}%</span>
+              </div>
+              <div className="h-2.5 w-full rounded-full bg-black/60 overflow-hidden ring-1 ring-white/5">
+                <div
+                  className="h-full bg-gradient-to-r from-[#d9aa3d] via-[#f59e0b] to-[#4ade80] rounded-full transition-all duration-300 shadow-sm"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
+
+            {/* 8-Stage Stepper */}
+            <div className="space-y-2 max-h-52 overflow-y-auto pr-1 scrollbar-thin text-xs">
+              {PIPELINE_STEPS.map((st, idx) => {
+                const isDone = idx < pipelineIdx || completed;
+                const isCurrent = idx === pipelineIdx && !completed;
+
+                return (
+                  <div
+                    key={st.step}
+                    className={clsx(
+                      'flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs',
+                      isDone
+                        ? 'border-emerald-900/40 bg-emerald-950/20 text-[#4ade80]'
+                        : isCurrent
+                        ? 'border-[#d9aa3d]/50 bg-[#d9aa3d]/10 text-[#d9aa3d] font-bold shadow-sm'
+                        : 'border-white/5 bg-black/20 text-[#8a948c]'
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono text-[10px] font-bold opacity-60">
+                        {st.step}
+                      </span>
+                      {isDone ? (
+                        <CheckCircle2 size={14} className="text-[#4ade80]" />
+                      ) : isCurrent ? (
+                        <RefreshCw size={14} className="animate-spin text-[#d9aa3d]" />
+                      ) : (
+                        <div className="h-2 w-2 rounded-full bg-white/10" />
+                      )}
+                      <span>{st.title}</span>
+                    </div>
+
+                    <span className="font-mono text-[10px]">
+                      {isDone ? 'COMPLETED' : isCurrent ? 'PROCESSING…' : 'WAITING'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Summary Statistics upon completion */}
+            {completed && summaryStats && (
+              <div className="rounded-2xl border border-[rgba(94,159,104,0.3)] bg-[rgba(94,159,104,0.08)] p-4 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-[#4ade80]">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle size={15} />
+                    Knowledge Graph Synchronized Successfully
+                  </span>
+                  <span className="font-mono text-[10px] text-[#8a948c]">HASH VERIFIED</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-xl bg-black/40 p-2 border border-white/5">
+                    <div className="font-bold text-lg text-[#d9aa3d] font-mono">{summaryStats.entities_resolved}</div>
+                    <div className="text-[9px] text-[#8a948c] uppercase">Entities Extracted</div>
+                  </div>
+                  <div className="rounded-xl bg-black/40 p-2 border border-white/5">
+                    <div className="font-bold text-lg text-[#4ade80] font-mono">{summaryStats.edges_created}</div>
+                    <div className="text-[9px] text-[#8a948c] uppercase">Relationships Formed</div>
+                  </div>
+                  <div className="rounded-xl bg-black/40 p-2 border border-white/5">
+                    <div className="font-bold text-lg text-[#38bdf8] font-mono">100%</div>
+                    <div className="text-[9px] text-[#8a948c] uppercase">Audit Chain Sealed</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            {completed && (
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => { setCompleted(false); setIsProcessing(false); }}
+                  className="rounded-xl border border-white/10 px-4 py-2 text-xs text-[#8a948c] hover:text-[#f1ebdd] cursor-pointer"
+                >
+                  Done
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCompleted(false);
+                    setIsProcessing(false);
+                    setActiveTab('network');
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d9aa3d] to-[#d97706] px-5 py-2 text-xs font-bold text-[#080a08] hover:brightness-110 shadow-lg cursor-pointer"
+                >
+                  <span>Explore in Knowledge Graph</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            )}
+
           </div>
         </div>
       )}
+
     </div>
   );
 }

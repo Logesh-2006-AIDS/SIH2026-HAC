@@ -1,0 +1,28 @@
+[
+  {
+    "record_id": "CRIM-HIST-101",
+    "full_name": "Ravi Kumar",
+    "aliases": ["Ravan", "RK", "R. Kumar"],
+    "dob": "1984-06-15",
+    "primary_phone": "+91-98110-44501",
+    "known_associates": ["Vikram Singh", "Suresh Raina", "Aarav Mehta"],
+    "gang_affiliation": "East Delhi Extortion Syndicate",
+    "modus_operandi": "Sim swap cyber fraud, corporate extortion, and Hawala layering through front logistics firms",
+    "past_fir_numbers": ["FIR-101/2023", "FIR-45/2022"],
+    "status": "ACTIVE_FUGITIVE",
+    "case_ids": ["CASE-101", "CASE-105"]
+  },
+  {
+    "record_id": "CRIM-HIST-102",
+    "full_name": "Vikram Singh",
+    "aliases": ["Vicky", "V. Singh"],
+    "dob": "1988-11-20",
+    "primary_phone": "+91-98765-43210",
+    "known_associates": ["Ravi Kumar", "Rohit Patel"],
+    "gang_affiliation": "NCR Auto Theft & Transport Cell",
+    "modus_operandi": "Vehicle theft, altered chassis plates, illicit transport logistics",
+    "past_fir_numbers": ["FIR-88/2021", "FIR-12/2023"],
+    "status": "ON_BAIL",
+    "case_ids": ["CASE-101", "CASE-104"]
+  }
+]

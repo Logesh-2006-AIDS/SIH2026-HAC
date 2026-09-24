@@ -1,0 +1,22 @@
+[
+  {
+    "post_id": "SOC-001",
+    "platform": "Telegram",
+    "profile_handle": "ShadowOperative_01",
+    "associated_handles": ["VickyLogistics", "ApexTransporter"],
+    "content": "Consignment DL-01-AB-1234 moving out from Laxmi Nagar hub towards warehouse. Reach out on burner +91-98110-44501 for gate pass.",
+    "extracted_tags": ["#delhilogistics", "#consignment", "#hawala"],
+    "timestamp": "2024-08-14T09:30:00Z",
+    "case_ids": ["CASE-101", "CASE-105"]
+  },
+  {
+    "post_id": "SOC-002",
+    "platform": "Twitter/X",
+    "profile_handle": "ApexLogistics_HQ",
+    "associated_handles": ["VickyLogistics"],
+    "content": "Express freight service operational between Connaught Place and Okhla depot. Contact desk at +91-98765-43210.",
+    "extracted_tags": ["#cargo", "#delhincr"],
+    "timestamp": "2024-08-14T11:00:00Z",
+    "case_ids": ["CASE-101"]
+  }
+]

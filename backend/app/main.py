@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.db.init_db import init_postgres
-from app.db.neo4j_client import MemgraphClient
+from app.db.graph_client import MemgraphClient
+from app.services.graph_store import get_graph_store
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,14 +21,11 @@ async def lifespan(app: FastAPI):
     try:
         init_postgres()
     except Exception as e:
-        logger.warning("PostgreSQL schema initialization: %s", e)
-    try:
-        if MemgraphClient.verify_connectivity():
-            logger.info("Memgraph connection established.")
-        else:
-            logger.warning("Memgraph unreachable — operating with local JSON graph fallback.")
-    except Exception as e:
-        logger.warning("Memgraph startup check: %s", e)
+        logger.warning("Database schema initialization: %s", e)
+
+    store = get_graph_store()
+    stats = store.get_stats()
+    logger.info("Knowledge Graph Store active: %s (%d nodes, %d edges)", stats.get("store"), stats.get("node_count", 0), stats.get("edge_count", 0))
 
     yield
 
@@ -57,10 +55,13 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():
+    store = get_graph_store()
+    stats = store.get_stats()
     return {
         "title": settings.APP_NAME,
-        "version": "0.2.0",
+        "version": "1.0.0",
         "docs": "/docs",
         "api_v1": settings.API_V1_STR,
-        "graph_store": "memgraph",
+        "graph_store": stats.get("store", "LocalFixtureStore"),
+        "demo_mode": settings.DEMO_MODE,
     }

@@ -1,7 +1,7 @@
 """
 Memgraph Knowledge Graph Builder
 Seeds entities/relationships from ground_truth JSON using Memgraph-compatible Cypher.
-No APOC — dynamic relationship types are applied via safe typed CREATE batches.
+Provides automatic synchronization with LocalFixtureStore when Memgraph is not running.
 """
 import json
 import logging
@@ -9,7 +9,8 @@ import os
 import re
 from collections import defaultdict
 
-from app.db.neo4j_client import MemgraphClient
+from app.db.graph_client import MemgraphClient
+from app.services.graph_store import get_graph_store
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +143,7 @@ def seed_nodes(entities: dict):
 
 
 def seed_edges(graph: dict):
-    """Create relationships without APOC (Memgraph-compatible)."""
+    """Create relationships in Memgraph without APOC."""
     edges = graph.get("edges", [])
     by_type = defaultdict(list)
     for e in edges:
@@ -195,30 +196,25 @@ def build_graph_from_synthetic_data(data_dir: str = None):
     if not os.path.exists(entities_path) or not os.path.exists(graph_path):
         raise FileNotFoundError(f"Synthetic data JSON files not found in {metadata_dir}")
 
-    if not MemgraphClient.verify_connectivity():
-        logger.warning("Memgraph unreachable — seed skipped; JSON fallback remains active.")
-        entities = load_json_file(entities_path)
-        graph = load_json_file(graph_path)
-        return {
-            "status": "fallback",
-            "message": "Memgraph not running. Serving ground_truth JSON via FastAPI.",
-            "nodes": len(entities.get("persons", [])) + len(entities.get("organizations", []))
-                     + len(entities.get("vehicles", [])) + len(entities.get("locations", []))
-                     + len(entities.get("financial_accounts", [])) + len(entities.get("phone_numbers", [])),
-            "edges": len(graph.get("edges", [])),
-        }
-
     entities = load_json_file(entities_path)
     graph = load_json_file(graph_path)
 
-    clear_graph()
-    seed_nodes(entities)
-    seed_edges(graph)
+    store = get_graph_store()
+
+    if MemgraphClient.verify_connectivity():
+        clear_graph()
+        seed_nodes(entities)
+        seed_edges(graph)
+        return {
+            "status": "success",
+            "mode": "LIVE_MEMGRAPH",
+            "nodes": len(graph.get("nodes", [])),
+            "edges": len(graph.get("edges", [])),
+        }
 
     return {
-        "status": "success",
-        "nodes": len(entities.get("persons", [])) + len(entities.get("organizations", []))
-                 + len(entities.get("vehicles", [])) + len(entities.get("locations", []))
-                 + len(entities.get("financial_accounts", [])) + len(entities.get("phone_numbers", [])),
+        "status": "ready",
+        "mode": "DEMO_FIXTURE_STORE",
+        "nodes": len(graph.get("nodes", [])),
         "edges": len(graph.get("edges", [])),
     }

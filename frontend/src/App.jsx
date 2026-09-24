@@ -34,6 +34,10 @@ import InvestigationLeads from './components/InvestigationLeads';
 import AdminDashboard from './components/AdminDashboard';
 import AnalystDashboard from './components/AnalystDashboard';
 
+// Global Forensic Search & Edge Evidence Panels
+import GlobalEntitySearch from './components/GlobalEntitySearch';
+import EdgeEvidenceDrawer from './components/EdgeEvidenceDrawer';
+
 const PAGE_META = {
   dashboard:         { label: 'Criminal Pinboard',          icon: Pin },
   admin_dashboard:   { label: 'System & Security Control',  icon: Shield },
@@ -116,6 +120,21 @@ function AppInner({ onSignOut }) {
     setInvestigationSection, suspectList,
   } = inv;
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [selectedEdge, setSelectedEdge] = useState(null);
+
+  // Global Ctrl+K hotkey for Global Entity Search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // 1. ADMIN ROLE VIEW (NEW Console from web/)
   if (currentRole === 'ADMIN') {
     return (
@@ -150,6 +169,17 @@ function AppInner({ onSignOut }) {
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <BackgroundNetwork />
 
+      {/* Global Forensic Entity Search Palette */}
+      <GlobalEntitySearch
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        nodes={nodes}
+        onSelectEntity={(e) => {
+          selectEntity(e, { focusGraph: true });
+          setActiveTab('network');
+        }}
+      />
+
       {/* When not on corkboard, render top bar */}
       {!isBoard && (
         <InvestigatorBar
@@ -158,6 +188,7 @@ function AppInner({ onSignOut }) {
           casesList={casesList} currentRole={currentRole} setCurrentRole={setCurrentRole}
           onBack={() => setActiveTab('dashboard')}
           isInvestigator={isInvestigator}
+          onOpenSearch={() => setIsSearchOpen(true)}
           onSignOut={onSignOut}
         />
       )}
@@ -169,7 +200,7 @@ function AppInner({ onSignOut }) {
         )}
 
         <main key={activeTab} className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-          {isBoard && <CriminalBoard />}
+          {isBoard && <CriminalBoard onOpenSearch={() => setIsSearchOpen(true)} />}
           {(activeTab === 'dossiers' || activeTab === 'cases') && <CaseDossiers />}
 
           {activeTab === 'network' && (
@@ -197,10 +228,20 @@ function AppInner({ onSignOut }) {
               <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
                 <GraphCanvas
                   nodes={nodes} edges={edges} layoutName={layoutName}
-                  selectedEntity={selectedEntity} onSelectEntity={(e) => selectEntity(e)}
+                  selectedEntity={selectedEntity} onSelectEntity={(e) => { setSelectedEdge(null); selectEntity(e); }}
+                  selectedEdge={selectedEdge} onSelectEdge={(edge) => { setSelectedEntity(null); setSelectedEdge(edge); }}
                   highlightedPath={highlightedPath} isLoading={isLoadingGraph}
                   focusEntityId={focusMode ? graphFocusEntity : null}
                 />
+                
+                {/* Edge Evidence Slide-Out Drawer */}
+                <EdgeEvidenceDrawer
+                  edgeData={selectedEdge}
+                  onClose={() => setSelectedEdge(null)}
+                  onFocusEntity={focusEntityById}
+                />
+
+                {/* Entity Inspector */}
                 <EntityInspector
                   entity={selectedEntity}
                   onClose={() => selectEntity(null)}
@@ -225,7 +266,6 @@ function AppInner({ onSignOut }) {
           {activeTab === 'pathfinder' && <PathFinder />}
           {activeTab === 'leads' && <InvestigationLeads />}
 
-
           {activeTab === 'investigation' && <CaseInvestigation />}
           {activeTab === 'crosscase' && <CrossCasePanel onFocusEntity={focusEntityById} selectedCase={selectedCase} />}
           {activeTab === 'copilot' && (
@@ -245,7 +285,7 @@ function AppInner({ onSignOut }) {
   );
 }
 
-function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, casesList, currentRole, setCurrentRole, onBack, isInvestigator, onSignOut }) {
+function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, casesList, currentRole, setCurrentRole, onBack, isInvestigator, onOpenSearch, onSignOut }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 48,
@@ -268,16 +308,28 @@ function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, ca
           }}>
             Case {selectedCase}
           </span>
-          <span style={{
-            fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 12,
-            background: 'rgba(94,159,104,0.2)', border: '1px solid rgba(94,159,104,0.4)', color: '#4ADE80'
-          }}>
-            DEMO MODE
-          </span>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {/* Global Entity Search Trigger */}
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(217,170,61,0.35)',
+            color: '#D9AA3D', padding: '0.3rem 0.75rem', borderRadius: 6,
+            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+          }}
+        >
+          <Search size={13} />
+          <span>Global Search</span>
+          <span style={{ background: 'rgba(255,255,255,0.08)', padding: '0.05rem 0.35rem', borderRadius: 4, fontSize: '0.65rem', color: '#8a948c' }}>
+            Ctrl+K
+          </span>
+        </button>
+
         <select value={selectedCase} onChange={(e) => setSelectedCase(e.target.value)} style={barSelect}>
           {(casesList.length ? casesList : [{ case_number: '101' }, { case_number: '102' }, { case_number: '103' }]).map((c) => (
             <option key={c.case_number} value={c.case_number}>Case {c.case_number}</option>

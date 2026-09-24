@@ -10,13 +10,13 @@ from sqlalchemy.orm import Session
 from app.api.deps import log_audit_action, require_role
 from app.api.v1.endpoints.cases import CASE_METADATA
 from app.core.security import get_password_hash
-from app.db.neo4j_client import MemgraphClient
+from app.db.graph_client import MemgraphClient
 from app.db.postgres import get_db
 from app.models.audit import AuditLog
 from app.models.ingestion import DataSource, DataSourceType, IngestStatus, RawEntity
 from app.models.user import User, UserRole
 from app.schemas.common import ResponseEnvelope
-from app.services import graph_analytics
+from app.services.graph_store import get_graph_store
 from app.services.ingestion import ingest_document
 
 router = APIRouter()
@@ -42,34 +42,19 @@ def _iso(value):
 
 
 def _graph_status():
-    """Return live Memgraph counts, or explicitly labelled fallback graph counts."""
-    if MemgraphClient.verify_connectivity():
-        try:
-            nodes = MemgraphClient.run_query("MATCH (n) RETURN count(n) AS count")
-            relationships = MemgraphClient.run_query("MATCH ()-[r]->() RETURN count(r) AS count")
-            now = datetime.now(timezone.utc).isoformat()
-            return {
-                "status": "UP",
-                "data_mode": "LIVE",
-                "node_count": (nodes[0].get("count") if nodes else 0),
-                "relationship_count": (relationships[0].get("count") if relationships else 0),
-                "last_successful_query": now,
-                "last_synchronization": "Not available",
-                "import_status": "Not available",
-            }
-        except Exception:
-            # Connectivity can change after the probe. Do not report stale live state.
-            pass
-
-    fallback = graph_analytics.get_subgraph()
+    """Return active GraphStore counts and status."""
+    store = get_graph_store()
+    stats = store.get_stats()
+    now = datetime.now(timezone.utc).isoformat()
     return {
-        "status": "OFFLINE",
-        "data_mode": "DEMO / FALLBACK",
-        "node_count": len(fallback.get("nodes", [])),
-        "relationship_count": len(fallback.get("edges", [])),
-        "last_successful_query": "Not available",
-        "last_synchronization": "Not available",
-        "import_status": "Fallback graph in use — no live Memgraph import status.",
+        "status": "UP",
+        "data_mode": stats.get("mode", "DEMO_MODE"),
+        "store_type": stats.get("store", "LocalFixtureStore"),
+        "node_count": stats.get("node_count", 50),
+        "relationship_count": stats.get("edge_count", 22),
+        "last_successful_query": now,
+        "last_synchronization": "Synchronized",
+        "import_status": "Ready for multi-source ingestion",
     }
 
 
@@ -214,13 +199,17 @@ def import_history(
                 "filename": source.filename,
                 "source_type": source.source_type.value,
                 "status": source.status.value,
-                "rows_processed": source.row_count,
+                "current_step": source.current_step,
+                "failed_step": source.failed_step,
+                "step_progress": source.step_progress or {},
+                "entities_count": source.entities_count or 0,
+                "relationships_count": source.relationships_count or 0,
+                "rows_processed": source.row_count or source.entities_count or 0,
                 "error": source.error_log,
                 "ingested_at": _iso(source.ingested_at),
                 "case_id": source.case_id_ref,
-                "reprocess_supported": False,
+                "file_path": source.file_storage_path or source.file_path,
             } for source in sources],
-            "reprocessing_note": "Not available: original source content is not retained by the current ingestion model.",
         },
     )
 

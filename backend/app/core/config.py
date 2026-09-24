@@ -21,43 +21,31 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
 
-    # PostgreSQL
+    # Operating Modes
+    DEMO_MODE: bool = True
+    GRAPH_STORE: str = "fixture"  # "fixture" or "memgraph"
+
+    # Evidence Store / Relational Database (Default: SQLite file for zero-Docker execution)
+    DATABASE_URL: str = "sqlite:///./sih_evidence.db"
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "sih_db"
-    DATABASE_URL: str = ""
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         if self.DATABASE_URL:
             return self.DATABASE_URL
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        return "sqlite:///./sih_evidence.db"
 
-    # Memgraph (Bolt) — preferred graph store
+    # Memgraph (Bolt Protocol)
     MEMGRAPH_URI: str = "bolt://localhost:7687"
     MEMGRAPH_USER: str = ""
     MEMGRAPH_PASSWORD: str = ""
 
-    # Legacy env aliases (map to Memgraph; Neo4j is NOT used)
-    NEO4J_URI: str = "bolt://localhost:7687"
-    NEO4J_USER: str = ""
-    NEO4J_PASSWORD: str = ""
-    NEO4J_DATABASE: str = ""
-
-    def model_post_init(self, __context) -> None:
-        # Prefer explicit MEMGRAPH_* ; fall back to NEO4J_* env if present
-        if self.NEO4J_URI and self.MEMGRAPH_URI == "bolt://localhost:7687":
-            # Keep MEMGRAPH_URI authoritative when set in .env
-            pass
-        if not self.MEMGRAPH_USER and self.NEO4J_USER:
-            object.__setattr__(self, "MEMGRAPH_USER", self.NEO4J_USER)
-        if not self.MEMGRAPH_PASSWORD and self.NEO4J_PASSWORD:
-            object.__setattr__(self, "MEMGRAPH_PASSWORD", self.NEO4J_PASSWORD)
-
     # Redis
-    USE_REDIS: bool = True
+    USE_REDIS: bool = False
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0

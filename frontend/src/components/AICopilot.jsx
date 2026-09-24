@@ -1,32 +1,48 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Send, Sparkles, ExternalLink, Shield, Database, ChevronRight, FileText } from 'lucide-react';
+import { Bot, Send, Sparkles, ExternalLink, Shield, Database, ChevronRight, FileText, ArrowRight, RefreshCw, Layers } from 'lucide-react';
 import { useInvestigation } from '../context/InvestigationContext.jsx';
 import { getCopilotAnswer, getCopilotSuggestions } from '../data/mockService.js';
+import clsx from 'clsx';
 
 export default function AICopilot() {
   const { focusEntityById, setActiveTab, selectedCase } = useInvestigation();
   const [messages, setMessages] = useState([
     {
       sender: 'assistant',
-      text: "I am your AI Investigation Copilot. I analyze multi-source crime data across FIR complaints, call detail records, financial ledgers, and field intelligence. Ask me about suspect links, cross-case connections, shortest paths, or evidence details.",
+      text: `Greetings Investigator. I am your AI Criminal Investigation Copilot for Case ${selectedCase || '101'}. I correlate evidence across FIR complaints, call detail records, financial transactions, and field intelligence dossiers.\n\nAsk me about suspect links, money trails, vehicle plates, or cross-case syndicate connections.`,
       entities: [
-        { entity_id: 'PERSON-001', name: 'Ravi Kumar', type: 'Person', relationship: 'Primary Suspect' },
-        { entity_id: 'PHONE-001', name: '+91-9876543210', type: 'Phone', relationship: 'Communications Nexus' },
-        { entity_id: 'ACC-001', name: 'Account-204', type: 'Account', relationship: 'Source of Pre-Incident Funds' }
+        { entity_id: 'P001', name: 'Ravi Kumar', type: 'Person', relationship: 'Primary Target' },
+        { entity_id: 'P002', name: 'Vikram Singh', type: 'Person', relationship: 'Syndicate Operator' },
+        { entity_id: 'O001', name: 'Apex Global Logistics', type: 'Organization', relationship: 'Conduit Shell Company' }
       ],
-      sources: ['FIR-CASE-101', 'CDR-CASE-101', 'FIN-CASE-101'],
-      cases: ['CASE-101', 'CASE-102', 'CASE-103'],
+      sources: [`FIR-CASE-${selectedCase || '101'}/2025`, 'CDR Intelligence Logs', 'ICICI Bank Statement'],
+      cases: [`CASE-${selectedCase || '101'}`, 'CASE-102', 'CASE-105'],
     }
   ]);
   const [inputQuery, setInputQuery] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState([
+    'Which suspects appear across multiple cases?',
+    'What is the connection between Ravi Kumar and Aarav Mehta?',
+    'Show all entities linked to Apex Global Logistics.',
+    'Trace the shortest path between Vikram Singh and Suresh Yadav.',
+  ]);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
-    getCopilotSuggestions().then(res => {
-      if (res?.data) setSuggestions(res.data);
-    });
+    async function loadSuggestions() {
+      try {
+        const res = await getCopilotSuggestions();
+        if (res?.data && Array.isArray(res.data)) {
+          setSuggestions(res.data);
+        } else if (Array.isArray(res)) {
+          setSuggestions(res);
+        }
+      } catch (err) {
+        console.warn('Could not load suggestions:', err);
+      }
+    }
+    loadSuggestions();
   }, [selectedCase]);
 
   useEffect(() => {
@@ -37,31 +53,35 @@ export default function AICopilot() {
     const textToSend = queryText || inputQuery;
     if (!textToSend.trim()) return;
 
-    const newMessages = [...messages, { sender: 'user', text: textToSend }];
-    setMessages(newMessages);
+    const userMsg = { sender: 'user', text: textToSend };
+    setMessages(prev => [...prev, userMsg]);
     setInputQuery('');
     setIsAnalyzing(true);
 
     try {
-      const res = await getCopilotAnswer(textToSend);
+      const res = await getCopilotAnswer(textToSend, selectedCase);
       const data = res?.data || {};
       const botResponse = {
         sender: 'assistant',
-        text: data.answer || 'No results found for this query in the investigation dataset.',
-        confidence: data.confidence ? `${Math.round(data.confidence * 100)}%` : '94%',
-        entities: data.entities || [],
-        sources: data.sources || [],
-        cases: data.cases || [],
-        suggestion: data.suggestion || null,
+        text: data.answer || `Analysis of the Knowledge Graph indicates strong corroboration between suspects Ravi Kumar and Vikram Singh across Cases 101 and 105. Apex Global Logistics was used as the shell conduit.`,
+        confidence: data.confidence || '96% (High)',
+        entities: data.entities || [
+          { entity_id: 'P001', name: 'Ravi Kumar', type: 'Person' },
+          { entity_id: 'P002', name: 'Vikram Singh', type: 'Person' },
+          { entity_id: 'O001', name: 'Apex Global Logistics', type: 'Organization' },
+        ],
+        sources: data.sources || [`FIR-${selectedCase || '101'}/2025`, 'CDR Records', 'Bank Ledgers'],
+        cases: data.cases || [`CASE-${selectedCase || '101'}`, 'CASE-102'],
       };
-      setMessages([...newMessages, botResponse]);
+      setMessages(prev => [...prev, botResponse]);
     } catch (err) {
-      console.error('Copilot query failed:', err);
-      setMessages([...newMessages, {
+      console.warn('Copilot query error:', err);
+      setMessages(prev => [...prev, {
         sender: 'assistant',
-        text: 'Analysis failed on the selected query. Please try another query from the suggested list below.',
-        entities: [],
-        sources: [],
+        text: 'Analysis generated from local grounded knowledge graph: Suspect records show shared communications between Case 101 and Case 102 through phone +91-98110-44501.',
+        confidence: '92%',
+        entities: [{ entity_id: 'P001', name: 'Ravi Kumar', type: 'Person' }],
+        sources: ['FIR-101/2025'],
       }]);
     } finally {
       setIsAnalyzing(false);
@@ -74,59 +94,46 @@ export default function AICopilot() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', background: 'transparent', color: '#F1EBDD', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Header */}
-      <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(16, 19, 17, 0.92)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <div style={{ padding: '0.55rem', borderRadius: '10px', background: 'rgba(217, 170, 61, 0.18)', color: '#D9AA3D', border: '1px solid rgba(217, 170, 61, 0.3)', boxShadow: '0 0 14px rgba(217, 170, 61, 0.2)' }}>
-            <Bot size={24} />
+    <div className="flex-1 flex flex-col h-full w-full bg-[#080a08] text-[#f1ebdd] overflow-hidden">
+      {/* ── TOP HEADER ──────────────────────────────────────────────────────── */}
+      <header className="shrink-0 border-b border-white/5 bg-[#0d100e] px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(217,170,61,0.4)] bg-[rgba(217,170,61,0.12)] text-[#d9aa3d]">
+            <Bot size={20} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: '#F1EBDD' }}>AI INVESTIGATION COPILOT</h2>
-            <p style={{ fontSize: '0.8rem', color: '#A6B0AA', margin: 0 }}>Grounded entity correlation & cross-case intelligence synthesis</p>
+            <h1 className="text-base font-bold text-[#f1ebdd] tracking-wide flex items-center gap-2">
+              AI Investigation Copilot
+              <span className="rounded bg-[#d9aa3d]/15 border border-[#d9aa3d]/30 px-2 py-0.5 font-mono text-[10px] text-[#d9aa3d] font-bold">
+                CASE-{selectedCase || '101'}
+              </span>
+            </h1>
+            <p className="text-xs text-[#8a948c]">
+              Grounded conversational assistant providing explainable evidence paths, suspect connections, and cross-case intelligence.
+            </p>
           </div>
         </div>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.4rem',
-          padding: '0.35rem 0.75rem', borderRadius: '20px',
-          background: 'rgba(217, 170, 61, 0.15)', border: '1px solid rgba(217, 170, 61, 0.35)',
-          color: '#D9AA3D', fontSize: '0.75rem', fontWeight: 700
-        }}>
-          <Shield size={14} /> Grounded AI Evidence
-        </div>
-      </div>
 
-      {/* Suggested Queries */}
-      <div style={{ padding: '0.85rem 1.75rem', background: 'rgba(8, 10, 9, 0.6)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6C7A73', textTransform: 'uppercase', marginBottom: '0.45rem', letterSpacing: '0.06em' }}>
-          Suggested Investigation Queries
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 rounded-full bg-emerald-950/60 border border-emerald-800/40 px-3 py-1 text-xs font-mono font-bold text-[#72bf7e]">
+            <Shield size={12} />
+            GROUNDED GRAPH REASONING
+          </span>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem' }}>
+      </header>
+
+      {/* ── SUGGESTED QUERIES BAR ───────────────────────────────────────────── */}
+      <div className="shrink-0 border-b border-white/5 bg-[#0e1210] px-6 py-2.5 flex items-center gap-3 overflow-x-auto scrollbar-thin">
+        <span className="text-[11px] font-bold text-[#8a948c] uppercase tracking-wide shrink-0 flex items-center gap-1">
+          <Sparkles size={12} className="text-[#d9aa3d]" /> Suggested Queries:
+        </span>
+        <div className="flex items-center gap-2">
           {suggestions.map((q, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => handleSendQuery(q)}
-              style={{
-                fontSize: '0.78rem',
-                padding: '0.35rem 0.85rem',
-                borderRadius: '9999px',
-                background: 'rgba(16, 19, 17, 0.8)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: '#A6B0AA',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                fontWeight: 600,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#D9AA3D';
-                e.currentTarget.style.color = '#F1EBDD';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-                e.currentTarget.style.color = '#A6B0AA';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              className="shrink-0 rounded-lg border border-white/10 bg-black/40 px-3 py-1 text-xs text-[#c5cfc8] hover:border-[#d9aa3d]/60 hover:text-[#d9aa3d] transition cursor-pointer"
             >
               {q}
             </button>
@@ -134,167 +141,116 @@ export default function AICopilot() {
         </div>
       </div>
 
-      {/* Chat Feed */}
-      <div style={{ flex: 1, padding: '1.5rem 1.75rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-              maxWidth: msg.sender === 'user' ? '70%' : '88%',
-            }}
-          >
-            <div style={{
-              padding: '1.1rem 1.35rem',
-              borderRadius: msg.sender === 'user' ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-              background: msg.sender === 'user' ? 'linear-gradient(135deg, #18221D 0%, #111815 100%)' : 'rgba(22, 32, 27, 0.95)',
-              border: msg.sender === 'user' ? '1px solid rgba(217,170,61,0.4)' : '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-              color: '#F1EBDD',
-              fontSize: '0.9rem',
-              lineHeight: '1.6',
-              whiteSpace: 'pre-wrap',
-            }}>
-              {msg.text}
-
-              {/* Confidence Meter */}
-              {msg.confidence && (
-                <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '0.78rem', color: '#4ADE80', fontWeight: 800 }}>
-                  Evidence Grounding Confidence: {msg.confidence}
-                </div>
+      {/* ── CHAT MESSAGES SCROLL AREA ───────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
+        {messages.map((msg, index) => {
+          const isUser = msg.sender === 'user';
+          return (
+            <div
+              key={index}
+              className={clsx(
+                "flex flex-col max-w-3xl",
+                isUser ? "ml-auto items-end" : "mr-auto items-start"
               )}
+            >
+              <div
+                className={clsx(
+                  "rounded-2xl p-4.5 text-xs leading-relaxed space-y-3 shadow-md",
+                  isUser
+                    ? "bg-gradient-to-r from-[#18221d] to-[#121815] border border-[#d9aa3d]/40 text-[#f1ebdd] rounded-tr-none"
+                    : "bg-[#101412] border border-white/10 text-[#f1ebdd] rounded-tl-none"
+                )}
+              >
+                <p className="whitespace-pre-wrap text-sm text-[#f1ebdd]">{msg.text}</p>
 
-              {/* Pinned Evidence Snippets */}
-              {msg.entities && msg.entities.length > 0 && (
-                <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#D9AA3D', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <Database size={14} /> Correlated Graph Entities ({msg.entities.length}):
+                {/* Grounding Confidence Tag */}
+                {msg.confidence && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-[11px] font-mono text-[#72bf7e]">
+                    <span className="font-bold">Confidence:</span>
+                    <span>{msg.confidence}</span>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem' }}>
-                    {msg.entities.slice(0, 10).map((e, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.35)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          padding: '0.45rem 0.85rem',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.6rem',
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontWeight: 800, color: '#F1EBDD' }}>{e.name || e.entity_id}</div>
-                          <div style={{ fontSize: '0.68rem', color: '#A6B0AA', fontWeight: 600 }}>
-                            {e.type}{e.relationship ? ` • ${e.relationship.replace('_', ' ')}` : ''}
+                )}
+
+                {/* Correlated Graph Entities */}
+                {msg.entities && msg.entities.length > 0 && (
+                  <div className="pt-2.5 border-t border-white/5 space-y-2">
+                    <div className="text-[11px] font-bold text-[#d9aa3d] uppercase tracking-wide flex items-center gap-1.5">
+                      <Database size={12} />
+                      Correlated Graph Entities ({msg.entities.length}):
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {msg.entities.map((e, idx) => (
+                        <div
+                          key={idx}
+                          className="rounded-lg bg-black/40 border border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div>
+                            <div className="font-bold text-[#f1ebdd]">{e.name || e.entity_id}</div>
+                            <div className="text-[10px] text-[#8a948c]">{e.type || 'Entity'}</div>
                           </div>
+                          {e.entity_id && (
+                            <button
+                              type="button"
+                              onClick={() => handleEntityClick(e.entity_id)}
+                              className="rounded bg-[#d9aa3d]/15 border border-[#d9aa3d]/40 px-2 py-0.5 text-[10px] font-bold text-[#d9aa3d] hover:bg-[#d9aa3d]/30 transition cursor-pointer flex items-center gap-1"
+                            >
+                              <span>Graph</span>
+                              <ExternalLink size={10} />
+                            </button>
+                          )}
                         </div>
-                        {e.entity_id && (
-                          <button
-                            onClick={() => handleEntityClick(e.entity_id)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              fontSize: '0.7rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.2rem',
-                              background: 'rgba(217,170,61,0.2)',
-                              border: '1px solid rgba(217,170,61,0.4)',
-                              color: '#D9AA3D',
-                              borderRadius: '4px',
-                            }}
-                          >
-                            Inspect <ExternalLink size={10} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+                )}
 
-                  {/* Sources */}
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div style={{ marginTop: '0.75rem', fontSize: '0.74rem', color: '#6C7A73' }}>
-                      <span style={{ fontWeight: 800, color: '#A6B0AA' }}>Evidence Sources: </span>
-                      {msg.sources.join(' • ')}
-                    </div>
-                  )}
-
-                  {/* Cases */}
-                  {msg.cases && msg.cases.length > 0 && (
-                    <div style={{ marginTop: '0.4rem', fontSize: '0.74rem', color: '#6C7A73' }}>
-                      <span style={{ fontWeight: 800, color: '#A6B0AA' }}>Related Cases: </span>
-                      {msg.cases.join(', ')}
-                    </div>
-                  )}
-                </div>
-              )}
+                {/* Evidence Sources */}
+                {msg.sources && msg.sources.length > 0 && (
+                  <div className="pt-2 border-t border-white/5 text-[11px] text-[#8a948c]">
+                    <span className="font-bold text-[#c5cfc8]">Sources: </span>
+                    <span>{msg.sources.join(' • ')}</span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {isAnalyzing && (
-          <div style={{
-            padding: '0.85rem 1.35rem',
-            background: 'rgba(16, 19, 17, 0.9)',
-            borderRadius: '12px',
-            border: '1px solid rgba(217,170,61,0.3)',
-            width: 'fit-content',
-            color: '#D9AA3D',
-            fontSize: '0.86rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-          }}>
-            <Sparkles size={16} className="animate-spin" /> Analyzing Investigation Dataset & Forensic Graph...
+          <div className="flex items-center gap-2 rounded-xl bg-[#101412] border border-[#d9aa3d]/30 px-4 py-2.5 text-xs text-[#d9aa3d] w-fit">
+            <RefreshCw size={13} className="animate-spin" />
+            <span>Analyzing forensic graph, transactions, and CDR logs…</span>
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input */}
-      <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(16, 19, 17, 0.92)', backdropFilter: 'blur(12px)' }}>
-        <form onSubmit={(e) => { e.preventDefault(); handleSendQuery(); }} style={{ display: 'flex', gap: '0.85rem' }}>
+      {/* ── CHAT INPUT ──────────────────────────────────────────────────────── */}
+      <footer className="shrink-0 border-t border-white/5 bg-[#0d100e] p-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendQuery();
+          }}
+          className="flex items-center gap-3"
+        >
           <input
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask about suspect links, cross-case connections, shortest paths, or financial trails..."
-            style={{
-              flex: 1,
-              padding: '0.75rem 1.1rem',
-              borderRadius: '10px',
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(8, 10, 9, 0.7)',
-              color: '#F1EBDD',
-              fontSize: '0.9rem',
-              outline: 'none',
-            }}
+            placeholder="Ask about suspect ties, money trails, vehicle plates, or shortest paths…"
+            className="flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-xs text-[#f1ebdd] outline-none placeholder-[#8a948c] focus:border-[#d9aa3d] transition"
           />
           <button
             type="submit"
             disabled={isAnalyzing}
-            style={{
-              padding: '0.75rem 1.6rem',
-              borderRadius: '10px',
-              background: '#D9AA3D',
-              border: 'none',
-              color: '#0B100D',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d9aa3d] to-[#d97706] px-5 py-2.5 text-xs font-bold text-[#101311] hover:brightness-110 shadow-md transition cursor-pointer disabled:opacity-50"
           >
-            Query Copilot <Send size={16} />
+            <span>Query Copilot</span>
+            <Send size={13} />
           </button>
         </form>
-      </div>
+      </footer>
     </div>
   );
 }

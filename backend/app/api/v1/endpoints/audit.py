@@ -36,7 +36,7 @@ class ClientLogRequest(BaseModel):
     details: Optional[dict] = None
 
 
-@router.get("/", response_model=ResponseEnvelope, summary="Retrieve Tamper-Evident Audit Logs")
+@router.get("/", response_model=ResponseEnvelope, summary="Retrieve Audit Logs")
 def get_audit_logs(
     action: Optional[str] = Query(None),
     resource_type: Optional[str] = Query(None),
@@ -45,7 +45,7 @@ def get_audit_logs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Query immutable investigation audit trail with timestamps and user identifiers."""
+    """Query investigation audit trail with timestamps and user identifiers."""
     q = db.query(AuditLog)
     if action:
         q = q.filter(AuditLog.action == action)

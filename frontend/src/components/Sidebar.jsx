@@ -20,7 +20,6 @@ const ROLE_MENUS = {
       items: [
         { id: 'network', label: 'Knowledge Graph', icon: <Network size={18} /> },
         { id: 'keyentities', label: 'Key & Bridge Entities', icon: <BarChart3 size={18} /> },
-        { id: 'crosscase', label: 'Cross-Case Network', icon: <GitBranch size={18} /> },
         { id: 'pathfinder', label: 'Red-String Path Finder', icon: <Route size={18} /> },
       ]
     },
@@ -30,7 +29,6 @@ const ROLE_MENUS = {
         { id: 'patterns', label: 'Suspicious Patterns', icon: <AlertTriangle size={18} /> },
         { id: 'nlp', label: 'AI/NLP Entity Extraction', icon: <Sparkles size={18} /> },
         { id: 'copilot', label: 'AI Investigation Copilot', icon: <Bot size={18} /> },
-        { id: 'leads', label: 'Actionable Leads', icon: <CheckCircle2 size={18} /> },
       ]
     },
     {

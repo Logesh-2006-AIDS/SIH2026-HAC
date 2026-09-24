@@ -1,23 +1,24 @@
 """
-Phase 4: Knowledge Graph API Endpoints
+Knowledge Graph API Endpoints
+==============================
+Exposes graph traversal, centrality analytics, shortest-path tracing, and focus subgraphs.
 """
 import os
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from app.schemas.common import ResponseEnvelope
 from app.services import graph_builder, graph_analytics
-from app.db.neo4j_client import Neo4jClient
-from app.core.config import settings
 
 router = APIRouter()
+
 
 @router.post(
     "/seed",
     response_model=ResponseEnvelope,
-    summary="Seed the Memgraph Graph from Synthetic Dataset",
+    summary="Seed the Knowledge Graph from Synthetic Dataset",
 )
 def seed_graph():
-    """Wipe and seed Memgraph from data/metadata JSON (falls back if Memgraph offline)."""
+    """Seed or synchronize the active graph store from data/metadata JSON."""
     try:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         data_dir = os.path.join(base_dir, "data")
@@ -25,7 +26,7 @@ def seed_graph():
         stats = graph_builder.build_graph_from_synthetic_data(data_dir)
         return ResponseEnvelope(
             success=True,
-            message="Graph seed completed (Memgraph or JSON fallback).",
+            message="Graph seed / sync completed successfully.",
             data=stats
         )
     except Exception as e:
@@ -160,14 +161,9 @@ def get_entity_connections(entity_id: str):
     """Return all entities connected to a given entity with relationship details."""
     try:
         data = graph_analytics.get_entity_connections(entity_id)
-        connections = data.get("connections", [])
-        if not connections:
-            fb = graph_analytics._load_fallback_graph()
-            if entity_id not in {n.get("id") for n in fb.get("nodes", [])}:
-                raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found.")
         return ResponseEnvelope(
             success=True,
-            message=f"Found {len(connections)} connections for entity {entity_id}.",
+            message=f"Connections retrieved for entity {entity_id}.",
             data=data,
         )
     except HTTPException:
@@ -182,24 +178,13 @@ def get_entity_connections(entity_id: str):
     summary="Detect Communities / Clusters in the Graph",
 )
 def get_communities():
-    """Identify connected clusters of entities using Neo4j."""
+    """Identify connected clusters of entities in the knowledge graph."""
     try:
-        query = """
-        MATCH (n:Entity)
-        WITH collect(n) AS allNodes
-        UNWIND allNodes AS node
-        MATCH path = (node)-[*1..3]-(connected:Entity)
-        WITH node, collect(DISTINCT connected.id) AS cluster_members
-        RETURN node.id AS entity_id, node.name AS name, node.cases AS cases,
-               size(cluster_members) AS cluster_size
-        ORDER BY cluster_size DESC
-        LIMIT 20
-        """
-        results = Neo4jClient.run_query(query)
+        results = graph_analytics.get_communities()
         return ResponseEnvelope(
             success=True,
-            message=f"Community analysis for {len(results or [])} entities.",
-            data=results or []
+            message=f"Community analysis found {len(results)} syndicate cluster(s).",
+            data=results
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

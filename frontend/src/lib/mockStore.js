@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Auto-generated complete mock store from live backend responses
 export const MOCK_STORE = {
   "/api/v1/health": {
@@ -30,8 +30,8 @@ export const MOCK_STORE = {
   },
   "/api/v1/analyst/overview": {
     "memgraph_live": false,
-    "data_mode": "FALLBACK",
-    "label": "DEMO / FALLBACK DATA",
+    "data_mode": "DEMO_MODE",
+    "label": "DEMO MODE (CANONICAL GRAPH)",
     "summary": {
       "total_cases": 5,
       "active_crime_zones": 4,

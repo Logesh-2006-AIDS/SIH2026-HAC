@@ -109,7 +109,7 @@ export default function LoginScreen({ onAuthenticated }) {
   };
 
   return (
-    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-ink px-4 text-parchment font-sans select-none">
+    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#080a08] px-4 text-[#f1ebdd] font-sans select-none">
       {/* Cinematic Ambient Background Gradients */}
       <div
         className="pointer-events-none absolute inset-0 z-0"
@@ -129,23 +129,23 @@ export default function LoginScreen({ onAuthenticated }) {
       />
 
       {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-panel/95 p-7 backdrop-blur-xl shadow-2xl transition-all">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[rgba(217,170,61,0.3)] bg-[#101412] p-7 backdrop-blur-xl shadow-2xl transition-all">
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold text-ink font-bold shadow-lg">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#d9aa3d] to-[#8a6515] text-[#101311] font-bold shadow-lg">
             <Shield size={22} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-parchment font-display">House Targaryen</h1>
-            <p className="text-xs text-muted font-medium">Forensic Intelligence Access • SIH 2026</p>
+            <h1 className="text-xl font-bold tracking-tight text-[#f1ebdd]">House Targaryen</h1>
+            <p className="text-xs text-[#8a948c] font-medium">Forensic Intelligence Access • SIH 2026</p>
           </div>
         </div>
 
         {/* Quick One-Click Role Selector */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold tracking-wide text-muted uppercase flex items-center gap-1">
-              <Sparkles size={12} className="text-gold" /> One-Click Role Access
+            <span className="text-[11px] font-bold tracking-wide text-[#8a948c] uppercase flex items-center gap-1">
+              <Sparkles size={12} className="text-[#d9aa3d]" /> One-Click Role Access
             </span>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -156,8 +156,8 @@ export default function LoginScreen({ onAuthenticated }) {
                 onClick={() => quickLogin(role.id)}
                 className={`rounded-lg border px-2.5 py-2 text-center text-xs font-bold transition-all duration-150 cursor-pointer ${
                   activeRole === role.id
-                    ? 'border-gold/80 bg-gold/15 text-gold shadow-sm'
-                    : 'border-white/10 text-muted hover:border-white/20 hover:text-parchment'
+                    ? 'border-[#d9aa3d] bg-[#d9aa3d]/20 text-[#d9aa3d] shadow-sm'
+                    : 'border-white/10 text-[#8a948c] hover:border-white/20 hover:text-[#f1ebdd] bg-black/30'
                 }`}
               >
                 {role.label}
@@ -170,7 +170,7 @@ export default function LoginScreen({ onAuthenticated }) {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/10" />
           </div>
-          <span className="relative bg-panel px-2 text-[10px] font-semibold text-muted uppercase tracking-wider">
+          <span className="relative bg-[#101412] px-2 text-[10px] font-semibold text-[#8a948c] uppercase tracking-wider">
             Or credentials sign-in
           </span>
         </div>
@@ -179,16 +179,16 @@ export default function LoginScreen({ onAuthenticated }) {
         <form onSubmit={handleSubmit}>
           {/* Username / Badge input */}
           <div className="mb-3">
-            <label className="mb-1 block text-[11px] font-bold tracking-wide text-muted uppercase">
+            <label className="mb-1 block text-[11px] font-bold tracking-wide text-[#8a948c] uppercase">
               Badge / Official Email
             </label>
-            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 transition focus-within:border-gold/60">
-              <BadgeCheck size={16} className="text-gold shrink-0" />
+            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 transition focus-within:border-[#d9aa3d]/60">
+              <BadgeCheck size={16} className="text-[#d9aa3d] shrink-0" />
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. investigator@police.gov.in"
-                className="w-full bg-transparent text-sm text-parchment outline-none placeholder:text-muted/60"
+                className="w-full bg-transparent text-sm text-[#f1ebdd] outline-none placeholder:text-[#8a948c]/60"
                 autoComplete="username"
               />
             </div>
@@ -196,23 +196,23 @@ export default function LoginScreen({ onAuthenticated }) {
 
           {/* Password input */}
           <div className="mb-3">
-            <label className="mb-1 block text-[11px] font-bold tracking-wide text-muted uppercase">
+            <label className="mb-1 block text-[11px] font-bold tracking-wide text-[#8a948c] uppercase">
               Password
             </label>
-            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 transition focus-within:border-gold/60">
-              <Lock size={16} className="text-gold shrink-0" />
+            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 transition focus-within:border-[#d9aa3d]/60">
+              <Lock size={16} className="text-[#d9aa3d] shrink-0" />
               <input
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter secure password"
-                className="w-full bg-transparent text-sm text-parchment outline-none placeholder:text-muted/60"
+                className="w-full bg-transparent text-sm text-[#f1ebdd] outline-none placeholder:text-[#8a948c]/60"
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
-                className="text-muted hover:text-parchment transition p-0.5 cursor-pointer"
+                className="text-[#8a948c] hover:text-[#f1ebdd] transition p-0.5 cursor-pointer"
               >
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -220,7 +220,7 @@ export default function LoginScreen({ onAuthenticated }) {
           </div>
 
           {error && (
-            <div className="mb-3 rounded-lg border border-signal/40 bg-signal/10 px-3 py-2 text-xs text-red-200">
+            <div className="mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
               {error}
             </div>
           )}
@@ -229,18 +229,18 @@ export default function LoginScreen({ onAuthenticated }) {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-signal px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#d9aa3d] to-[#d97706] px-4 py-3 text-sm font-bold text-[#101311] shadow-lg transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
             {loading ? 'Authenticating…' : 'Enter Forensic Workbench'}
             <ArrowRight size={16} />
           </button>
 
-          <p className="mt-4 text-center text-[11px] text-muted font-mono">
-            Demo: <code className="text-gold/90">investigator123</code> / <code className="text-gold/90">analyst123</code> / <code className="text-gold/90">admin123</code>
+          <p className="mt-4 text-center text-[11px] text-[#8a948c] font-mono">
+            Demo: <code className="text-[#d9aa3d]/90">investigator123</code> / <code className="text-[#d9aa3d]/90">analyst123</code> / <code className="text-[#d9aa3d]/90">admin123</code>
           </p>
         </form>
 
-        <div className="mt-4 pt-3 border-t border-white/5 text-center text-[10px] text-muted tracking-wider">
+        <div className="mt-4 pt-3 border-t border-white/5 text-center text-[10px] text-[#8a948c] tracking-wider">
           HOUSE TARGARYEN • AI CRIMINAL NETWORK ANALYSIS PLATFORM • SIH 2026
         </div>
       </div>

@@ -16,7 +16,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from app.db.neo4j_client import MemgraphClient
+from app.db.graph_client import MemgraphClient
 from app.services import graph_analytics
 
 logger = logging.getLogger(__name__)
@@ -29,18 +29,40 @@ _MEMGRAPH_TTL_SEC = 15.0
 # location entities.  This keeps the visual precision honest when a case is
 # known only at a jurisdiction/state level.
 GEO_LOOKUP = {
-    "delhi": {"state": "Delhi", "city": "Delhi"},
-    "new delhi": {"state": "Delhi", "city": "Delhi"},
-    "rohini": {"state": "Delhi", "city": "Delhi"},
-    "karol bagh": {"state": "Delhi", "city": "Delhi"},
-    "okhla": {"state": "Delhi", "city": "Delhi"},
-    "pahar ganj": {"state": "Delhi", "city": "Delhi"},
-    "meerut": {"state": "Uttar Pradesh", "city": "Meerut"},
-    "mumbai": {"state": "Maharashtra", "city": "Mumbai"},
-    "bandra": {"state": "Maharashtra", "city": "Mumbai"},
-    "andheri": {"state": "Maharashtra", "city": "Mumbai"},
-    "kolkata": {"state": "West Bengal", "city": "Kolkata"},
-    "salt lake": {"state": "West Bengal", "city": "Kolkata"},
+    "delhi": {"state": "Delhi", "city": "Delhi", "lat": 28.6139, "lon": 77.2090},
+    "new delhi": {"state": "Delhi", "city": "Delhi", "lat": 28.6139, "lon": 77.2090},
+    "rohini": {"state": "Delhi", "city": "Delhi", "lat": 28.7041, "lon": 77.1025},
+    "karol bagh": {"state": "Delhi", "city": "Delhi", "lat": 28.6511, "lon": 77.1907},
+    "okhla": {"state": "Delhi", "city": "Delhi", "lat": 28.5355, "lon": 77.2710},
+    "pahar ganj": {"state": "Delhi", "city": "Delhi", "lat": 28.6432, "lon": 77.2144},
+    "noida": {"state": "Uttar Pradesh", "city": "Noida", "lat": 28.5355, "lon": 77.3910},
+    "gurgaon": {"state": "Haryana", "city": "Gurugram", "lat": 28.4595, "lon": 77.0266},
+    "gurugram": {"state": "Haryana", "city": "Gurugram", "lat": 28.4595, "lon": 77.0266},
+    "meerut": {"state": "Uttar Pradesh", "city": "Meerut", "lat": 28.9845, "lon": 77.7064},
+    "lucknow": {"state": "Uttar Pradesh", "city": "Lucknow", "lat": 26.8467, "lon": 80.9462},
+    "kanpur": {"state": "Uttar Pradesh", "city": "Kanpur", "lat": 26.4499, "lon": 80.3319},
+    "mumbai": {"state": "Maharashtra", "city": "Mumbai", "lat": 19.0760, "lon": 72.8777},
+    "bandra": {"state": "Maharashtra", "city": "Mumbai", "lat": 19.0596, "lon": 72.8295},
+    "andheri": {"state": "Maharashtra", "city": "Mumbai", "lat": 19.1136, "lon": 72.8697},
+    "dharavi": {"state": "Maharashtra", "city": "Mumbai", "lat": 19.0434, "lon": 72.8567},
+    "pune": {"state": "Maharashtra", "city": "Pune", "lat": 18.5204, "lon": 73.8567},
+    "nagpur": {"state": "Maharashtra", "city": "Nagpur", "lat": 21.1458, "lon": 79.0882},
+    "ahmedabad": {"state": "Gujarat", "city": "Ahmedabad", "lat": 23.0225, "lon": 72.5714},
+    "surat": {"state": "Gujarat", "city": "Surat", "lat": 21.1702, "lon": 72.8311},
+    "bengaluru": {"state": "Karnataka", "city": "Bengaluru", "lat": 12.9716, "lon": 77.5946},
+    "bangalore": {"state": "Karnataka", "city": "Bengaluru", "lat": 12.9716, "lon": 77.5946},
+    "hyderabad": {"state": "Telangana", "city": "Hyderabad", "lat": 17.3850, "lon": 78.4867},
+    "chennai": {"state": "Tamil Nadu", "city": "Chennai", "lat": 13.0827, "lon": 80.2707},
+    "kolkata": {"state": "West Bengal", "city": "Kolkata", "lat": 22.5726, "lon": 88.3639},
+    "salt lake": {"state": "West Bengal", "city": "Kolkata", "lat": 22.5804, "lon": 88.4180},
+    "patna": {"state": "Bihar", "city": "Patna", "lat": 25.5941, "lon": 85.1376},
+    "jaipur": {"state": "Rajasthan", "city": "Jaipur", "lat": 26.9124, "lon": 75.7873},
+    "chandigarh": {"state": "Punjab", "city": "Chandigarh", "lat": 30.7333, "lon": 76.7794},
+    "amritsar": {"state": "Punjab", "city": "Amritsar", "lat": 31.6340, "lon": 74.8723},
+    "bhopal": {"state": "Madhya Pradesh", "city": "Bhopal", "lat": 23.2599, "lon": 77.4126},
+    "indore": {"state": "Madhya Pradesh", "city": "Indore", "lat": 22.7196, "lon": 75.8577},
+    "guwahati": {"state": "Assam", "city": "Guwahati", "lat": 26.1445, "lon": 91.7362},
+    "kochi": {"state": "Kerala", "city": "Kochi", "lat": 9.9312, "lon": 76.2673},
 }
 
 

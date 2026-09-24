@@ -100,6 +100,7 @@ const CY_STYLE = [
 
 export default function GraphCanvas({
   nodes = [], edges = [], selectedEntity = null, onSelectEntity = () => {},
+  selectedEdge = null, onSelectEdge = () => {},
   highlightedPath = [], layoutName = 'cose', isLoading = false, focusEntityId = null,
 }) {
   const containerRef = useRef(null);
@@ -110,9 +111,21 @@ export default function GraphCanvas({
   useEffect(() => {
     if (!containerRef.current || cyRef.current) return;
     cyRef.current = cytoscape({ container: containerRef.current, style: CY_STYLE, elements: [] });
-    cyRef.current.on('tap', 'node', (evt) => onSelectEntity(evt.target.data('raw')));
-    cyRef.current.on('tap', (evt) => { if (evt.target === cyRef.current) onSelectEntity(null); });
-  }, [onSelectEntity]);
+    cyRef.current.on('tap', 'node', (evt) => {
+      onSelectEdge(null);
+      onSelectEntity(evt.target.data('raw'));
+    });
+    cyRef.current.on('tap', 'edge', (evt) => {
+      onSelectEntity(null);
+      onSelectEdge(evt.target.data());
+    });
+    cyRef.current.on('tap', (evt) => {
+      if (evt.target === cyRef.current) {
+        onSelectEntity(null);
+        onSelectEdge(null);
+      }
+    });
+  }, [onSelectEntity, onSelectEdge]);
 
   // Update graph data
   useEffect(() => {

@@ -1,0 +1,5 @@
+txn_id,sender_account,sender_name,sender_ifsc,sender_bank,receiver_account,receiver_name,receiver_ifsc,receiver_bank,amount,timestamp,source_case_id,flagged_suspicious
+TXN-8801,998877665544332,Sunita Sharma,HDFC0001234,HDFC Bank,112233445566778,R. Kumar,ICIC0000987,ICICI Bank,2500000,2024-08-14 10:45:00,CASE-101,TRUE
+TXN-8802,112233445566778,R. Kumar,ICIC0000987,ICICI Bank,554433221100998,Apex Global Logistics,UTIB0000456,Axis Bank,1800000,2024-08-14 11:30:00,CASE-101,TRUE
+TXN-8803,554433221100998,Apex Global Logistics,UTIB0000456,Axis Bank,778899001122334,Shroff Hawala Network,SBIN0004321,State Bank of India,1500000,2024-08-14 13:10:00,CASE-105,TRUE
+TXN-8804,112233445566778,R. Kumar,ICIC0000987,ICICI Bank,667788990011223,Vikram Singh,PUNB0001122,Punjab National Bank,300000,2024-08-14 14:00:00,CASE-101,FALSE

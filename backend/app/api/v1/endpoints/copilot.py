@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.postgres import get_db
-from app.db.neo4j_client import Neo4jClient, MemgraphClient
+from app.db.graph_client import MemgraphClient
 from app.services import graph_analytics
 from app.schemas.common import ResponseEnvelope
 

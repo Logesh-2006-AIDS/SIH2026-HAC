@@ -1,0 +1,22 @@
+[
+  {
+    "report_id": "SURV-2024-081",
+    "officer_badge": "DL-4491",
+    "location_observed": "Laxmi Nagar Metro Hub, East Delhi",
+    "timestamp": "2024-08-14T15:00:00Z",
+    "entities_spotted": ["R. Kumar", "Vikram Singh"],
+    "vehicle_plates": ["DL-01-AB-1234"],
+    "activity_notes": "Suspects observed exchanging briefcase near black SUV DL-01-AB-1234 outside Metro Pillar 42. Caller phone +91-98110-44501 observed in active use.",
+    "case_ids": ["CASE-101"]
+  },
+  {
+    "report_id": "SURV-2024-082",
+    "officer_badge": "DL-3320",
+    "location_observed": "Okhla Industrial Area Phase III",
+    "timestamp": "2024-08-14T17:30:00Z",
+    "entities_spotted": ["Vikram Singh", "Rohit Patel"],
+    "vehicle_plates": ["DL-01-AB-1234", "HR-26-DK-8899"],
+    "activity_notes": "Loading unmarked packages into container truck linked to Apex Global Logistics premises.",
+    "case_ids": ["CASE-101", "CASE-104"]
+  }
+]

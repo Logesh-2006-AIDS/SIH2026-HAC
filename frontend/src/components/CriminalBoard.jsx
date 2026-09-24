@@ -27,30 +27,28 @@ export default function CriminalBoard() {
     { id: 'investigation', label: 'Case Workspace', icon: Database, tone: 'yellow', pin: 'red', x: 52, y: 10, rot: 1, w: 135, section: 'evidence' },
     
     { id: 'network', label: 'Knowledge Graph', icon: Network, tone: 'cream', pin: 'blue', x: 4, y: 34, rot: 2, w: 135 },
-    { id: 'pathfinder', label: 'Path Finder', icon: Route, tone: 'orange', pin: 'red', x: 19, y: 32, rot: -2, w: 125 },
-    { id: 'keyentities', label: 'Bridge Entities', icon: BarChart3, tone: 'yellow', pin: 'gold', x: 34, y: 34, rot: -1, w: 130 },
-    { id: 'crosscase', label: 'Cross-Case', icon: Crosshair, tone: 'yellow', pin: 'red', x: 49, y: 34, rot: 1, w: 125 },
+    { id: 'pathfinder', label: 'Path Finder', icon: Route, tone: 'orange', pin: 'red', x: 22, y: 32, rot: -2, w: 135 },
+    { id: 'keyentities', label: 'Bridge Entities', icon: BarChart3, tone: 'yellow', pin: 'gold', x: 40, y: 34, rot: -1, w: 135 },
 
     { id: 'patterns', label: 'Suspicious Patterns', icon: AlertTriangle, tone: 'orange', pin: 'red', x: 4, y: 58, rot: 1.5, w: 145 },
-    { id: 'leads', label: 'Actionable Leads', icon: CheckCircle2, tone: 'yellow', pin: 'gold', x: 20, y: 58, rot: -1, w: 140 },
-    { id: 'report', label: 'Investigation Report', icon: FileText, tone: 'cream', pin: 'gold', x: 36, y: 58, rot: -1.5, w: 145 },
+    { id: 'report', label: 'Investigation Report', icon: FileText, tone: 'cream', pin: 'gold', x: 24, y: 58, rot: -1.5, w: 145 },
     { id: 'copilot', label: 'AI Copilot', kind: 'copilot', pin: 'gold', x: 67, y: 26, rot: 1, w: 180 },
   ]), []);
 
   const PINS = useMemo(() => ({
     hub: { x: 48, y: 26 },
     dossiers: { x: 10, y: 14 }, ingest: { x: 26, y: 12 }, nlp: { x: 42, y: 12 }, investigation: { x: 58, y: 14 },
-    network: { x: 10, y: 38 }, pathfinder: { x: 25, y: 36 }, keyentities: { x: 40, y: 38 }, crosscase: { x: 55, y: 38 },
-    patterns: { x: 10, y: 62 }, leads: { x: 26, y: 62 }, report: { x: 42, y: 62 },
+    network: { x: 10, y: 38 }, pathfinder: { x: 28, y: 36 }, keyentities: { x: 46, y: 38 },
+    patterns: { x: 10, y: 62 }, report: { x: 30, y: 62 },
     copilot: { x: 76, y: 34 },
   }), []);
 
   const ROPES = useMemo(() => ([
-    ['hub', 'dossiers'], ['hub', 'network'], ['hub', 'leads'], ['hub', 'crosscase'], ['hub', 'copilot'],
+    ['hub', 'dossiers'], ['hub', 'network'], ['hub', 'copilot'],
     ['dossiers', 'ingest'], ['ingest', 'nlp'], ['nlp', 'network'],
-    ['network', 'pathfinder'], ['pathfinder', 'keyentities'], ['keyentities', 'crosscase'],
-    ['crosscase', 'patterns'], ['patterns', 'leads'], ['leads', 'investigation'], ['investigation', 'report'],
-    ['copilot', 'leads'], ['copilot', 'patterns'],
+    ['network', 'pathfinder'], ['pathfinder', 'keyentities'],
+    ['keyentities', 'patterns'], ['patterns', 'investigation'], ['investigation', 'report'],
+    ['copilot', 'patterns'],
   ]), []);
 
   const toPath = (a, b, i) => {
