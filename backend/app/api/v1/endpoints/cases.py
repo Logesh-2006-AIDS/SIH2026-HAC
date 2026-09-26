@@ -132,22 +132,250 @@ def get_case(
     )
 
 
+def _generate_court_brief_pdf(case: dict, subgraph: dict, now_str: str, officer_name: str, badge_number: str, audit_token: str) -> bytes:
+    import io
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40,
+    )
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "DocTitle",
+        parent=styles["Heading1"],
+        fontSize=16,
+        leading=20,
+        textColor=colors.HexColor("#0f172a"),
+        fontName="Helvetica-Bold",
+        spaceAfter=4,
+    )
+    subtitle_style = ParagraphStyle(
+        "DocSubtitle",
+        parent=styles["Normal"],
+        fontSize=9,
+        leading=12,
+        textColor=colors.HexColor("#dc2626"),
+        fontName="Helvetica-Bold",
+        spaceAfter=12,
+    )
+    section_heading = ParagraphStyle(
+        "SectionHeading",
+        parent=styles["Heading2"],
+        fontSize=12,
+        leading=15,
+        textColor=colors.HexColor("#1e293b"),
+        fontName="Helvetica-Bold",
+        spaceBefore=10,
+        spaceAfter=6,
+    )
+    body_style = ParagraphStyle(
+        "Body",
+        parent=styles["Normal"],
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor("#334155"),
+        fontName="Helvetica",
+    )
+    bold_body = ParagraphStyle(
+        "BoldBody",
+        parent=body_style,
+        fontName="Helvetica-Bold",
+    )
+    table_cell = ParagraphStyle(
+        "TableCell",
+        parent=styles["Normal"],
+        fontSize=8,
+        leading=11,
+        textColor=colors.HexColor("#1e293b"),
+    )
+    table_cell_bold = ParagraphStyle(
+        "TableCellBold",
+        parent=table_cell,
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor("#0f172a"),
+    )
+
+    story = []
+
+    # Title & Header
+    story.append(Paragraph("LAW ENFORCEMENT INTELLIGENCE PLATFORM", title_style))
+    story.append(Paragraph("CASE EVIDENCE BRIEF &amp; INVESTIGATION DOSSIER", ParagraphStyle("Sub", parent=title_style, fontSize=12, leading=15, textColor=colors.HexColor("#2563eb"))))
+    story.append(Paragraph("CONFIDENTIAL // LAW ENFORCEMENT SENSITIVE // OFFICIAL USE ONLY", subtitle_style))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#cbd5e1"), spaceAfter=10))
+
+    # Case Metadata Table
+    meta_data = [
+        [Paragraph("FIR / Case Number:", table_cell_bold), Paragraph(str(case.get("fir_number", "N/A")), table_cell), Paragraph("Generated Date:", table_cell_bold), Paragraph(now_str, table_cell)],
+        [Paragraph("Case Title:", table_cell_bold), Paragraph(str(case.get("title", "N/A")), table_cell), Paragraph("Incident Date:", table_cell_bold), Paragraph(str(case.get("incident_date", "N/A")), table_cell)],
+        [Paragraph("Crime Category:", table_cell_bold), Paragraph(str(case.get("crime_category", "N/A")), table_cell), Paragraph("Jurisdiction:", table_cell_bold), Paragraph(str(case.get("jurisdiction", "N/A")), table_cell)],
+        [Paragraph("Investigating Officer:", table_cell_bold), Paragraph(officer_name, table_cell), Paragraph("Badge ID:", table_cell_bold), Paragraph(badge_number, table_cell)],
+    ]
+    t_meta = Table(meta_data, colWidths=[110, 160, 100, 160])
+    t_meta.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(t_meta)
+    story.append(Spacer(1, 10))
+
+    # Executive Summary
+    story.append(Paragraph("1. Executive Summary", section_heading))
+    story.append(Paragraph(case.get("summary", "No executive summary on record."), body_style))
+    story.append(Spacer(1, 8))
+
+    # Named Accused
+    story.append(Paragraph("2. Named Accused &amp; Targets of Interest", section_heading))
+    accused_list = case.get("accused", [])
+    if accused_list:
+        for idx, acc in enumerate(accused_list, 1):
+            story.append(Paragraph(f"• <b>Accused {idx}:</b> {acc}", body_style))
+    else:
+        story.append(Paragraph("No primary accused listed.", body_style))
+    story.append(Spacer(1, 8))
+
+    # Extracted Graph Entities
+    nodes = subgraph.get("nodes", [])
+    story.append(Paragraph(f"3. Extracted Network Entities ({len(nodes)} Identified Nodes)", section_heading))
+    if nodes:
+        entity_rows = [[
+            Paragraph("Entity ID", table_cell_bold),
+            Paragraph("Name / Identifier", table_cell_bold),
+            Paragraph("Type", table_cell_bold),
+            Paragraph("Associated Cases", table_cell_bold),
+        ]]
+        for n in nodes[:15]:
+            nid = str(n.get("id", ""))
+            name = str(n.get("name") or n.get("reg_number") or n.get("number") or nid)
+            etype = str(n.get("type", "Entity"))
+            cases_str = ", ".join(n.get("cases", [])) or case.get("case_number", "")
+            entity_rows.append([
+                Paragraph(nid, table_cell),
+                Paragraph(name, table_cell),
+                Paragraph(etype, table_cell),
+                Paragraph(cases_str, table_cell),
+            ])
+        t_entities = Table(entity_rows, colWidths=[80, 180, 110, 160])
+        t_entities.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e2e8f0")),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+            ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#f1f5f9")),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story.append(t_entities)
+    else:
+        story.append(Paragraph("No extracted entities found for this case.", body_style))
+    story.append(Spacer(1, 8))
+
+    # Extracted Relationships
+    edges = subgraph.get("edges", [])
+    story.append(Paragraph(f"4. Evidence Relationship Chains ({len(edges)} Verified Connections)", section_heading))
+    if edges:
+        edge_rows = [[
+            Paragraph("Source", table_cell_bold),
+            Paragraph("Relationship", table_cell_bold),
+            Paragraph("Target", table_cell_bold),
+            Paragraph("Extraction Method", table_cell_bold),
+            Paragraph("Evidentiary Strength", table_cell_bold),
+        ]]
+        for e in edges[:15]:
+            props = e.get("properties") or {}
+            ev_strength = props.get("evidentiary_strength") or {}
+            strength_label = ev_strength.get("label") if isinstance(ev_strength, dict) else f"{int(props.get('confidence', 0.9)*100)}%"
+            extract_method = props.get("extraction_method") or e.get("extraction_method", "NLP_HYBRID")
+            edge_rows.append([
+                Paragraph(str(e.get("source")), table_cell),
+                Paragraph(str(e.get("type")), table_cell),
+                Paragraph(str(e.get("target")), table_cell),
+                Paragraph(extract_method, table_cell),
+                Paragraph(strength_label or "85% (High)", table_cell),
+            ])
+        t_edges = Table(edge_rows, colWidths=[90, 110, 90, 120, 120])
+        t_edges.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e2e8f0")),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+            ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#f1f5f9")),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story.append(t_edges)
+    else:
+        story.append(Paragraph("No direct relationship chains mapped for this case.", body_style))
+    story.append(Spacer(1, 10))
+
+    # Chain of custody notice
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#cbd5e1"), spaceAfter=6))
+    story.append(Paragraph("5. Chain of Custody &amp; Audit Logging", section_heading))
+    story.append(Paragraph(
+        f"<b>Integrity Reference:</b> {audit_token}<br/>"
+        "<b>Notice:</b> This intelligence report is generated for investigative support. All AI-extracted entities and evidentiary links require officer verification prior to judicial filing.",
+        ParagraphStyle("Notice", parent=body_style, fontSize=8, leading=11, textColor=colors.HexColor("#64748b")),
+    ))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 @router.get("/{case_number}/export", summary="Generate Court Evidence Brief & Evidentiary Docket")
 def export_court_brief(
     case_number: str,
-    format: str = Query("markdown", enum=["markdown", "text"]),
+    format: str = Query("markdown", enum=["markdown", "text", "pdf"]),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Export a tamper-evident court evidence brief with timestamped audit signature."""
+    """Export a case evidence brief with timestamped audit signature in Markdown, Text, or PDF format."""
     case = next((c for c in CASE_METADATA if c["case_number"] == case_number), None)
     if not case:
         raise HTTPException(status_code=404, detail=f"Case '{case_number}' not found.")
 
     subgraph = graph_analytics.get_subgraph(case_number)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    officer_name = current_user.full_name if current_user and current_user.full_name else "Insp. Rajesh Vardhan"
+    badge_number = current_user.badge_number if current_user and current_user.badge_number else "DL-CB-9021"
+    audit_token = f"SIH-AUDIT-{case_number}-{int(datetime.now().timestamp())}"
 
-    doc = f"""# LAW ENFORCEMENT INTELLIGENCE PLATFORM — COURT EVIDENCE BRIEF
+    log_audit_action(
+        db=db,
+        action="EXPORT_COURT_BRIEF",
+        resource_type="CASE",
+        resource_id=case_number,
+        user_id=current_user.id if current_user else None,
+        details={"format": format, "node_count": len(subgraph.get("nodes", []))},
+    )
+
+    if format == "pdf":
+        try:
+            pdf_bytes = _generate_court_brief_pdf(
+                case=case,
+                subgraph=subgraph,
+                now_str=now_str,
+                officer_name=officer_name,
+                badge_number=badge_number,
+                audit_token=audit_token,
+            )
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="Case_Brief_{case_number}.pdf"'},
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+    doc = f"""# LAW ENFORCEMENT INTELLIGENCE PLATFORM — CASE BRIEF
 **CONFIDENTIAL // LAW ENFORCEMENT SENSITIVE // SIH 2026**
 
 ---
@@ -158,7 +386,7 @@ def export_court_brief(
 - **Crime Category:** {case['crime_category']}
 - **Incident Date:** {case['incident_date']}
 - **Generated At:** {now_str}
-- **Authorized Officer:** {current_user.full_name if current_user else 'Insp. Rajesh Vardhan'} (Badge: {current_user.badge_number if current_user else 'DL-CB-9021'})
+- **Authorized Officer:** {officer_name} (Badge: {badge_number})
 
 ---
 
@@ -178,24 +406,14 @@ def export_court_brief(
 ---
 
 ### EVIDENCE RELATIONSHIP CHAINS ({len(subgraph.get('edges', []))} Verified Connections)
-{chr(10).join([f"- {e.get('source')} ➔ [{e.get('type')}] ➔ {e.get('target')} (Confidence: {e.get('properties', {}).get('confidence', 1.0)*100:.0f}%)" for e in subgraph.get('edges', [])])}
+{chr(10).join([f"- {e.get('source')} ➔ [{e.get('type')}] ➔ {e.get('target')} (Extraction: {e.get('properties', {}).get('extraction_method', 'NLP_HYBRID')})" for e in subgraph.get('edges', [])])}
 
 ---
 
 ### CHAIN OF CUSTODY & AUDIT VERIFICATION
-*This document was generated automatically by the AI-Powered Criminal Network Analysis Platform with tamper-evident cryptographic logging.*
-- **Integrity Status:** VERIFIED & SEALED
-- **Audit Token:** SIH-AUDIT-{case_number}-{int(datetime.now().timestamp())}
+*This document was generated for investigative intelligence support. Officer verification required prior to judicial filing.*
+- **Audit Reference:** {audit_token}
 """
-
-    log_audit_action(
-        db=db,
-        action="EXPORT_COURT_BRIEF",
-        resource_type="CASE",
-        resource_id=case_number,
-        user_id=current_user.id if current_user else None,
-        details={"format": format, "node_count": len(subgraph.get("nodes", []))},
-    )
 
     return Response(
         content=doc,

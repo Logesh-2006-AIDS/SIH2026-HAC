@@ -18,10 +18,23 @@ const CASE_OPTIONS = [
 ];
 
 const LAYOUT_OPTIONS = [
-  { id: 'cose', label: 'Force-Directed (Physics Board)' },
-  { id: 'concentric', label: 'Concentric (Hierarchy Pins)' },
-  { id: 'circle', label: 'Circular Cluster' },
-  { id: 'grid', label: 'Matrix Grid' },
+  { id: 'cose', label: '🕸️ CoSE Physics (Default)' },
+  { id: 'concentric', label: '🎯 Concentric Hierarchy' },
+  { id: 'circle', label: '⭕ Circular Cluster' },
+  { id: 'grid', label: '⊞ Matrix Grid' },
+  { id: 'breadthfirst', label: '🌲 Tree Hierarchy' },
+];
+
+const RELATIONSHIP_OPTIONS = [
+  { id: '', label: 'All Relationship Types' },
+  { id: 'ACCUSED_IN', label: 'ACCUSED_IN (FIR Charge)' },
+  { id: 'COMMUNICATED_WITH', label: 'COMMUNICATED_WITH (Calls/CDR)' },
+  { id: 'TRANSFERRED_MONEY', label: 'TRANSFERRED_MONEY (Financial)' },
+  { id: 'OPERATES_VEHICLE', label: 'OPERATES_VEHICLE (Logistics)' },
+  { id: 'ASSOCIATED_WITH', label: 'ASSOCIATED_WITH (Syndicate)' },
+  { id: 'FINANCES_GANG', label: 'FINANCES_GANG (Hawala)' },
+  { id: 'SIGHTED_AT', label: 'SIGHTED_AT (Location Pin)' },
+  { id: 'OWNS', label: 'OWNS (Asset / Account)' },
 ];
 
 export default function GraphControls({
@@ -29,6 +42,12 @@ export default function GraphControls({
   onSelectCase = () => {},
   layoutName = 'cose',
   onSelectLayout = () => {},
+  minConfidence = 0.0,
+  onSelectMinConfidence = () => {},
+  relationshipType = '',
+  onSelectRelationshipType = () => {},
+  entityType = 'ALL',
+  onSelectEntityType = () => {},
   onFindPath = () => {},
   onClearPath = () => {},
   hasActivePath = false,
@@ -61,190 +80,265 @@ export default function GraphControls({
       style={{
         padding: '0.75rem 1.25rem',
         display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.85rem',
+        flexDirection: 'column',
+        gap: '0.75rem',
         marginBottom: '1rem',
         position: 'relative',
         zIndex: 15,
       }}
     >
-      {/* Left: Case Filter & Layout Control */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem' }}>
-        {/* Case Selector Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Filter size={16} color="#D9AA3D" />
-          <select
-            value={selectedCase}
-            onChange={(e) => onSelectCase(e.target.value)}
-            style={{
-              background: 'rgba(16, 19, 17, 0.85)',
-              border: '1px solid var(--border-color)',
-              color: '#F1EBDD',
-              borderRadius: '8px',
-              padding: '0.5rem 0.85rem',
-              fontSize: '0.85rem',
-              outline: 'none',
-              cursor: 'pointer',
-              fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-            }}
-          >
-            {CASE_OPTIONS.map((c) => (
-              <option key={c.id} value={c.id} style={{ background: '#101311', color: '#F1EBDD' }}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+      {/* Top Row: Case, Layout, Confidence & Path Tracing */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.85rem' }}>
+        {/* Left: Case Filter & Layout Control */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Case Selector Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Filter size={15} color="#D9AA3D" />
+            <select
+              value={selectedCase}
+              onChange={(e) => onSelectCase(e.target.value)}
+              style={{
+                background: 'rgba(16, 19, 17, 0.85)',
+                border: '1px solid var(--border-color)',
+                color: '#F1EBDD',
+                borderRadius: '8px',
+                padding: '0.45rem 0.75rem',
+                fontSize: '0.82rem',
+                outline: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }}
+            >
+              {CASE_OPTIONS.map((c) => (
+                <option key={c.id} value={c.id} style={{ background: '#101311', color: '#F1EBDD' }}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Layout Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Layers size={15} color="#5E9F68" />
+            <select
+              value={layoutName}
+              onChange={(e) => onSelectLayout(e.target.value)}
+              style={{
+                background: 'rgba(16, 19, 17, 0.85)',
+                border: '1px solid var(--border-color)',
+                color: '#F1EBDD',
+                borderRadius: '8px',
+                padding: '0.45rem 0.75rem',
+                fontSize: '0.82rem',
+                outline: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }}
+            >
+              {LAYOUT_OPTIONS.map((l) => (
+                <option key={l.id} value={l.id} style={{ background: '#101311', color: '#F1EBDD' }}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Relationship Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <select
+              value={relationshipType}
+              onChange={(e) => onSelectRelationshipType(e.target.value)}
+              style={{
+                background: 'rgba(16, 19, 17, 0.85)',
+                border: '1px solid var(--border-color)',
+                color: '#F1EBDD',
+                borderRadius: '8px',
+                padding: '0.45rem 0.75rem',
+                fontSize: '0.82rem',
+                outline: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              {RELATIONSHIP_OPTIONS.map((r) => (
+                <option key={r.id} value={r.id} style={{ background: '#101311', color: '#F1EBDD' }}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Min Confidence Threshold */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0,0,0,0.35)', padding: '0.3rem 0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <span style={{ fontSize: '0.75rem', color: '#A6B0AA', fontWeight: 600 }}>Min Conf:</span>
+            <input
+              type="range"
+              min="0"
+              max="0.95"
+              step="0.05"
+              value={minConfidence}
+              onChange={(e) => onSelectMinConfidence(parseFloat(e.target.value))}
+              style={{ width: '70px', accentColor: '#D9AA3D', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '0.75rem', color: '#D9AA3D', fontWeight: 700, minWidth: '32px' }}>
+              {Math.round(minConfidence * 100)}%
+            </span>
+          </div>
         </div>
 
-        {/* Layout Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Layers size={16} color="#5E9F68" />
-          <select
-            value={layoutName}
-            onChange={(e) => onSelectLayout(e.target.value)}
+        {/* Right: Path Finder & Sync Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          {/* Shortest Path Trigger */}
+          <button
+            onClick={() => setShowPathFinder(!showPathFinder)}
+            className={hasActivePath ? "btn-red" : "btn-primary"}
             style={{
-              background: 'rgba(16, 19, 17, 0.85)',
-              border: '1px solid var(--border-color)',
-              color: '#F1EBDD',
-              borderRadius: '8px',
-              padding: '0.5rem 0.85rem',
-              fontSize: '0.85rem',
-              outline: 'none',
-              cursor: 'pointer',
-              fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              padding: '0.5rem 0.95rem',
+              fontSize: '0.83rem',
             }}
           >
-            {LAYOUT_OPTIONS.map((l) => (
-              <option key={l.id} value={l.id} style={{ background: '#101311', color: '#F1EBDD' }}>
-                {l.label}
-              </option>
-            ))}
-          </select>
+            <Route size={16} />
+            <span>{hasActivePath ? 'Red String Connection Active' : 'Trace Connection String'}</span>
+          </button>
+
+          {hasActivePath && (
+            <button
+              onClick={onClearPath}
+              title="Clear Path Highlight"
+              style={{
+                background: 'rgba(201, 42, 42, 0.15)',
+                border: '1px solid rgba(201, 42, 42, 0.35)',
+                color: '#ff6b6b',
+                borderRadius: '8px',
+                padding: '0.5rem 0.75rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <X size={14} />
+              <span>Reset String</span>
+            </button>
+          )}
+
+          {/* Person Focus & Hop Expansion Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(0,0,0,0.4)', padding: '0.25rem 0.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <button
+              type="button"
+              onClick={onToggleFocusMode}
+              style={{
+                padding: '0.4rem 0.75rem',
+                borderRadius: '6px',
+                border: '1px solid',
+                borderColor: focusMode ? 'rgba(217,170,61,0.5)' : 'rgba(255,255,255,0.1)',
+                background: focusMode ? 'rgba(217,170,61,0.2)' : 'transparent',
+                color: focusMode ? '#D9AA3D' : '#A6B0AA',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {focusMode ? '🎯 Focus Mode: ON' : '🎯 Person Focus'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onExpandHops(1);
+                if (!focusMode) onToggleFocusMode();
+              }}
+              style={{
+                padding: '0.4rem 0.75rem',
+                borderRadius: '6px',
+                border: '1px solid',
+                borderColor: focusMode && expandHops === 1 ? 'rgba(78,205,196,0.5)' : 'rgba(255,255,255,0.1)',
+                background: focusMode && expandHops === 1 ? 'rgba(78,205,196,0.2)' : 'transparent',
+                color: focusMode && expandHops === 1 ? '#4ECDC4' : '#A6B0AA',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Expand 1 Hop
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onExpandHops(2);
+                if (!focusMode) onToggleFocusMode();
+              }}
+              style={{
+                padding: '0.4rem 0.75rem',
+                borderRadius: '6px',
+                border: '1px solid',
+                borderColor: focusMode && expandHops === 2 ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.1)',
+                background: focusMode && expandHops === 2 ? 'rgba(99,102,241,0.2)' : 'transparent',
+                color: focusMode && expandHops === 2 ? '#818CF8' : '#A6B0AA',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Expand 2 Hops
+            </button>
+
+            <button
+              type="button"
+              onClick={onClearFocus}
+              style={{
+                padding: '0.4rem 0.75rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: !focusMode && !graphFocusEntity ? 'rgba(255,255,255,0.08)' : 'transparent',
+                color: !focusMode && !graphFocusEntity ? '#F1EBDD' : '#A6B0AA',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              🌐 Full Network
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Right: Path Finder & Sync Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-        {/* Shortest Path Trigger */}
-        <button
-          onClick={() => setShowPathFinder(!showPathFinder)}
-          className={hasActivePath ? "btn-red" : "btn-primary"}
-          style={{
-            padding: '0.5rem 0.95rem',
-            fontSize: '0.83rem',
-          }}
-        >
-          <Route size={16} />
-          <span>{hasActivePath ? 'Red String Connection Active' : 'Trace Connection String'}</span>
-        </button>
-
-        {hasActivePath && (
-          <button
-            onClick={onClearPath}
-            title="Clear Path Highlight"
-            style={{
-              background: 'rgba(201, 42, 42, 0.15)',
-              border: '1px solid rgba(201, 42, 42, 0.35)',
-              color: '#ff6b6b',
-              borderRadius: '8px',
-              padding: '0.5rem 0.75rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <X size={14} />
-            <span>Reset String</span>
-          </button>
-        )}
-
-        {/* Person Focus & Hop Expansion Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(0,0,0,0.4)', padding: '0.25rem 0.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <button
-            type="button"
-            onClick={onToggleFocusMode}
-            style={{
-              padding: '0.4rem 0.75rem',
-              borderRadius: '6px',
-              border: '1px solid',
-              borderColor: focusMode ? 'rgba(217,170,61,0.5)' : 'rgba(255,255,255,0.1)',
-              background: focusMode ? 'rgba(217,170,61,0.2)' : 'transparent',
-              color: focusMode ? '#D9AA3D' : '#A6B0AA',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            {focusMode ? '🎯 Focus Mode: ON' : '🎯 Person Focus'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onExpandHops(1);
-              if (!focusMode) onToggleFocusMode();
-            }}
-            style={{
-              padding: '0.4rem 0.75rem',
-              borderRadius: '6px',
-              border: '1px solid',
-              borderColor: focusMode && expandHops === 1 ? 'rgba(78,205,196,0.5)' : 'rgba(255,255,255,0.1)',
-              background: focusMode && expandHops === 1 ? 'rgba(78,205,196,0.2)' : 'transparent',
-              color: focusMode && expandHops === 1 ? '#4ECDC4' : '#A6B0AA',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            Expand 1 Hop
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onExpandHops(2);
-              if (!focusMode) onToggleFocusMode();
-            }}
-            style={{
-              padding: '0.4rem 0.75rem',
-              borderRadius: '6px',
-              border: '1px solid',
-              borderColor: focusMode && expandHops === 2 ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.1)',
-              background: focusMode && expandHops === 2 ? 'rgba(99,102,241,0.2)' : 'transparent',
-              color: focusMode && expandHops === 2 ? '#818CF8' : '#A6B0AA',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            Expand 2 Hops
-          </button>
-
-          <button
-            type="button"
-            onClick={onClearFocus}
-            style={{
-              padding: '0.4rem 0.75rem',
-              borderRadius: '6px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: !focusMode && !graphFocusEntity ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: !focusMode && !graphFocusEntity ? '#F1EBDD' : '#A6B0AA',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            🌐 Full Network
-          </button>
-        </div>
+      {/* Bottom Row: Entity Type Quick Filters */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflowX: 'auto', paddingTop: '0.35rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <span style={{ fontSize: '0.73rem', color: '#8A948C', fontWeight: 600, textTransform: 'uppercase', marginRight: '0.3rem' }}>
+          Entity Filter:
+        </span>
+        {['ALL', 'PERSON', 'PHONE', 'ORGANIZATION', 'VEHICLE', 'FINANCIALACCOUNT', 'LOCATION'].map((t) => {
+          const label = t === 'FINANCIALACCOUNT' ? 'ACCOUNT' : t;
+          const active = entityType.toUpperCase() === t;
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => onSelectEntityType(t)}
+              style={{
+                padding: '0.25rem 0.6rem',
+                borderRadius: '5px',
+                border: active ? '1px solid #D9AA3D' : '1px solid rgba(255,255,255,0.08)',
+                background: active ? '#D9AA3D' : 'rgba(0,0,0,0.3)',
+                color: active ? '#101311' : '#A6B0AA',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Path Finder Dialog Modal */}

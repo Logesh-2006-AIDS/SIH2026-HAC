@@ -115,6 +115,9 @@ function AppInner({ onSignOut }) {
     nodes, edges, isLoadingGraph, layoutName, setLayoutName,
     selectedEntity, selectEntity, graphFocusEntity, setGraphFocusEntity,
     focusMode, setFocusMode, expandHops, setExpandHops,
+    minConfidence, setMinConfidence,
+    relationshipTypeFilter, setRelationshipTypeFilter,
+    entityTypeFilter, setEntityTypeFilter,
     highlightedPath, pathDetails, pathMessage, pathSourceId, setPathSourceId,
     handleFindPath, clearPath, focusEntityById, openCase,
     setInvestigationSection, suspectList,
@@ -210,6 +213,12 @@ function AppInner({ onSignOut }) {
                 onSelectCase={setSelectedCase}
                 layoutName={layoutName}
                 onSelectLayout={setLayoutName}
+                minConfidence={minConfidence}
+                onSelectMinConfidence={setMinConfidence}
+                relationshipType={relationshipTypeFilter}
+                onSelectRelationshipType={setRelationshipTypeFilter}
+                entityType={entityTypeFilter}
+                onSelectEntityType={setEntityTypeFilter}
                 onFindPath={handleFindPath}
                 onClearPath={clearPath}
                 hasActivePath={highlightedPath.length > 0}
@@ -223,7 +232,29 @@ function AppInner({ onSignOut }) {
                 onClearFocus={() => { setGraphFocusEntity(null); setFocusMode(false); }}
               />
               {(pathMessage || pathDetails?.hops?.length) && (
-                <PathBanner message={pathMessage} hops={pathDetails?.hops} />
+                <PathBanner
+                  message={pathMessage}
+                  hops={pathDetails?.hops}
+                  evidentiaryStrength={pathDetails?.evidentiary_strength}
+                  onSelectHop={(hop) => {
+                    setSelectedEntity(null);
+                    setSelectedEdge({
+                      source: hop.from_id,
+                      target: hop.to_id,
+                      from_name: hop.from_name,
+                      to_name: hop.to_name,
+                      type: hop.relationship,
+                      relationship: hop.relationship,
+                      confidence: hop.confidence,
+                      evidence_snippet: hop.evidence_snippet || hop.evidence,
+                      source_document_id: hop.source_document_id || hop.source_document,
+                      extraction_method: hop.extraction_method,
+                      verification_status: hop.verification_status,
+                      created_at: hop.created_at,
+                      evidentiary_strength: hop.evidentiary_strength,
+                    });
+                  }}
+                />
               )}
               <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
                 <GraphCanvas
@@ -352,16 +383,48 @@ function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, ca
   );
 }
 
-function PathBanner({ message, hops }) {
+function PathBanner({ message, hops, evidentiaryStrength, onSelectHop }) {
   return (
-    <div style={{ padding: '0.6rem 1rem', margin: '0.5rem 1rem 0', borderRadius: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#fbbf24', fontSize: '0.82rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}><Sparkles size={16} />{message}</div>
+    <div style={{ padding: '0.65rem 1rem', margin: '0.5rem 1rem 0', borderRadius: 8, background: 'rgba(217,170,61,0.08)', border: '1px solid rgba(217,170,61,0.25)', color: '#F1EBDD', fontSize: '0.82rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, color: '#D9AA3D' }}>
+          <Sparkles size={16} />
+          <span>{message}</span>
+        </div>
+        {evidentiaryStrength && (
+          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#72bf7e', background: 'rgba(94,159,104,0.15)', padding: '0.15rem 0.5rem', borderRadius: 6, border: '1px solid rgba(94,159,104,0.3)' }}>
+            Evidentiary Strength: {evidentiaryStrength.label}
+          </span>
+        )}
+      </div>
       {hops?.length > 0 && (
-        <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#fde68a' }}>
+        <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#A6B0AA', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {hops.map((h, i) => (
-            <div key={i}>
-              {h.from_name} —[{h.relationship}]→ {h.to_name} (Source: {h.evidence_source}, {Math.round((h.confidence || 0.9) * 100)}%)
-            </div>
+            <button
+              key={i}
+              type="button"
+              onClick={() => onSelectHop && onSelectHop(h)}
+              style={{
+                background: 'rgba(0,0,0,0.4)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 6,
+                padding: '0.25rem 0.55rem',
+                color: '#F1EBDD',
+                cursor: 'pointer',
+                fontSize: '0.73rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+              title="Click hop to view evidence drawer"
+            >
+              <span style={{ color: '#D9AA3D', fontWeight: 700 }}>{h.from_name}</span>
+              <span style={{ color: '#8a948c' }}>—[{h.relationship}]→</span>
+              <span style={{ color: '#D9AA3D', fontWeight: 700 }}>{h.to_name}</span>
+              <span style={{ color: '#72bf7e', fontSize: '0.68rem', marginLeft: 4 }}>
+                {h.evidentiary_strength?.label || `${Math.round((h.confidence || 0.9) * 100)}%`}
+              </span>
+            </button>
           ))}
         </div>
       )}

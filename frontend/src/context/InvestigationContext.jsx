@@ -103,6 +103,9 @@ export function InvestigationProvider({ children }) {
   const [graphFocusEntity, setGraphFocusEntity] = useState(null);
   const [focusMode, setFocusMode] = useState(false);
   const [expandHops, setExpandHops] = useState(1);
+  const [minConfidence, setMinConfidence] = useState(0.0);
+  const [relationshipTypeFilter, setRelationshipTypeFilter] = useState('');
+  const [entityTypeFilter, setEntityTypeFilter] = useState('ALL');
 
   // ── Path state ─────────────────────────────────────────────────────────────
   const [highlightedPath, setHighlightedPath] = useState([]);
@@ -219,8 +222,12 @@ export function InvestigationProvider({ children }) {
   }, []);
 
   // ── Graph fetch from Live API ──────────────────────────────────────────────
-  const fetchSubgraph = useCallback(async (caseId = '', entityId = null, hops = 1) => {
+  const fetchSubgraph = useCallback(async (caseId = '', entityId = null, hops = 1, filters = {}) => {
     setIsLoadingGraph(true);
+    const minConf = filters.minConfidence ?? minConfidence;
+    const relType = filters.relationshipType ?? relationshipTypeFilter;
+    const entType = filters.entityType ?? entityTypeFilter;
+
     try {
       let res;
       if (entityId) {
@@ -228,10 +235,16 @@ export function InvestigationProvider({ children }) {
           entity_id: entityId,
           case_id: caseId || undefined,
           hops,
+          min_confidence: minConf > 0 ? minConf : undefined,
+          relationship_type: relType || undefined,
+          entity_type: entType !== 'ALL' ? entType : undefined,
         });
       } else {
         res = await apiGet('/api/v1/graph/subgraph', {
           case_id: caseId || undefined,
+          min_confidence: minConf > 0 ? minConf : undefined,
+          relationship_type: relType || undefined,
+          entity_type: entType !== 'ALL' ? entType : undefined,
         });
       }
       const data = res?.data || res;
@@ -246,14 +259,23 @@ export function InvestigationProvider({ children }) {
       if (caseId) {
         caseNodes = ALL_CANONICAL_NODES.filter(n => n.cases?.includes(caseId));
       }
+      if (entType && entType !== 'ALL') {
+        caseNodes = caseNodes.filter(n => (n.type || '').toUpperCase() === entType.toUpperCase());
+      }
       const validIds = new Set(caseNodes.map(n => n.id));
-      const caseEdges = ALL_CANONICAL_EDGES.filter(e => validIds.has(e.source) && validIds.has(e.target));
+      let caseEdges = ALL_CANONICAL_EDGES.filter(e => validIds.has(e.source) && validIds.has(e.target));
+      if (minConf > 0) {
+        caseEdges = caseEdges.filter(e => (e.confidence ?? 0.9) >= minConf);
+      }
+      if (relType) {
+        caseEdges = caseEdges.filter(e => (e.type || e.relation || '').toUpperCase() === relType.toUpperCase());
+      }
       setNodes(caseNodes);
       setEdges(caseEdges);
     } finally {
       setIsLoadingGraph(false);
     }
-  }, []);
+  }, [minConfidence, relationshipTypeFilter, entityTypeFilter]);
 
   useEffect(() => { refreshCaseSummary(selectedCase); }, [selectedCase, refreshCaseSummary]);
 
@@ -284,7 +306,7 @@ export function InvestigationProvider({ children }) {
       const focusId = focusMode ? (graphFocusEntity || selectedEntity?.id) : null;
       fetchSubgraph(selectedCase, focusId, expandHops);
     }
-  }, [selectedCase, graphFocusEntity, selectedEntity?.id, focusMode, expandHops, activeTab, fetchSubgraph]);
+  }, [selectedCase, graphFocusEntity, selectedEntity?.id, focusMode, expandHops, activeTab, fetchSubgraph, minConfidence, relationshipTypeFilter, entityTypeFilter]);
 
   // ── Entity selection ────────────────────────────────────────────────────────
   const selectEntity = useCallback((entity, options = {}) => {
@@ -417,6 +439,9 @@ export function InvestigationProvider({ children }) {
     graphFocusEntity, setGraphFocusEntity,
     focusMode, setFocusMode,
     expandHops, setExpandHops,
+    minConfidence, setMinConfidence,
+    relationshipTypeFilter, setRelationshipTypeFilter,
+    entityTypeFilter, setEntityTypeFilter,
     highlightedPath, pathDetails, pathMessage, pathSourceId, setPathSourceId,
     handleFindPath, clearPath,
     focusEntityById,

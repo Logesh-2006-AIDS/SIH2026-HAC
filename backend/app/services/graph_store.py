@@ -10,6 +10,7 @@ import abc
 import json
 import logging
 import os
+import re
 from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -74,6 +75,62 @@ def _infer_entity_type(node: Dict[str, Any]) -> str:
     return "Person"
 
 
+def compute_evidentiary_strength(
+    confidence: float,
+    verification_status: str = "AI_SUGGESTED",
+    evidence_snippet: str = "",
+    source_document_id: str = "",
+    distinct_docs_count: int = 1,
+) -> Dict[str, Any]:
+    """
+    Compute Evidentiary Strength (Officer Verification Required).
+    Exact Formula & Weights:
+      1. Base Extraction Confidence (weight 0.40): C in [0.0, 1.0]
+      2. Verification Status Multiplier (weight 0.35):
+         - VERIFIED / CONFIRMED / HUMAN_VERIFIED: 1.0
+         - AI_SUGGESTED / PENDING / STAGED: 0.80
+         - ALLEGED / UNVERIFIED: 0.50
+      3. Source Corroboration & Snippet Factor (weight 0.25):
+         - S = min(1.0, 0.60 + 0.20 * (distinct_docs - 1)) + (0.10 if valid evidence snippet exists)
+         
+      Composite Score:
+        Score = round(0.40 * C + 0.35 * V + 0.25 * S, 3) bounded in [0.0, 1.0].
+        
+      Levels:
+        - HIGH: >= 0.80 (>= 80%)
+        - MEDIUM: 0.50 - 0.79 (50% - 79%)
+        - LOW: < 0.50 (< 50%)
+    """
+    c = max(0.0, min(1.0, float(confidence if confidence is not None else 0.85)))
+
+    v_stat = (verification_status or "AI_SUGGESTED").upper()
+    if v_stat in ("VERIFIED", "CONFIRMED", "HUMAN_VERIFIED"):
+        v = 1.0
+    elif v_stat in ("AI_SUGGESTED", "PENDING", "STAGED"):
+        v = 0.80
+    else:
+        v = 0.50
+
+    s = min(1.0, 0.60 + 0.20 * max(0, distinct_docs_count - 1))
+    if evidence_snippet and len(str(evidence_snippet).strip()) > 5:
+        s = min(1.0, s + 0.10)
+
+    raw_score = 0.40 * c + 0.35 * v + 0.25 * s
+    score = round(max(0.0, min(1.0, raw_score)), 3)
+    score_pct = int(round(score * 100))
+
+    level = "HIGH" if score >= 0.80 else ("MEDIUM" if score >= 0.50 else "LOW")
+    label = f"{score_pct}% ({level.capitalize()})"
+
+    return {
+        "score": score,
+        "score_pct": score_pct,
+        "level": level,
+        "label": label,
+        "explanation": f"Evidentiary strength ({level.capitalize()} - {score_pct}%): derived from {int(c*100)}% extraction confidence, status '{v_stat}', and corroboration across {distinct_docs_count} source document(s). Officer verification required.",
+    }
+
+
 class BaseGraphStore(abc.ABC):
     """Abstract interface for all Knowledge Graph operations."""
 
@@ -83,13 +140,37 @@ class BaseGraphStore(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_subgraph(self, case_id: Optional[str] = None) -> Dict[str, List[Any]]:
-        """Retrieve nodes and edges, optionally filtered by case."""
+    def get_subgraph(
+        self,
+        case_id: Optional[str] = None,
+        min_confidence: float = 0.0,
+        relationship_type: Optional[str] = None,
+        entity_type: Optional[str] = None,
+    ) -> Dict[str, List[Any]]:
+        """Retrieve nodes and edges with multi-attribute filtering."""
         pass
 
     @abc.abstractmethod
-    def get_focus_subgraph(self, entity_id: str, case_id: Optional[str] = None, hops: int = 1) -> Dict[str, List[Any]]:
-        """Retrieve ego-network around a target entity."""
+    def get_focus_subgraph(
+        self,
+        entity_id: str,
+        case_id: Optional[str] = None,
+        hops: int = 1,
+        min_confidence: float = 0.0,
+        relationship_type: Optional[str] = None,
+        entity_type: Optional[str] = None,
+    ) -> Dict[str, List[Any]]:
+        """Retrieve ego-network around a target entity with filters."""
+        pass
+
+    @abc.abstractmethod
+    def search_entities(
+        self,
+        query: str,
+        entity_type: Optional[str] = None,
+        limit: int = 30,
+    ) -> List[Dict[str, Any]]:
+        """Global search across phone, vehicle, account, and fuzzy name variants."""
         pass
 
     @abc.abstractmethod
@@ -163,19 +244,115 @@ class LocalFixtureStore(BaseGraphStore):
     def _load_canonical_fixtures(self):
         try:
             metadata_dir = _data_dir()
+            entities_path = os.path.join(metadata_dir, "ground_truth_entities.json")
             graph_path = os.path.join(metadata_dir, "ground_truth_graph.json")
+
+            # 1. Load multi-type entities from ground_truth_entities.json
+            if os.path.exists(entities_path):
+                with open(entities_path, "r", encoding="utf-8") as f:
+                    ent_data = json.load(f)
+                    # Persons
+                    for p in ent_data.get("persons", []):
+                        pid = p.get("id")
+                        if pid:
+                            self._nodes[pid] = {**p, "type": "Person"}
+
+                    # Organizations
+                    for o in ent_data.get("organizations", []):
+                        oid = o.get("id")
+                        if oid:
+                            self._nodes[oid] = {**o, "type": "Organization"}
+
+                    # Vehicles
+                    for v in ent_data.get("vehicles", []):
+                        vid = v.get("id")
+                        if vid:
+                            plate = v.get("plate") or v.get("reg_number") or vid
+                            name = f"{v.get('color', '')} {v.get('model', 'Vehicle')} ({plate})".strip()
+                            self._nodes[vid] = {
+                                **v,
+                                "id": vid,
+                                "name": name,
+                                "reg_number": plate,
+                                "plate": plate,
+                                "type": "Vehicle",
+                            }
+
+                    # Locations
+                    for l in ent_data.get("locations", []):
+                        lid = l.get("id")
+                        if lid:
+                            self._nodes[lid] = {**l, "type": "Location"}
+
+                    # Financial Accounts
+                    for a in ent_data.get("financial_accounts", []):
+                        aid = a.get("id")
+                        if aid:
+                            acc_num = a.get("number") or a.get("account_number") or aid
+                            bank = a.get("bank") or "Bank Account"
+                            self._nodes[aid] = {
+                                **a,
+                                "id": aid,
+                                "name": f"{bank} ({acc_num})",
+                                "account_number": acc_num,
+                                "number": acc_num,
+                                "type": "FinancialAccount",
+                            }
+                            # Add ownership edge
+                            holder = a.get("holder_id")
+                            if holder:
+                                self._edges.append(_normalize_edge({
+                                    "id": f"REL-{holder}-{aid}",
+                                    "source": holder,
+                                    "target": aid,
+                                    "type": "OWNS",
+                                    "relationship": "OWNS",
+                                    "confidence": 0.98,
+                                    "evidence": f"Bank account {acc_num} registered to {holder}",
+                                    "source_case": (a.get("cases") or ["101"])[0],
+                                }))
+
+                    # Phone Numbers
+                    for idx, ph in enumerate(ent_data.get("phone_numbers", [])):
+                        ph_num = ph.get("number")
+                        ph_id = ph.get("id") or f"PH_{ph_num or idx}"
+                        if ph_num:
+                            self._nodes[ph_id] = {
+                                **ph,
+                                "id": ph_id,
+                                "name": ph_num,
+                                "number": ph_num,
+                                "phone": ph_num,
+                                "type": "Phone",
+                            }
+                            person_id = ph.get("person_id")
+                            if person_id:
+                                self._edges.append(_normalize_edge({
+                                    "id": f"REL-{person_id}-{ph_id}",
+                                    "source": person_id,
+                                    "target": ph_id,
+                                    "type": "COMMUNICATED_WITH",
+                                    "relationship": "COMMUNICATED_WITH",
+                                    "confidence": 0.95,
+                                    "evidence": f"Subscriber record binds {person_id} to phone {ph_num}",
+                                    "source_case": "101",
+                                }))
+
+            # 2. Load ground truth graph nodes & edges
             if os.path.exists(graph_path):
                 with open(graph_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     for n in data.get("nodes", []):
                         nid = n.get("id")
                         if nid:
-                            node_data = dict(n)
-                            node_data["type"] = _infer_entity_type(node_data)
-                            self._nodes[nid] = node_data
+                            existing = self._nodes.get(nid, {})
+                            merged = {**existing, **n}
+                            merged["type"] = n.get("type") or _infer_entity_type(merged)
+                            self._nodes[nid] = merged
                     for e in data.get("edges", []):
                         self._edges.append(_normalize_edge(e))
-                logger.info("LocalFixtureStore initialized with %d nodes and %d edges.", len(self._nodes), len(self._edges))
+
+            logger.info("LocalFixtureStore initialized with %d nodes and %d edges.", len(self._nodes), len(self._edges))
         except Exception as e:
             logger.warning("Error loading canonical fixture in LocalFixtureStore: %s", e)
 
@@ -216,32 +393,74 @@ class LocalFixtureStore(BaseGraphStore):
             "is_live": False,
         }
 
-    def get_subgraph(self, case_id: Optional[str] = None) -> Dict[str, List[Any]]:
+    def get_subgraph(
+        self,
+        case_id: Optional[str] = None,
+        min_confidence: float = 0.0,
+        relationship_type: Optional[str] = None,
+        entity_type: Optional[str] = None,
+    ) -> Dict[str, List[Any]]:
         case_id_clean = case_id.replace("CASE-", "") if case_id else None
         nodes = list(self._nodes.values())
         edges = list(self._edges)
 
+        # 1. Filter by Case ID
         if case_id_clean:
             nodes = [n for n in nodes if case_id_clean in (n.get("cases") or [])]
-            valid_ids = {n["id"] for n in nodes}
-            edges = [e for e in edges if e["source"] in valid_ids and e["target"] in valid_ids]
 
-        return {"nodes": nodes, "edges": edges}
+        # 2. Filter by Entity Type
+        if entity_type and entity_type.upper() != "ALL":
+            target_type = entity_type.upper()
+            nodes = [
+                n for n in nodes
+                if (n.get("type") or _infer_entity_type(n)).upper() == target_type
+            ]
 
-    def get_focus_subgraph(self, entity_id: str, case_id: Optional[str] = None, hops: int = 1) -> Dict[str, List[Any]]:
+        valid_ids = {n["id"] for n in nodes}
+
+        # 3. Filter Edges by confidence, relationship type, and valid node endpoints
+        filtered_edges = []
+        for e in edges:
+            src = e.get("source")
+            tgt = e.get("target")
+            if src not in valid_ids or tgt not in valid_ids:
+                continue
+
+            conf = (e.get("properties") or {}).get("confidence")
+            if conf is None:
+                conf = e.get("confidence", 1.0)
+            if float(conf) < float(min_confidence or 0.0):
+                continue
+
+            rel_type = (e.get("type") or e.get("relationship") or "").upper()
+            if relationship_type and relationship_type.upper() != "ALL":
+                if rel_type != relationship_type.upper():
+                    continue
+
+            filtered_edges.append(e)
+
+        return {"nodes": nodes, "edges": filtered_edges}
+
+    def get_focus_subgraph(
+        self,
+        entity_id: str,
+        case_id: Optional[str] = None,
+        hops: int = 1,
+        min_confidence: float = 0.0,
+        relationship_type: Optional[str] = None,
+        entity_type: Optional[str] = None,
+    ) -> Dict[str, List[Any]]:
         if entity_id not in self._nodes:
             return {"nodes": [], "edges": [], "focus_entity_id": entity_id}
 
-        case_id_clean = case_id.replace("CASE-", "") if case_id else None
-        nodes = list(self._nodes.values())
-        edges = list(self._edges)
-
-        if case_id_clean:
-            nodes = [n for n in nodes if case_id_clean in (n.get("cases") or [])]
-            valid_ids = {n["id"] for n in nodes}
-            edges = [e for e in edges if e["source"] in valid_ids and e["target"] in valid_ids]
-            if entity_id not in valid_ids:
-                return {"nodes": [], "edges": [], "focus_entity_id": entity_id}
+        sub = self.get_subgraph(
+            case_id=case_id,
+            min_confidence=min_confidence,
+            relationship_type=relationship_type,
+            entity_type=None,  # We evaluate ego-network first then filter
+        )
+        nodes = sub["nodes"]
+        edges = sub["edges"]
 
         adj = defaultdict(set)
         for e in edges:
@@ -259,8 +478,114 @@ class LocalFixtureStore(BaseGraphStore):
             frontier = nxt
 
         focus_nodes = [self._nodes[nid] for nid in included if nid in self._nodes]
-        focus_edges = [e for e in edges if e["source"] in included and e["target"] in included]
+        if entity_type and entity_type.upper() != "ALL":
+            target_type = entity_type.upper()
+            focus_nodes = [
+                n for n in focus_nodes
+                if n["id"] == entity_id or (n.get("type") or _infer_entity_type(n)).upper() == target_type
+            ]
+        
+        valid_focus_ids = {n["id"] for n in focus_nodes}
+        focus_edges = [
+            e for e in edges
+            if e["source"] in valid_focus_ids and e["target"] in valid_focus_ids
+        ]
         return {"nodes": focus_nodes, "edges": focus_edges, "focus_entity_id": entity_id}
+
+    def search_entities(
+        self,
+        query: str,
+        entity_type: Optional[str] = None,
+        limit: int = 30,
+    ) -> List[Dict[str, Any]]:
+        """
+        Global entity search across phone, vehicle, bank account, and name.
+        Uses rapidfuzz for fuzzy name variants while maintaining fast exact/prefix matching.
+        """
+        q = (query or "").strip().lower()
+        if not q:
+            return []
+
+        from rapidfuzz import fuzz
+
+        # Clean search digits
+        q_digits = re.sub(r"\D", "", q)
+        q_plate = re.sub(r"[\s\-]", "", q).upper()
+
+        matches = []
+        target_type = entity_type.upper() if entity_type and entity_type.upper() != "ALL" else None
+
+        for n in self._nodes.values():
+            etype = (n.get("type") or _infer_entity_type(n)).upper()
+            if target_type and etype != target_type:
+                continue
+
+            nid = str(n.get("id") or "")
+            name = str(n.get("name") or "")
+            phone = str(n.get("phone") or n.get("number") or "")
+            reg = str(n.get("reg_number") or "")
+            acc = str(n.get("account_number") or "")
+            alias = str(n.get("alias") or "")
+            aliases = [str(a) for a in (n.get("aliases") or [])]
+            cases = [str(c) for c in (n.get("cases") or [])]
+
+            match_reason = None
+            sim_score = 0.0
+
+            # 1. Exact / Substring ID match
+            if q == nid.lower() or q in nid.lower():
+                match_reason = f"ID: {nid}"
+                sim_score = 100.0
+
+            # 2. Phone match
+            elif q_digits and len(q_digits) >= 4 and q_digits in re.sub(r"\D", "", phone):
+                match_reason = f"Phone: {phone}"
+                sim_score = 98.0
+
+            # 3. Vehicle registration match
+            elif q_plate and len(q_plate) >= 4 and q_plate in re.sub(r"[\s\-]", "", reg).upper():
+                match_reason = f"Vehicle: {reg}"
+                sim_score = 98.0
+
+            # 4. Bank account match
+            elif len(q) >= 4 and q in acc.lower():
+                match_reason = f"Bank Account: {acc}"
+                sim_score = 98.0
+
+            # 5. Alias match
+            elif alias and (q in alias.lower() or any(q in a.lower() for a in aliases)):
+                matched_alias = alias if q in alias.lower() else next((a for a in aliases if q in a.lower()), alias)
+                match_reason = f"Alias: {matched_alias}"
+                sim_score = 95.0
+
+            # 6. Case number match
+            elif any(q in f"case-{c}".lower() or q == c.lower() for c in cases):
+                match_reason = f"Case Reference: {', '.join(cases)}"
+                sim_score = 90.0
+
+            # 7. Name match (exact substring or rapidfuzz token similarity)
+            elif name:
+                name_clean = name.lower()
+                if q in name_clean:
+                    match_reason = f"Name match: {name}"
+                    sim_score = 95.0
+                else:
+                    ratio = fuzz.token_sort_ratio(q, name_clean)
+                    partial = fuzz.partial_ratio(q, name_clean)
+                    score = max(ratio, partial * 0.9)
+                    if score >= 65.0:
+                        match_reason = f"Fuzzy name match ({int(score)}%): {name}"
+                        sim_score = round(score, 1)
+
+            if match_reason:
+                item = dict(n)
+                item["type"] = n.get("type") or _infer_entity_type(n)
+                item["match_field"] = match_reason
+                item["search_score"] = sim_score
+                matches.append(item)
+
+        matches.sort(key=lambda x: x.get("search_score", 0), reverse=True)
+        return matches[:limit]
 
     def get_entity_connections(self, entity_id: str) -> Dict[str, Any]:
         center = self._nodes.get(entity_id)
@@ -276,12 +601,32 @@ class LocalFixtureStore(BaseGraphStore):
             else:
                 continue
             other = self._nodes.get(other_id, {})
+            props = e.get("properties") or {}
+            conf = props.get("confidence", e.get("confidence", 0.9))
+            v_stat = props.get("verification_status") or e.get("verification_status", "AI_SUGGESTED")
+            snippet = props.get("evidence_snippet") or e.get("evidence_snippet") or e.get("evidence", "")
+            doc_id = props.get("source_document_id") or e.get("source_document_id") or props.get("source_case") or e.get("source_case", "")
+
+            strength = compute_evidentiary_strength(
+                confidence=conf,
+                verification_status=v_stat,
+                evidence_snippet=snippet,
+                source_document_id=doc_id,
+            )
+
             connections.append({
                 "target_id": other_id,
                 "target_name": other.get("name") or other.get("reg_number") or other.get("number") or other_id,
                 "target_type": other.get("type") or _infer_entity_type(other),
                 "relationship": e.get("type"),
-                "properties": e.get("properties") or {},
+                "source_document_id": doc_id,
+                "evidence_snippet": snippet,
+                "extraction_method": props.get("extraction_method") or e.get("extraction_method", "NLP_HYBRID"),
+                "confidence": conf,
+                "verification_status": v_stat,
+                "created_at": props.get("created_at") or e.get("created_at", ""),
+                "evidentiary_strength": strength,
+                "properties": props,
                 "cases": other.get("cases") or [],
             })
         return {"entity_id": entity_id, "connections": connections}
@@ -292,6 +637,13 @@ class LocalFixtureStore(BaseGraphStore):
                 "path": [source_id],
                 "hop_count": 0,
                 "hops": [],
+                "evidentiary_strength": {
+                    "score": 1.0,
+                    "score_pct": 100,
+                    "level": "HIGH",
+                    "label": "100% (High)",
+                    "explanation": "Direct self-identity path.",
+                },
                 "explanation": "Source and target are the same entity.",
             }
 
@@ -320,24 +672,92 @@ class LocalFixtureStore(BaseGraphStore):
                     queue.append(current_path + [neighbor])
 
         if not found_path:
-            return {"path": [], "hop_count": 0, "hops": [], "explanation": "No connection path found."}
+            return {
+                "path": [],
+                "hop_count": 0,
+                "hops": [],
+                "evidentiary_strength": {
+                    "score": 0.0,
+                    "score_pct": 0,
+                    "level": "LOW",
+                    "label": "0% (Low)",
+                    "explanation": "No evidentiary connection found.",
+                },
+                "explanation": "No connection path found between the selected entities.",
+            }
 
         hops = []
+        hop_scores = []
+        distinct_source_docs = set()
+
         for i in range(len(found_path) - 1):
             u, v = found_path[i], found_path[i + 1]
             e = edge_map.get((u, v), {})
             node_u = self._nodes.get(u, {})
             node_v = self._nodes.get(v, {})
+
+            props = e.get("properties") or {}
+            conf = props.get("confidence", e.get("confidence", 0.9))
+            v_stat = props.get("verification_status") or e.get("verification_status", "AI_SUGGESTED")
+            snippet = props.get("evidence_snippet") or e.get("evidence_snippet") or e.get("evidence", "")
+            doc_id = props.get("source_document_id") or e.get("source_document_id") or props.get("source_case") or e.get("source_case") or "Investigation Record"
+            created_at = props.get("created_at") or e.get("created_at") or ""
+            extract_method = props.get("extraction_method") or e.get("extraction_method", "NLP_HYBRID")
+
+            if doc_id:
+                distinct_source_docs.add(doc_id)
+
+            hop_strength = compute_evidentiary_strength(
+                confidence=conf,
+                verification_status=v_stat,
+                evidence_snippet=snippet,
+                source_document_id=doc_id,
+                distinct_docs_count=1,
+            )
+            hop_scores.append(hop_strength["score"])
+
             hops.append({
                 "from_id": u,
                 "from_name": node_u.get("name") or node_u.get("reg_number") or node_u.get("number") or u,
+                "from_type": node_u.get("type") or _infer_entity_type(node_u),
                 "to_id": v,
                 "to_name": node_v.get("name") or node_v.get("reg_number") or node_v.get("number") or v,
+                "to_type": node_v.get("type") or _infer_entity_type(node_v),
                 "relationship": e.get("type") or "LINKED_TO",
-                "evidence_source": (e.get("properties") or {}).get("source_case") or e.get("source_case") or "Investigation Record",
-                "confidence": (e.get("properties") or {}).get("confidence", 0.9),
-                "source_document": (e.get("properties") or {}).get("source_document") or "FIR-Case",
+                "source_document_id": doc_id,
+                "evidence_snippet": snippet,
+                "evidence": snippet or f"Evidence link connecting {u} and {v}",
+                "extraction_method": extract_method,
+                "confidence": conf,
+                "verification_status": v_stat,
+                "created_at": created_at,
+                "evidentiary_strength": hop_strength,
             })
+
+        # Overall path evidentiary strength: average of hop scores boosted by distinct document corroboration
+        base_path_avg = sum(hop_scores) / max(1, len(hop_scores))
+        doc_factor = min(1.0, 0.85 + 0.05 * max(0, len(distinct_source_docs) - 1))
+        path_composite = round(max(0.0, min(1.0, base_path_avg * doc_factor)), 3)
+        path_pct = int(round(path_composite * 100))
+        path_level = "HIGH" if path_composite >= 0.80 else ("MEDIUM" if path_composite >= 0.50 else "LOW")
+
+        path_strength = {
+            "score": path_composite,
+            "score_pct": path_pct,
+            "level": path_level,
+            "label": f"{path_pct}% ({path_level.capitalize()})",
+            "explanation": f"Evidentiary strength ({path_level.capitalize()} - {path_pct}%): path verified across {len(hops)} hop(s) and {len(distinct_source_docs)} distinct source document(s). Officer verification required.",
+        }
+
+        names = [self._nodes.get(nid, {}).get("name", nid) for nid in found_path]
+        explanation = f"Connection path identified across {len(hops)} hop(s): {' ➔ '.join(names)}. Evidentiary strength: {path_strength['label']} (officer verification required)."
+        return {
+            "path": found_path,
+            "hop_count": len(hops),
+            "hops": hops,
+            "evidentiary_strength": path_strength,
+            "explanation": explanation,
+        }
 
         names = [self._nodes.get(nid, {}).get("name", nid) for nid in found_path]
         explanation = f"Connection found in {len(hops)} hop(s): {' -> '.join(names)}."
@@ -705,6 +1125,14 @@ class MemgraphStore(BaseGraphStore):
         except Exception as e:
             logger.warning("Memgraph get_focus_subgraph query failed (%s), using fixture.", e)
         return self._fallback_store.get_focus_subgraph(entity_id, case_id, hops)
+
+    def search_entities(
+        self,
+        query: str,
+        entity_type: Optional[str] = None,
+        limit: int = 30,
+    ) -> List[Dict[str, Any]]:
+        return self._fallback_store.search_entities(query, entity_type, limit)
 
     def get_entity_connections(self, entity_id: str) -> Dict[str, Any]:
         if not MemgraphClient.verify_connectivity():

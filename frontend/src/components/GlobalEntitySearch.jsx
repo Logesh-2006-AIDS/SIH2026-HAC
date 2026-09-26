@@ -6,6 +6,8 @@ import { ALL_CANONICAL_NODES } from '../data/mockData.js';
 export default function GlobalEntitySearch({ isOpen, onClose, onSelectEntity, nodes = [] }) {
   const [query, setQuery] = useState('');
   const [selectedType, setSelectedType] = useState('ALL');
+  const [apiResults, setApiResults] = useState(null);
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
   // Focus input when modal opens
@@ -14,10 +16,41 @@ export default function GlobalEntitySearch({ isOpen, onClose, onSelectEntity, no
       setTimeout(() => inputRef.current?.focus(), 50);
     } else {
       setQuery('');
+      setApiResults(null);
     }
   }, [isOpen]);
 
-  // Combine live graph nodes + canonical repository
+  // Query backend search API with debouncing
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setApiResults(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setLoading(true);
+        const typeParam = selectedType !== 'ALL' ? `&entity_type=${encodeURIComponent(selectedType)}` : '';
+        const res = await fetch(`/api/v1/search/entities?q=${encodeURIComponent(q)}${typeParam}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            setApiResults(json.data);
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback to local filtering
+      } finally {
+        setLoading(false);
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [query, selectedType]);
+
+  // Combine live graph nodes + canonical repository as fallback
   const searchableEntities = useMemo(() => {
     const list = nodes.length > 0 ? nodes : ALL_CANONICAL_NODES;
     const seen = new Set();
@@ -54,6 +87,9 @@ export default function GlobalEntitySearch({ isOpen, onClose, onSelectEntity, no
 
   // Filter entities
   const results = useMemo(() => {
+    if (apiResults !== null) {
+      return apiResults;
+    }
     const q = query.trim().toLowerCase();
     return searchableEntities.filter((e) => {
       const type = getEntityType(e);
@@ -70,7 +106,7 @@ export default function GlobalEntitySearch({ isOpen, onClose, onSelectEntity, no
 
       return name.includes(q) || phone.includes(q) || reg.includes(q) || acc.includes(q) || alias.includes(q) || cases.includes(q);
     }).slice(0, 30);
-  }, [searchableEntities, query, selectedType]);
+  }, [searchableEntities, query, selectedType, apiResults]);
 
   if (!isOpen) return null;
 

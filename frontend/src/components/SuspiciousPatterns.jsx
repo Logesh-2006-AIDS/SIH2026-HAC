@@ -135,15 +135,17 @@ export default function SuspiciousPatterns() {
         });
         if (res.data?.success && res.data?.data?.patterns?.length) {
           const apiPats = res.data.data.patterns.map((p, idx) => ({
-            id: p.id || `PAT-00${idx + 1}`,
+            id: p.id || p.pattern_id || `PAT-00${idx + 1}`,
             title: p.title || p.pattern_name || `Suspicious Pattern Detected in Case ${selectedCase}`,
             severity: (p.severity || 'HIGH').toUpperCase(),
             confidence: p.confidence || 0.92,
+            evidentiary_strength: p.evidentiary_strength || null,
             cases: p.cases || [`CASE-${selectedCase || '101'}`],
-            rule: p.rule || 'Automated graph intelligence correlation rule',
-            description: p.description || p.summary || 'Unusual cross-entity correlation detected in multi-source datasets.',
-            evidence: p.evidence || p.details || 'Corroborated across CDR timestamps and financial account statements.',
-            action_recommended: p.action || 'Examine linked nodes in the Knowledge Graph and issue formal intelligence request.',
+            rule: p.rule || (p.rule_id ? `Rule ${p.rule_id}: Forensic detector` : 'Automated graph intelligence correlation rule'),
+            description: p.description || p.summary || p.what || 'Unusual cross-entity correlation detected in multi-source datasets.',
+            evidence: p.evidence ? (Array.isArray(p.evidence) ? p.evidence.join('; ') : p.evidence) : (p.supporting_records || []).map(r => `${r.source_document_id}: ${r.row_reference} (${r.details})`).join('; ') || 'Corroborated across CDR timestamps and financial account statements.',
+            supporting_records: p.supporting_records || [],
+            action_recommended: p.action || p.action_recommended || 'Examine linked nodes in the Knowledge Graph and issue formal intelligence request.',
             entities: (p.entities || []).map(e => typeof e === 'string' ? { id: e, name: e, type: 'Entity' } : e),
           }));
           setPatternsList(apiPats);

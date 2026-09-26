@@ -1,18 +1,19 @@
-import React, { useMemo } from 'react';
+"use client";
 
-export default function BackgroundNetwork() {
-  // Static radar blip coordinates (representing distant nodes waiting to be discovered)
+import React, { useMemo } from "react";
+
+export default function RadarSweepBackground() {
+  // Generate fixed static radar blip dots scattered across background
   const blips = useMemo(() => [
-    { top: '16%', left: '24%', size: 3.5, opacity: 0.25, color: '#d9aa3d' },
-    { top: '26%', left: '76%', size: 4, opacity: 0.22, color: '#d62828' },
-    { top: '64%', left: '16%', size: 3, opacity: 0.18, color: '#38bdf8' },
-    { top: '74%', left: '84%', size: 4.5, opacity: 0.28, color: '#d9aa3d' },
-    { top: '36%', left: '44%', size: 2.5, opacity: 0.2, color: '#5e9f68' },
-    { top: '52%', left: '66%', size: 3.5, opacity: 0.24, color: '#d9aa3d' },
-    { top: '82%', left: '48%', size: 3, opacity: 0.18, color: '#d62828' },
-    { top: '12%', left: '60%', size: 3, opacity: 0.2, color: '#d9aa3d' },
-    { top: '46%', left: '88%', size: 4, opacity: 0.22, color: '#38bdf8' },
-    { top: '70%', left: '32%', size: 3, opacity: 0.19, color: '#5e9f68' },
+    { top: "18%", left: "22%", size: 3.5, opacity: 0.25, color: "#d9aa3d", delay: "0s" },
+    { top: "28%", left: "74%", size: 4, opacity: 0.22, color: "#d62828", delay: "1.2s" },
+    { top: "65%", left: "18%", size: 3, opacity: 0.18, color: "#38bdf8", delay: "2.4s" },
+    { top: "72%", left: "82%", size: 4.5, opacity: 0.26, color: "#d9aa3d", delay: "0.8s" },
+    { top: "38%", left: "42%", size: 2.5, opacity: 0.2, color: "#5e9f68", delay: "3.1s" },
+    { top: "54%", left: "68%", size: 3.5, opacity: 0.24, color: "#d9aa3d", delay: "1.7s" },
+    { top: "84%", left: "46%", size: 3, opacity: 0.18, color: "#d62828", delay: "2.9s" },
+    { top: "14%", left: "62%", size: 3, opacity: 0.2, color: "#d9aa3d", delay: "0.5s" },
+    { top: "45%", left: "88%", size: 4, opacity: 0.22, color: "#38bdf8", delay: "1.9s" },
   ], []);
 
   return (
@@ -20,7 +21,7 @@ export default function BackgroundNetwork() {
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0"
       style={{
-        background: 'radial-gradient(ellipse at 50% 50%, rgba(18, 23, 20, 0.95) 0%, rgba(8, 10, 8, 1) 100%)',
+        background: "radial-gradient(ellipse at 50% 50%, rgba(18, 23, 20, 0.95) 0%, rgba(8, 10, 8, 1) 100%)",
       }}
     >
       {/* 1. Tactical Grid Texture Overlay */}
@@ -31,7 +32,7 @@ export default function BackgroundNetwork() {
             linear-gradient(to right, rgba(217, 170, 61, 0.15) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(217, 170, 61, 0.15) 1px, transparent 1px)
           `,
-          backgroundSize: '48px 48px',
+          backgroundSize: "48px 48px",
         }}
       />
 
@@ -65,13 +66,13 @@ export default function BackgroundNetwork() {
               transparent 70deg,
               transparent 360deg
             )`,
-            transformOrigin: '50% 50%',
+            transformOrigin: "50% 50%",
           }}
         >
           {/* Thin leading bright edge of the rotating beam */}
           <div
             className="absolute top-0 left-1/2 w-[1px] h-1/2 origin-bottom bg-gradient-to-t from-transparent via-[rgba(217,170,61,0.3)] to-[rgba(217,170,61,0.55)]"
-            style={{ transform: 'translateX(-50%)' }}
+            style={{ transform: "translateX(-50%)" }}
           />
         </div>
       </div>

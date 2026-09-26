@@ -1,7 +1,7 @@
 """
 Analyst Intelligence API
 ========================
-Strategic crime analytics and Entity Resolution Review for the Analyst dashboard.
+Strategic crime analytics, pattern discovery, and Entity Resolution Review for the Analyst dashboard.
 """
 from typing import Optional
 from datetime import datetime, timezone
@@ -153,6 +153,7 @@ def analyst_centrality():
 @router.get("/patterns", response_model=ResponseEnvelope, summary="Pattern discovery")
 def analyst_patterns(
     crime_type: Optional[str] = Query(None),
+    case_id: Optional[str] = Query(None),
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
     geography: Optional[str] = Query(None),
@@ -160,6 +161,7 @@ def analyst_patterns(
 ):
     data = ai.discover_patterns(
         crime_type=crime_type,
+        case_id=case_id,
         start=start,
         end=end,
         geography=geography,
@@ -275,7 +277,6 @@ def review_resolution(
 
     if action == "APPROVE":
         try:
-            # Ensure primary exists in store, if not create dummy for candidate
             if pr.node_a_id not in store._nodes:
                 store.add_nodes([{"id": pr.node_a_id, "name": pr.node_a_name, "type": pr.entity_type}])
             if pr.node_b_id not in store._nodes:

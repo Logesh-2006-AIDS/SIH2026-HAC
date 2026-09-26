@@ -59,35 +59,6 @@ const NATIONAL_HOTSPOT_PRESETS = [
   { id: 'punjab', name: 'Punjab Border Transit', lat: 31.6340, lon: 74.8723, zoom: 9, count: 3, state: 'Punjab' },
 ];
 
-const COMPREHENSIVE_INDIAN_HOTSPOTS = [
-  // Delhi NCR
-  { id: 'hot_01', name: 'Rohini Crime Sector, Delhi', lat: 28.7041, lon: 77.1025, state: 'Delhi', city: 'Delhi', case_count: 5, trend: 'increasing', change_pct: 45, is_repeated: true, type: 'Kidnapping & Armed Extortion', cases: [{ case_number: 'FIR-2024-001', crime_category: 'Armed Extortion / Sec 386', incident_date: '2024-03-12' }, { case_number: 'FIR-2024-005', crime_category: 'Criminal Intimidation', incident_date: '2024-05-18' }] },
-  { id: 'hot_02', name: 'Karol Bagh Bullion Market, Delhi', lat: 28.6511, lon: 77.1907, state: 'Delhi', city: 'Delhi', case_count: 4, trend: 'repeated', change_pct: 0, is_repeated: true, type: 'Hawala & Cash Movement', cases: [{ case_number: 'FIR-2024-001', crime_category: 'Hawala Transfer', incident_date: '2024-03-15' }, { case_number: 'FIR-2024-003', crime_category: 'Sec 120B Conspiracy', incident_date: '2024-04-05' }] },
-  { id: 'hot_03', name: 'Okhla Industrial Terminal, Delhi', lat: 28.5355, lon: 77.2710, state: 'Delhi', city: 'Delhi', case_count: 3, trend: 'increasing', change_pct: 30, is_repeated: true, type: 'Counterfeit & Smuggling', cases: [{ case_number: 'FIR-2024-001', crime_category: 'Counterfeit Goods', incident_date: '2024-03-15' }, { case_number: 'FIR-2024-005', crime_category: 'Forged Invoices', incident_date: '2024-05-20' }] },
-  { id: 'hot_04', name: 'Gurugram Cyber Hub Corridor', lat: 28.4595, lon: 77.0266, state: 'Haryana', city: 'Gurugram', case_count: 4, trend: 'increasing', change_pct: 60, is_repeated: false, type: 'Digital Banking Extortion', cases: [{ case_number: 'FIR-2024-005', crime_category: 'IT Act Sec 66D Fraud', incident_date: '2024-05-18' }] },
-  
-  // Mumbai Metropolitan
-  { id: 'hot_05', name: 'Bandra West Financial Cell, Mumbai', lat: 19.0596, lon: 72.8295, state: 'Maharashtra', city: 'Mumbai', case_count: 6, trend: 'repeated', change_pct: 15, is_repeated: true, type: 'Shell Company Network Hub', cases: [{ case_number: 'FIR-2024-002', crime_category: 'Money Laundering', incident_date: '2024-02-19' }, { case_number: 'FIR-2024-004', crime_category: 'Foreign Invoicing', incident_date: '2024-04-10' }] },
-  { id: 'hot_06', name: 'Andheri East Logistics Node, Mumbai', lat: 19.1136, lon: 72.8697, state: 'Maharashtra', city: 'Mumbai', case_count: 5, trend: 'increasing', change_pct: 40, is_repeated: true, type: 'Narcotics Transit Terminal', cases: [{ case_number: 'FIR-2024-002', crime_category: 'Smuggling Network', incident_date: '2024-03-05' }, { case_number: 'FIR-2024-004', crime_category: 'NDPS Act Sec 21', incident_date: '2024-04-22' }] },
-  { id: 'hot_07', name: 'Dharavi Hawala Channel, Mumbai', lat: 19.0434, lon: 72.8567, state: 'Maharashtra', city: 'Mumbai', case_count: 3, trend: 'repeated', change_pct: 0, is_repeated: true, type: 'Informal Value Transfer', cases: [{ case_number: 'FIR-2024-002', crime_category: 'Hawala Courier', incident_date: '2024-03-01' }] },
-  
-  // Gujarat
-  { id: 'hot_08', name: 'SG Highway Cyber Terminal, Ahmedabad', lat: 23.0225, lon: 72.5714, state: 'Gujarat', city: 'Ahmedabad', case_count: 5, trend: 'increasing', change_pct: 75, is_repeated: false, type: 'Cryptocurrency Ransom Channel', cases: [{ case_number: 'FIR-2024-005', crime_category: 'Crypto Extortion', incident_date: '2024-05-02' }] },
-  { id: 'hot_09', name: 'Surat Diamond Exchange Hub', lat: 21.1702, lon: 72.8311, state: 'Gujarat', city: 'Surat', case_count: 3, trend: 'decreasing', change_pct: -35, is_repeated: false, type: 'High-Value Gem Smuggling', cases: [{ case_number: 'FIR-2024-002', crime_category: 'Customs Evasion', incident_date: '2024-02-28' }] },
-  
-  // Uttar Pradesh & North
-  { id: 'hot_10', name: 'Meerut Highway Arms Corridor', lat: 28.9845, lon: 77.7064, state: 'Uttar Pradesh', city: 'Meerut', case_count: 4, trend: 'decreasing', change_pct: -40, is_repeated: true, type: 'Illicit Firearm Transit', cases: [{ case_number: 'FIR-2024-001', crime_category: 'Arms Supply', incident_date: '2024-03-01' }, { case_number: 'FIR-2024-003', crime_category: 'Arms Act Sec 25', incident_date: '2024-03-30' }] },
-  { id: 'hot_11', name: 'Lucknow Cyber Crime Cell', lat: 26.8467, lon: 80.9462, state: 'Uttar Pradesh', city: 'Lucknow', case_count: 2, trend: 'decreasing', change_pct: -25, is_repeated: false, type: 'Public Procurement Scam', cases: [{ case_number: 'FIR-2024-003', crime_category: 'Sec 420 Cheating', incident_date: '2024-04-11' }] },
-  { id: 'hot_12', name: 'Amritsar Border Transit Point', lat: 31.6340, lon: 74.8723, state: 'Punjab', city: 'Amritsar', case_count: 3, trend: 'decreasing', change_pct: -30, is_repeated: false, type: 'Cross-Border Contraband Drop', cases: [{ case_number: 'FIR-2024-004', crime_category: 'NDPS Smuggling', incident_date: '2024-05-10' }] },
-  
-  // South & East
-  { id: 'hot_13', name: 'Bengaluru Whitefield Cyber Zone', lat: 12.9716, lon: 77.5946, state: 'Karnataka', city: 'Bengaluru', case_count: 5, trend: 'increasing', change_pct: 80, is_repeated: false, type: 'SIM-Box & Telecom Hijack', cases: [{ case_number: 'FIR-2024-005', crime_category: 'Telegraph Act Violation', incident_date: '2024-05-25' }] },
-  { id: 'hot_14', name: 'Hyderabad Cyberabad Financial Tech', lat: 17.3850, lon: 78.4867, state: 'Telangana', city: 'Hyderabad', case_count: 3, trend: 'increasing', change_pct: 35, is_repeated: false, type: 'Instant Loan App Syndicate', cases: [{ case_number: 'FIR-2024-005', crime_category: 'Extortion & Data Theft', incident_date: '2024-04-14' }] },
-  { id: 'hot_15', name: 'Salt Lake Sector V, Kolkata', lat: 22.5804, lon: 88.4180, state: 'West Bengal', city: 'Kolkata', case_count: 4, trend: 'repeated', change_pct: 10, is_repeated: true, type: 'Fake Tech Support Call Centers', cases: [{ case_number: 'FIR-2024-003', crime_category: 'Wire Fraud', incident_date: '2024-03-18' }, { case_number: 'FIR-2024-005', crime_category: 'International Fraud', incident_date: '2024-05-12' }] },
-  { id: 'hot_16', name: 'Chennai Port Container Corridor', lat: 13.0827, lon: 80.2707, state: 'Tamil Nadu', city: 'Chennai', case_count: 2, trend: 'decreasing', change_pct: -20, is_repeated: false, type: 'Under-Invoiced Cargo', cases: [{ case_number: 'FIR-2024-004', crime_category: 'Trade Money Laundering', incident_date: '2024-02-14' }] },
-  { id: 'hot_17', name: 'Jaipur Transit Logistics Hub', lat: 26.9124, lon: 75.7873, state: 'Rajasthan', city: 'Jaipur', case_count: 2, trend: 'decreasing', change_pct: -30, is_repeated: false, type: 'Precious Metals Smuggling', cases: [{ case_number: 'FIR-2024-002', crime_category: 'Customs Evasion', incident_date: '2024-03-22' }] },
-];
-
 function normalise(value) {
   return (value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -207,16 +178,9 @@ export default function CrimeMap({ heatmap, heatMode = 'density', geographicMode
   const [showStateLabels, setShowStateLabels] = useState(true);
   const [mapError, setMapError] = useState('');
 
-  // Merge backend points with rich Indian hotspot points
+  // Live crime points directly from backend /api/v1/map/crime-summary
   const allPoints = useMemo(() => {
-    const backendPoints = heatmap?.points || [];
-    const pointKeys = new Set(backendPoints.map(p => `${p.lat?.toFixed(2)}_${p.lon?.toFixed(2)}`));
-    
-    const additional = COMPREHENSIVE_INDIAN_HOTSPOTS.filter(
-      hp => !pointKeys.has(`${hp.lat.toFixed(2)}_${hp.lon.toFixed(2)}`)
-    );
-    
-    return [...backendPoints, ...additional];
+    return heatmap?.points || [];
   }, [heatmap]);
 
   // Filter points dynamically based on heatMode: density | increasing | decreasing | repeated

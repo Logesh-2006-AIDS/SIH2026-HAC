@@ -39,7 +39,8 @@ import {
   Filter,
   FileText,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Repeat
 } from "lucide-react";
 import { apiGet, apiPost } from "../lib/api.js";
 import clsx from "clsx";
@@ -240,17 +241,19 @@ export default function AnalystDashboard({ onSignOut }) {
 
   const openLeadFromPattern = (p) => {
     setLeadDraft({
-      title: p.title || p.type,
-      description: p.what,
-      priority: p.trend === "increasing" || p.type === "Cross-Case Entity" ? "HIGH" : "MEDIUM",
+      title: p.title || p.pattern_name || p.type,
+      description: p.what || p.description || "",
+      priority: p.severity === "CRITICAL" ? "CRITICAL" : p.trend === "increasing" || p.type === "Cross-Case Entity" ? "HIGH" : "MEDIUM",
       related_cases: p.cases || [],
-      entities: (p.entities || []).map((n) => ({ name: n })),
+      entities: (p.entities || []).map((n) => typeof n === 'string' ? { name: n } : n),
       locations: p.where ? [p.where] : [],
-      evidence: p.evidence || [],
-      reason: p.why,
-      confidence: p.confidence,
-      confidence_reason: p.confidence_reason,
-      pattern_type: p.type,
+      evidence: p.evidence ? (Array.isArray(p.evidence) ? p.evidence : [p.evidence]) : (p.supporting_records || []).map(r => typeof r === 'string' ? r : `${r.source_document_id || ''}: ${r.row_reference || ''} (${r.details || ''})`),
+      supporting_records: p.supporting_records || [],
+      reason: p.reason || p.why || p.what || "",
+      confidence: p.confidence || 0.90,
+      confidence_reason: p.confidence_reason || `Triggered forensic rule: ${p.rule_id || p.rule || 'Pattern Detection'}`,
+      evidentiary_strength: p.evidentiary_strength || null,
+      pattern_type: p.type || p.pattern_name || "Pattern Detection",
       created_by: "ANALYST"
     });
     setView("leads");
@@ -260,12 +263,13 @@ export default function AnalystDashboard({ onSignOut }) {
     setLeadDraft({
       title: `Key Entity Link: ${e.name}`,
       description: e.explanation,
-      priority: e.classification?.includes("Hub") ? "CRITICAL" : "HIGH",
+      priority: (e.classification || "").includes("Hub") || (e.cross_case || 0) >= 3 ? "CRITICAL" : "HIGH",
       related_cases: e.cases || [],
       entities: [{ id: e.entity_id, name: e.name, type: e.type }],
       reason: e.explanation,
-      confidence: 0.9,
-      confidence_reason: "High network centrality score calculated from connected components.",
+      confidence: 0.92,
+      confidence_reason: `Calculated from network centrality (betweenness ${e.betweenness ?? 'N/A'}, degree ${e.degree ?? 'N/A'}, bridging ${e.community_bridging ? 'multiple' : 'single'} cluster).`,
+      evidentiary_strength: e.evidentiary_strength || null,
       pattern_type: e.classification || "Key Entity",
       created_by: "ANALYST"
     });
@@ -276,12 +280,14 @@ export default function AnalystDashboard({ onSignOut }) {
     setLeadDraft({
       title: `Cross-Case Cluster: ${c.shared_entity?.name}`,
       description: `Entity links cases ${c.related_cases?.join(", ")}`,
-      priority: "HIGH",
+      priority: c.connection_strength === "CRITICAL" ? "CRITICAL" : "HIGH",
       related_cases: c.related_cases || [],
       entities: [{ name: c.shared_entity?.name, type: c.shared_entity?.type }],
-      reason: `Shared entity across multiple cases: ${c.related_cases?.join(", ")}`,
+      evidence: c.evidence ? [c.evidence] : [],
+      reason: `Shared entity across multiple cases: ${c.related_cases?.join(", ")} (warrants review).`,
       confidence: c.connection_strength === "CRITICAL" ? 0.95 : 0.85,
       confidence_reason: "Direct entity recurrence across independent FIRs.",
+      evidentiary_strength: c.evidentiary_strength || null,
       pattern_type: "Cross-Case Linkage",
       created_by: "ANALYST"
     });
@@ -601,6 +607,11 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
   const activeZones = summary.active_crime_zones ?? (overview.geographic_intelligence?.length || 4);
   const crossLinks = summary.cross_case_connections ?? (overview.cross_case_signals?.length || 6);
   const keyEntities = summary.important_network_entities ?? 14;
+  const keyHubCount = summary.key_hub_entities_count ?? 4;
+  const velocityPct = summary.overall_velocity_pct ?? 14.0;
+  const criticalPatternsCount = summary.critical_patterns_count ?? 1;
+  const activePatternsCount = summary.active_patterns_count ?? 3;
+  const threatScore = Math.min(100, Math.max(0, Math.round((criticalPatternsCount * 25) + (keyHubCount * 15) + (crossLinks * 5))));
 
   const rawTrends = overview.crime_trend_snapshot || [];
   const rawRegions = overview.geographic_intelligence || overview.top_regions || [];
@@ -771,8 +782,8 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
             </div>
             <div className="rounded-lg border border-[rgba(214,40,40,0.3)] bg-black/40 px-3 py-1.5 flex items-center gap-2">
               <ShieldAlert size={13} className="text-[#fca5a5]" />
-              <span className="text-[11px] text-[#8a948c]">Kingpin Nodes:</span>
-              <span className="font-mono font-bold text-[#fca5a5]">4 IDENTIFIED</span>
+              <span className="text-[11px] text-[#8a948c]">Key Hub Entities:</span>
+              <span className="font-mono font-bold text-[#fca5a5]">{keyHubCount} IDENTIFIED</span>
             </div>
           </div>
         </div>
@@ -785,7 +796,7 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold tracking-widest text-[#8a948c] uppercase">Monitored Incidents</span>
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#72bf7e] bg-[rgba(94,159,104,0.12)] px-1.5 py-0.5 rounded border border-[rgba(94,159,104,0.25)]">
-              <TrendingUp size={11} /> +14% VELOCITY
+              <TrendingUp size={11} /> {velocityPct >= 0 ? `+${velocityPct}%` : `${velocityPct}%`} VELOCITY
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -793,7 +804,7 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
             <span className="text-xs text-[#8a948c]">cases in graph</span>
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#d9aa3d] to-[#8a6515]" style={{ width: '78%' }}></div>
+            <div className="h-full rounded-full bg-gradient-to-r from-[#d9aa3d] to-[#8a6515]" style={{ width: `${Math.min(100, Math.max(15, totalCases * 5))}%` }}></div>
           </div>
         </div>
 
@@ -802,19 +813,23 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold tracking-widest text-[#fca5a5] uppercase">Syndicate Threat Index</span>
             <span className="text-[10px] font-bold text-[#fca5a5] bg-[rgba(214,40,40,0.18)] px-1.5 py-0.5 rounded border border-[rgba(214,40,40,0.35)]">
-              HIGH RISK
+              {threatScore >= 70 ? "CRITICAL RISK" : threatScore >= 40 ? "HIGH RISK" : "ELEVATED"}
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#fca5a5] font-mono">84<span className="text-lg text-[#fca5a5]/60">/100</span></span>
+            <span className="text-3xl font-black tracking-tight text-[#fca5a5] font-mono">{threatScore}<span className="text-lg text-[#fca5a5]/60">/100</span></span>
             <span className="text-xs text-[#8a948c]">composite threat</span>
           </div>
           <div className="mt-3 flex gap-1">
-            <div className="h-1.5 flex-1 rounded-full bg-[#d62828]"></div>
-            <div className="h-1.5 flex-1 rounded-full bg-[#d62828]"></div>
-            <div className="h-1.5 flex-1 rounded-full bg-[#d62828]"></div>
-            <div className="h-1.5 flex-1 rounded-full bg-[#d62828]"></div>
-            <div className="h-1.5 flex-1 rounded-full bg-white/10"></div>
+            {[20, 40, 60, 80, 100].map((step) => (
+              <div
+                key={step}
+                className={clsx(
+                  "h-1.5 flex-1 rounded-full",
+                  threatScore >= step ? "bg-[#d62828]" : "bg-white/10"
+                )}
+              />
+            ))}
           </div>
         </div>
 
@@ -828,10 +843,10 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-black tracking-tight text-[#f1ebdd] font-mono">{activeZones}</span>
-            <span className="text-xs text-[#8a948c]">2 high-velocity</span>
+            <span className="text-xs text-[#8a948c]">active corridors</span>
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#d8c58a] to-[#7d7254]" style={{ width: '65%' }}></div>
+            <div className="h-full rounded-full bg-gradient-to-r from-[#d8c58a] to-[#7d7254]" style={{ width: `${Math.min(100, Math.max(20, activeZones * 18))}%` }}></div>
           </div>
         </div>
 
@@ -848,7 +863,7 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
             <span className="text-xs text-[#8a948c]">inter-FIR links</span>
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#d9aa3d] to-[#8a6515]" style={{ width: '85%' }}></div>
+            <div className="h-full rounded-full bg-gradient-to-r from-[#d9aa3d] to-[#8a6515]" style={{ width: `${Math.min(100, Math.max(25, crossLinks * 15))}%` }}></div>
           </div>
         </div>
       </div>
@@ -1065,13 +1080,37 @@ function OverviewView({ overview, onSelectRegion, onLead, onNavigate }) {
 function HeatmapView({ heatmap, heatMode, setHeatMode, geographicMode, setGeographicMode, selectedRegion, setSelectedRegion, regionDetail, onLead }) {
   if (!heatmap) return <Empty>Loading heatmap…</Empty>;
 
-  // Compute live counts for each mode
-  const allPoints = heatmap?.points || [];
+  // Compute live counts for each mode from real data
+  const regionsList = heatmap?.regions || [];
   const modeStats = {
-    density: { count: 17, label: "Total Density", desc: "All Monitored National Corridors", icon: Flame, color: "text-[#d9aa3d]" },
-    increasing: { count: 6, label: "Increasing Surge", desc: "Escalating Velocity (+30% to +80%)", icon: TrendingUp, color: "text-[#fca5a5]" },
-    decreasing: { count: 6, label: "Decreasing Suppression", desc: "Cooling Enforcement Zones (-20% to -40%)", icon: TrendingDown, color: "text-[#72bf7e]" },
-    repeated: { count: 5, label: "Repeated Recidivism", desc: "Chronic Multi-FIR Syndicate Hubs", icon: Repeat, color: "text-[#f59e0b]" },
+    density: { 
+      count: heatmap?.totals?.visible_regions ?? regionsList.length ?? (heatmap?.points || []).length, 
+      label: "Total Density", 
+      desc: "All Monitored Regional Corridors", 
+      icon: Flame, 
+      color: "text-[#d9aa3d]" 
+    },
+    increasing: { 
+      count: regionsList.filter(r => r.trend === "increasing").length, 
+      label: "Increasing Surge", 
+      desc: "Escalating Velocity Hotspots", 
+      icon: TrendingUp, 
+      color: "text-[#fca5a5]" 
+    },
+    decreasing: { 
+      count: regionsList.filter(r => r.trend === "decreasing").length, 
+      label: "Decreasing Suppression", 
+      desc: "Cooling Enforcement Zones", 
+      icon: TrendingDown, 
+      color: "text-[#72bf7e]" 
+    },
+    repeated: { 
+      count: regionsList.filter(r => r.repeated && ((r.case_count || r.cases?.length || 0) >= 2)).length, 
+      label: "Repeated Recidivism", 
+      desc: "Chronic Multi-FIR Syndicate Hubs", 
+      icon: Repeat, 
+      color: "text-[#f59e0b]" 
+    },
   };
 
   return (
@@ -1827,21 +1866,60 @@ function CommunitiesView({ communities }) {
 
 function CentralityView({ centrality, onLead }) {
   if (!centrality) return <Empty>Loading key entities…</Empty>;
+  const entities = centrality.entities || [];
+
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-[var(--line)] bg-[#101311] p-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-[#f1ebdd] flex items-center gap-2">
+            <Target size={16} className="text-[#d9aa3d]" />
+            Key Influencers & Centrality Radar
+          </h3>
+          <p className="text-[11px] text-[#8a948c] mt-0.5">
+            Topology metrics computed using Brandes Betweenness Centrality, Degree Centrality, and Community Bridging.
+          </p>
+        </div>
+        <span className="font-mono text-xs font-bold text-[#d9aa3d] bg-[rgba(217,170,61,0.12)] border border-[rgba(217,170,61,0.25)] px-2.5 py-1 rounded">
+          {entities.length} Key Entities Identified
+        </span>
+      </div>
+
       <div className="space-y-3">
-        {(centrality.entities || []).map((e) => (
-          <div key={e.entity_id} className="rounded-xl border border-[var(--line)] bg-panel p-4 space-y-2">
-            <div className="flex justify-between items-start">
+        {entities.map((e) => (
+          <div key={e.entity_id} className="rounded-xl border border-[var(--line)] bg-[#101311] p-4 space-y-3 hover:border-[rgba(217,170,61,0.35)] transition">
+            <div className="flex flex-wrap justify-between items-start gap-2">
               <div>
-                <h4 className="text-lg font-bold text-parchment">{e.name}</h4>
-                <p className="text-xs text-gold font-bold">{e.classification}</p>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-bold text-[#f1ebdd]">{e.name}</h4>
+                  <span className="rounded bg-[rgba(217,170,61,0.15)] text-[#d9aa3d] border border-[rgba(217,170,61,0.3)] px-2 py-0.5 text-[10px] font-bold">
+                    {e.classification || "Key Entity"}
+                  </span>
+                  <span className="rounded bg-white/5 text-[#8a948c] px-2 py-0.5 text-[10px] font-mono">
+                    ID: {e.entity_id}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-[#8a948c] mt-1 font-mono">
+                  <span>Betweenness: <strong className="text-[#f1ebdd]">{e.betweenness !== undefined ? e.betweenness : "N/A"}</strong></span>
+                  <span>•</span>
+                  <span>Degree: <strong className="text-[#f1ebdd]">{e.degree ?? "N/A"}</strong></span>
+                  <span>•</span>
+                  <span>Cases: <strong className="text-[#d9aa3d]">{(e.cases || []).join(", ") || "N/A"}</strong></span>
+                </div>
               </div>
-              <button onClick={() => onLead(e)} className="text-xs font-bold text-gold hover:underline cursor-pointer">
-                Create Intelligence Lead
+              <button
+                onClick={() => onLead(e)}
+                className="flex items-center gap-1.5 rounded-lg border border-[rgba(217,170,61,0.35)] bg-[rgba(217,170,61,0.1)] px-3 py-1.5 text-xs font-bold text-[#d9aa3d] hover:bg-[rgba(217,170,61,0.2)] hover:text-[#f1ebdd] transition cursor-pointer"
+              >
+                <Zap size={12} /> Dispatch Lead to Investigator
               </button>
             </div>
-            <p className="text-xs text-muted">{e.explanation}</p>
+
+            {/* Plain-language explanation with real topology metrics */}
+            <div className="rounded-lg border border-white/5 bg-black/40 p-3 text-xs text-[#c5cfc8] leading-relaxed">
+              <span className="text-[#d9aa3d] font-semibold">Intelligence Analysis: </span>
+              {e.explanation}
+            </div>
           </div>
         ))}
       </div>
@@ -1851,19 +1929,100 @@ function CentralityView({ centrality, onLead }) {
 
 function PatternsView({ patterns, onLead }) {
   if (!patterns) return <Empty>Loading patterns…</Empty>;
+  const patternList = patterns.patterns || [];
+
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-[var(--line)] bg-[#101311] p-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-[#f1ebdd] flex items-center gap-2">
+            <Search size={16} className="text-[#d9aa3d]" />
+            Forensic Pattern Discovery Engine
+          </h3>
+          <p className="text-[11px] text-[#8a948c] mt-0.5">
+            Configurable behavioral detectors scanning canonical CDR and financial transaction ledgers.
+          </p>
+        </div>
+        <span className="font-mono text-xs font-bold text-[#fca5a5] bg-[rgba(214,40,40,0.12)] border border-[rgba(214,40,40,0.25)] px-2.5 py-1 rounded">
+          {patternList.length} Anomalies Flagged
+        </span>
+      </div>
+
       <div className="grid gap-3 lg:grid-cols-2">
-        {(patterns.patterns || []).map((p) => (
-          <div key={p.pattern_id} className="rounded-xl border border-[var(--line)] bg-panel p-4 space-y-2">
-            <p className="text-[10px] tracking-wide text-gold uppercase">{p.type}</p>
-            <h4 className="font-semibold text-parchment">{p.title}</h4>
-            <p className="text-xs text-muted">{p.what}</p>
-            <button onClick={() => onLead(p)} className="text-xs font-bold text-gold hover:underline cursor-pointer">
-              Create Intelligence Lead
-            </button>
-          </div>
-        ))}
+        {patternList.map((p) => {
+          const isCritical = p.severity === "CRITICAL";
+          const evScore = p.evidentiary_strength?.score ?? Math.round((p.confidence || 0.9) * 100);
+          const evLabel = p.evidentiary_strength?.label ?? (evScore >= 80 ? "HIGH" : evScore >= 50 ? "MEDIUM" : "LOW");
+
+          return (
+            <div
+              key={p.pattern_id || p.id}
+              className={clsx(
+                "rounded-xl border p-4 space-y-3 transition flex flex-col justify-between",
+                isCritical
+                  ? "border-[rgba(214,40,40,0.35)] bg-[#141010] hover:border-[rgba(214,40,40,0.55)]"
+                  : "border-[var(--line)] bg-[#101311] hover:border-white/20"
+              )}
+            >
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={clsx(
+                          "rounded px-2 py-0.5 text-[9px] font-bold font-mono border",
+                          isCritical
+                            ? "bg-[rgba(214,40,40,0.18)] text-[#fca5a5] border-[rgba(214,40,40,0.35)]"
+                            : "bg-[rgba(217,170,61,0.15)] text-[#d9aa3d] border-[rgba(217,170,61,0.3)]"
+                        )}
+                      >
+                        {p.severity || "HIGH"}
+                      </span>
+                      <span className="rounded bg-white/5 border border-white/10 px-2 py-0.5 text-[9px] font-mono text-[#8a948c]">
+                        RULE: {p.rule_id || p.rule || "CORRELATION"}
+                      </span>
+                      <span className="rounded bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 text-[9px] font-mono text-emerald-400">
+                        Evidence: {evScore}% ({evLabel})
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-sm text-[#f1ebdd] mt-1.5">{p.title || p.pattern_name}</h4>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[#c5cfc8] leading-relaxed">{p.what || p.description}</p>
+
+                {/* Supporting Records Citation Block */}
+                {p.supporting_records && p.supporting_records.length > 0 && (
+                  <div className="rounded-lg border border-white/5 bg-black/40 p-2.5 space-y-1 text-[11px]">
+                    <span className="text-[10px] font-bold text-[#d9aa3d] uppercase tracking-wider block">
+                      Canonical Supporting Records:
+                    </span>
+                    {p.supporting_records.map((sr, idx) => (
+                      <div key={idx} className="font-mono text-[#8a948c] flex items-center gap-1.5">
+                        <span className="text-[#d9aa3d]">•</span>
+                        <strong className="text-[#f1ebdd]">{sr.source_document_id}</strong>
+                        <span>({sr.row_reference}):</span>
+                        <span className="truncate">{sr.details}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 text-[10px] text-[#8a948c] font-mono truncate">
+                  <span>Cases: {(p.cases || []).join(", ") || "Multi-case"}</span>
+                </div>
+                <button
+                  onClick={() => onLead(p)}
+                  className="flex items-center gap-1 rounded-lg border border-[rgba(217,170,61,0.35)] bg-[rgba(217,170,61,0.12)] px-2.5 py-1 text-xs font-bold text-[#d9aa3d] hover:bg-[rgba(217,170,61,0.22)] hover:text-[#f1ebdd] transition cursor-pointer shrink-0"
+                >
+                  <Zap size={11} /> Create Lead
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1873,43 +2032,136 @@ function LeadsView({ leads, draft, setDraft, onSend }) {
   return (
     <div className="space-y-4">
       {draft && (
-        <div className="rounded-xl border border-gold/40 bg-panel p-4 space-y-3">
-          <h4 className="font-semibold text-gold">Draft Lead for Investigator</h4>
-          <input
-            className="w-full rounded border border-white/10 bg-black/30 px-3 py-2 text-xs"
-            value={draft.title || ""}
-            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-            placeholder="Lead Title"
-          />
-          <textarea
-            className="w-full rounded border border-white/10 bg-black/30 px-3 py-2 text-xs"
-            rows={3}
-            value={draft.reason || ""}
-            onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
-            placeholder="Actionable reason and intelligence justification"
-          />
-          <div className="flex gap-2">
-            <button onClick={() => onSend(draft)} className="rounded bg-signal px-3 py-1.5 text-xs font-bold text-white cursor-pointer">
-              Send to Investigator Queue
+        <div className="rounded-xl border border-[#d9aa3d]/40 bg-[#101311] p-5 space-y-3 shadow-lg">
+          <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+            <h4 className="font-bold text-sm text-[#d9aa3d] flex items-center gap-2">
+              <Send size={15} /> Dispatch Intelligence Lead to Investigator Queue
+            </h4>
+            <span className="text-[10px] font-mono text-[#8a948c] bg-white/5 px-2 py-0.5 rounded">
+              Priority: {draft.priority || "HIGH"}
+            </span>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-[#8a948c] uppercase block mb-1">Lead Title</label>
+            <input
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] focus:outline-none"
+              value={draft.title || ""}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              placeholder="Descriptive lead title"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-[#8a948c] uppercase block mb-1">Investigative Justification & Reason</label>
+            <textarea
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-[#f1ebdd] focus:border-[#d9aa3d] focus:outline-none"
+              rows={3}
+              value={draft.reason || ""}
+              onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
+              placeholder="Actionable reason, factual evidence summary, and recommended next steps"
+            />
+          </div>
+
+          {draft.supporting_records && draft.supporting_records.length > 0 && (
+            <div className="text-[11px] text-[#8a948c] bg-black/30 p-2.5 rounded-lg border border-white/5">
+              <span className="text-[#d9aa3d] font-bold block mb-1">Attached Supporting Citations:</span>
+              {draft.supporting_records.map((sr, idx) => (
+                <div key={idx} className="font-mono">• {sr.source_document_id} ({sr.row_reference}): {sr.details}</div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => onSend(draft)}
+              className="flex items-center gap-1.5 rounded-lg bg-[#d9aa3d] px-4 py-2 text-xs font-bold text-[#101311] hover:brightness-110 shadow-sm transition cursor-pointer"
+            >
+              <Send size={12} /> Submit to Investigator Queue
             </button>
-            <button onClick={() => setDraft(null)} className="rounded border border-white/10 px-3 py-1.5 text-xs cursor-pointer">
-              Discard
+            <button
+              onClick={() => setDraft(null)}
+              className="rounded-lg border border-white/10 px-3 py-2 text-xs text-[#8a948c] hover:text-[#f1ebdd] transition cursor-pointer"
+            >
+              Discard Draft
             </button>
           </div>
         </div>
       )}
 
-      <div className="space-y-2">
-        {leads.length === 0 ? <Empty>No intelligence leads sent yet.</Empty> : leads.map((l) => (
-          <div key={l.id} className="rounded-xl border border-[var(--line)] bg-panel p-4 text-xs space-y-1">
-            <div className="flex justify-between">
-              <strong className="text-parchment">{l.lead_id || l.id}</strong>
-              <span className="text-gold font-bold">{l.status}</span>
-            </div>
-            <p className="text-parchment">{l.title}</p>
-            <p className="text-muted">{l.reason}</p>
-          </div>
-        ))}
+      {/* Dispatched Leads Roster */}
+      <div className="space-y-3">
+        {leads.length === 0 ? (
+          <Empty>No intelligence leads dispatched to investigator queue yet.</Empty>
+        ) : (
+          leads.map((l) => {
+            const isVerified = l.status === "VERIFIED" || l.status === "APPROVED";
+            const isRejected = l.status === "REJECTED";
+            const evStrength = l.evidentiary_strength;
+
+            return (
+              <div
+                key={l.id || l.lead_id}
+                className={clsx(
+                  "rounded-xl border p-4 text-xs space-y-2.5 transition",
+                  isVerified
+                    ? "border-[rgba(94,159,104,0.35)] bg-[#0d1410]"
+                    : isRejected
+                    ? "border-[rgba(108,122,115,0.35)] bg-[#121413]"
+                    : "border-[var(--line)] bg-[#101311]"
+                )}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-[#d9aa3d] text-xs">
+                      {l.lead_id || l.id}
+                    </span>
+                    <span className="rounded bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-[#8a948c]">
+                      {l.pattern_type || l.match_type || "Intelligence Lead"}
+                    </span>
+                    {evStrength && (
+                      <span className="rounded bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 text-[10px] font-mono text-emerald-400">
+                        Strength: {Math.round(evStrength.score * 100)}% ({evStrength.label})
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={clsx(
+                      "rounded px-2 py-0.5 text-[10px] font-bold font-mono border",
+                      isVerified
+                        ? "bg-[rgba(94,159,104,0.18)] text-[#72bf7e] border-[rgba(94,159,104,0.35)]"
+                        : isRejected
+                        ? "bg-white/5 text-[#8a948c] border-white/10"
+                        : "bg-[rgba(217,170,61,0.18)] text-[#d9aa3d] border-[rgba(217,170,61,0.35)]"
+                    )}
+                  >
+                    {l.status}
+                  </span>
+                </div>
+
+                <h4 className="font-bold text-sm text-[#f1ebdd]">{l.title}</h4>
+                <p className="text-xs text-[#c5cfc8] leading-relaxed">{l.reason || l.description}</p>
+
+                {/* Supporting Records List */}
+                {l.supporting_records && l.supporting_records.length > 0 && (
+                  <div className="font-mono text-[11px] text-[#8a948c] bg-black/30 p-2 rounded border border-white/5 space-y-0.5">
+                    {l.supporting_records.map((sr, idx) => (
+                      <div key={idx}>• {sr.source_document_id} ({sr.row_reference}): {sr.details}</div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Investigator Verification Audit Footer */}
+                {l.reviewed_by && (
+                  <div className="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between text-[11px] text-[#8a948c]">
+                    <span>Reviewed by Officer: <strong className="text-[#f1ebdd]">Badge #{l.reviewed_by}</strong> ({l.reviewed_at ? new Date(l.reviewed_at).toLocaleString() : "Confirmed"})</span>
+                    {l.remarks && <span className="italic text-[#d9aa3d]">"{l.remarks}"</span>}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

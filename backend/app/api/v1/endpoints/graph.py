@@ -38,14 +38,46 @@ def seed_graph():
     response_model=ResponseEnvelope,
     summary="Retrieve Graph Nodes and Edges",
 )
-def get_subgraph(case_id: Optional[str] = Query(None, description="Filter by a specific Case ID")):
-    """Get the graph structure, optionally filtered by a Case ID."""
+def get_subgraph(
+    case_id: Optional[str] = Query(None, description="Filter by a specific Case ID"),
+    min_confidence: float = Query(0.0, ge=0.0, le=1.0, description="Minimum confidence threshold"),
+    relationship_type: Optional[str] = Query(None, description="Filter by relationship type"),
+    entity_type: Optional[str] = Query(None, description="Filter by entity type"),
+):
+    """Get the graph structure, optionally filtered by Case ID, confidence, rel type, entity type."""
     try:
-        data = graph_analytics.get_subgraph(case_id)
+        data = graph_analytics.get_subgraph(
+            case_id=case_id,
+            min_confidence=min_confidence,
+            relationship_type=relationship_type,
+            entity_type=entity_type,
+        )
         return ResponseEnvelope(
             success=True,
             message="Subgraph retrieved successfully.",
             data=data
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get(
+    "/search",
+    response_model=ResponseEnvelope,
+    summary="Search Entities in the Graph",
+)
+def search_entities(
+    q: str = Query(..., min_length=1, description="Search query string"),
+    entity_type: Optional[str] = Query(None, description="Optional entity type filter"),
+    limit: int = Query(30, ge=1, le=100, description="Max results"),
+):
+    """Search entities by phone number, vehicle plate, bank account, name, or alias."""
+    try:
+        results = graph_analytics.search_entities(query=q, entity_type=entity_type, limit=limit)
+        return ResponseEnvelope(
+            success=True,
+            message=f"Found {len(results)} matching entity/entities.",
+            data=results,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -105,10 +137,20 @@ def get_focus_subgraph(
     entity_id: str = Query(..., description="Center entity ID"),
     case_id: Optional[str] = Query(None, description="Optional case filter"),
     hops: int = Query(1, ge=1, le=2, description="Expansion hops (1=direct only)"),
+    min_confidence: float = Query(0.0, ge=0.0, le=1.0, description="Minimum confidence threshold"),
+    relationship_type: Optional[str] = Query(None, description="Filter by relationship type"),
+    entity_type: Optional[str] = Query(None, description="Filter by entity type"),
 ):
-    """Return focused subgraph around a selected entity."""
+    """Return focused subgraph around a selected entity with filters."""
     try:
-        data = graph_analytics.get_focus_subgraph(entity_id, case_id, hops)
+        data = graph_analytics.get_focus_subgraph(
+            entity_id=entity_id,
+            case_id=case_id,
+            hops=hops,
+            min_confidence=min_confidence,
+            relationship_type=relationship_type,
+            entity_type=entity_type,
+        )
         return ResponseEnvelope(
             success=True,
             message=f"Focus subgraph for {entity_id}.",

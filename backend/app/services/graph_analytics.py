@@ -13,18 +13,47 @@ from app.services.graph_store import get_graph_store
 logger = logging.getLogger(__name__)
 
 
-def get_subgraph(case_id: Optional[str] = None) -> Dict[str, List[Any]]:
-    """Retrieve graph nodes and relationships, optionally filtered by Case ID."""
-    return get_graph_store().get_subgraph(case_id)
+def get_subgraph(
+    case_id: Optional[str] = None,
+    min_confidence: float = 0.0,
+    relationship_type: Optional[str] = None,
+    entity_type: Optional[str] = None,
+) -> Dict[str, List[Any]]:
+    """Retrieve graph nodes and relationships, optionally filtered by Case ID, confidence, rel type, entity type."""
+    return get_graph_store().get_subgraph(
+        case_id=case_id,
+        min_confidence=min_confidence,
+        relationship_type=relationship_type,
+        entity_type=entity_type,
+    )
 
 
 def get_focus_subgraph(
     entity_id: str,
     case_id: Optional[str] = None,
     hops: int = 1,
+    min_confidence: float = 0.0,
+    relationship_type: Optional[str] = None,
+    entity_type: Optional[str] = None,
 ) -> Dict[str, List[Any]]:
-    """Return entity-centered ego network."""
-    return get_graph_store().get_focus_subgraph(entity_id, case_id, hops)
+    """Return entity-centered ego network with filters."""
+    return get_graph_store().get_focus_subgraph(
+        entity_id=entity_id,
+        case_id=case_id,
+        hops=hops,
+        min_confidence=min_confidence,
+        relationship_type=relationship_type,
+        entity_type=entity_type,
+    )
+
+
+def search_entities(
+    query: str,
+    entity_type: Optional[str] = None,
+    limit: int = 30,
+) -> List[Dict[str, Any]]:
+    """Global multi-attribute and fuzzy entity search."""
+    return get_graph_store().search_entities(query=query, entity_type=entity_type, limit=limit)
 
 
 def get_entity_connections(entity_id: str) -> Dict[str, Any]:

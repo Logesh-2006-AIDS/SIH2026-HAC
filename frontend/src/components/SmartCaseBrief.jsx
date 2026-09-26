@@ -29,15 +29,20 @@ export default function SmartCaseBrief({ selectedCase, reportMode = false }) {
       .finally(() => setLoading(false));
   }, [activeCaseId]);
 
-  const handleExport = () => {
+  const handleExportMarkdown = () => {
     if (!activeCaseId) return;
     window.open(`/api/v1/cases/${activeCaseId}/export?format=markdown`, '_blank');
+  };
+
+  const handleExportPdf = () => {
+    if (!activeCaseId) return;
+    window.open(`/api/v1/cases/${activeCaseId}/export?format=pdf`, '_blank');
   };
 
   return (
     <div className="animate-fade-in" style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', background: 'transparent', color: '#F1EBDD', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(16, 34, 29, 0.92)', backdropFilter: 'blur(12px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(16, 34, 29, 0.92)', backdropFilter: 'blur(12px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
           <div style={{ padding: '0.55rem', borderRadius: '10px', background: 'rgba(217, 170, 61, 0.18)', color: '#D9AA3D', border: '1px solid rgba(217, 170, 61, 0.3)', boxShadow: '0 0 12px rgba(217, 170, 61, 0.2)' }}>
             <FileText size={24} />
@@ -47,7 +52,7 @@ export default function SmartCaseBrief({ selectedCase, reportMode = false }) {
             <p style={{ fontSize: '0.8rem', color: '#A6B0AA', margin: 0 }}>Automated intelligence summary synthesized from graph evidence & FIR dossiers</p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <select value={activeCaseId} onChange={(e) => setActiveCaseId(e.target.value)}
             style={{ padding: '0.55rem 0.95rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(11, 23, 20, 0.7)', color: '#F1EBDD', fontSize: '0.86rem', outline: 'none', fontWeight: 600 }}>
             <option value="">Select FIR Case</option>
@@ -56,9 +61,14 @@ export default function SmartCaseBrief({ selectedCase, reportMode = false }) {
             ))}
           </select>
           {activeCaseId && (
-            <button onClick={handleExport} className="btn-primary" style={{ padding: '0.55rem 0.95rem', fontSize: '0.83rem' }}>
-              <Download size={15} /> Export Forensic Report
-            </button>
+            <div style={{ display: 'flex', gap: '0.45rem' }}>
+              <button onClick={handleExportPdf} className="btn-primary" style={{ padding: '0.55rem 0.85rem', fontSize: '0.82rem', background: '#dc2626', borderColor: '#b91c1c' }}>
+                <Download size={14} /> Export PDF Brief
+              </button>
+              <button onClick={handleExportMarkdown} className="btn-primary" style={{ padding: '0.55rem 0.85rem', fontSize: '0.82rem' }}>
+                <Download size={14} /> Export Markdown
+              </button>
+            </div>
           )}
         </div>
       </div>

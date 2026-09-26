@@ -57,6 +57,85 @@
   --header-height: 64px;
 }
 
+@keyframes radarPulse {
+  0% {
+    r: 18px;
+    opacity: 0.95;
+    stroke-width: 2.5px;
+  }
+  50% {
+    opacity: 0.55;
+  }
+  100% {
+    r: 75px;
+    opacity: 0;
+    stroke-width: 0.5px;
+  }
+}
+
+@keyframes focalGlow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 22px rgba(168, 85, 247, 0.5));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 18px rgba(168, 85, 247, 1)) drop-shadow(0 0 32px rgba(168, 85, 247, 0.8));
+  }
+}
+
+@keyframes edgeFlow {
+  from {
+    stroke-dashoffset: 36;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes edgePulsePacket {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-radar {
+  animation: radarPulse 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+.animate-focal-glow {
+  animation: focalGlow 2.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-edge-flow {
+  animation: edgeFlow 1.4s linear infinite;
+}
+
+@keyframes radarLighthouse {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-lighthouse {
+  animation: radarLighthouse 8s linear infinite;
+}
+
 .font-stats {
   font-family: var(--font-stats), 'Space Grotesk', sans-serif;
 }
