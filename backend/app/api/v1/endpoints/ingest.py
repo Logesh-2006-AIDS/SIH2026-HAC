@@ -17,11 +17,19 @@ from sqlalchemy.orm import Session
 
 from app.db.postgres import get_db
 from app.models.ingestion import DataSource, DataSourceType, IngestStatus, RawEntity
+from app.models.user import User, UserRole
 from app.schemas.common import ResponseEnvelope
 from app.services.ingestion import detect_source_type, ingest_document
+from app.api.deps import require_role, log_audit_action
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+_ingest_write = require_role(UserRole.INVESTIGATOR, UserRole.ADMIN)
+_any_officer = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
+
+# Source types that require legal authorization_reference
+_SENSITIVE_SOURCES = {DataSourceType.CDR, DataSourceType.FINANCIAL}
 
 
 # ── Request / Response Schemas ────────────────────────────────────────────────
@@ -31,6 +39,7 @@ class TextIngestRequest(BaseModel):
     content: str
     source_type: Optional[DataSourceType] = None
     case_id: Optional[str] = None
+    authorization_reference: Optional[str] = None
 
 
 class DataSourceOut(BaseModel):
@@ -71,8 +80,22 @@ async def ingest_file(
     file: UploadFile = File(...),
     case_id: Optional[str] = Form(None),
     source_type: Optional[DataSourceType] = Form(None),
+    authorization_reference: Optional[str] = Form(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(_ingest_write),
 ):
+    # Determine effective source type for authorization check
+    effective_type = source_type or detect_source_type(file.filename or "upload")
+
+    # Require authorization_reference for CDR and FINANCIAL data
+    if effective_type in _SENSITIVE_SOURCES:
+        if not authorization_reference or not authorization_reference.strip():
+            raise HTTPException(
+                status_code=422,
+                detail=f"authorization_reference is required for {effective_type.value} data "
+                       f"(provide court order number, authority, and date).",
+            )
+
     content_bytes = await file.read()
     if file.filename and file.filename.lower().endswith(".pdf"):
         from app.nlp.pdf_parser import extract_text_from_pdf_bytes
@@ -95,12 +118,43 @@ async def ingest_file(
             source_type=source_type,
             case_id=case_id,
             file_size=len(content_bytes),
+            user_id=current_user.id if current_user else None,
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.exception(f"Ingestion failed: {e}")
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
+
+    # Store authorization_reference on the DataSource record
+    if authorization_reference and result.get("data_source_id"):
+        ds = db.query(DataSource).filter(DataSource.id == result["data_source_id"]).first()
+        if ds:
+            ds.authorization_reference = authorization_reference.strip()
+            db.commit()
+
+    # Log custody event for the upload
+    try:
+        from app.services.integrity import log_custody_event
+        if result.get("data_source_id"):
+            log_custody_event(
+                db=db,
+                data_source_id=result["data_source_id"],
+                action="UPLOAD",
+                user_id=current_user.id if current_user else None,
+                details={"filename": file.filename, "file_size": len(content_bytes)},
+            )
+    except Exception:
+        pass  # Custody logging failure should not block ingestion
+
+    log_audit_action(
+        db=db,
+        action="INGEST_FILE",
+        resource_type="DATA_SOURCE",
+        resource_id=str(result.get("data_source_id")),
+        user_id=current_user.id if current_user else None,
+        details={"filename": file.filename},
+    )
 
     return ResponseEnvelope(
         success=True,
@@ -118,7 +172,19 @@ async def ingest_file(
 def ingest_text(
     payload: TextIngestRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(_ingest_write),
 ):
+    effective_type = payload.source_type or detect_source_type(payload.filename)
+
+    # Require authorization_reference for CDR and FINANCIAL data
+    if effective_type in _SENSITIVE_SOURCES:
+        if not payload.authorization_reference or not payload.authorization_reference.strip():
+            raise HTTPException(
+                status_code=422,
+                detail=f"authorization_reference is required for {effective_type.value} data "
+                       f"(provide court order number, authority, and date).",
+            )
+
     try:
         result = ingest_document(
             db=db,
@@ -126,12 +192,20 @@ def ingest_text(
             content=payload.content,
             source_type=payload.source_type,
             case_id=payload.case_id,
+            user_id=current_user.id if current_user else None,
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.exception(f"Text ingestion failed: {e}")
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
+
+    # Store authorization_reference
+    if payload.authorization_reference and result.get("data_source_id"):
+        ds = db.query(DataSource).filter(DataSource.id == result["data_source_id"]).first()
+        if ds:
+            ds.authorization_reference = payload.authorization_reference.strip()
+            db.commit()
 
     return ResponseEnvelope(
         success=True,
@@ -152,6 +226,7 @@ def list_sources(
     limit: int = Query(50, le=200),
     offset: int = Query(0),
     db: Session = Depends(get_db),
+    current_user: User = Depends(_any_officer),
 ):
     q = db.query(DataSource)
     if source_type:
@@ -191,7 +266,11 @@ def list_sources(
     response_model=ResponseEnvelope,
     summary="Get details for a specific data source",
 )
-def get_source(source_id: int, db: Session = Depends(get_db)):
+def get_source(
+    source_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(_any_officer),
+):
     ds = db.query(DataSource).filter(DataSource.id == source_id).first()
     if not ds:
         raise HTTPException(status_code=404, detail="Data source not found.")
@@ -199,6 +278,18 @@ def get_source(source_id: int, db: Session = Depends(get_db)):
     entity_count = db.query(func.count(RawEntity.id)).filter(
         RawEntity.data_source_id == source_id
     ).scalar()
+
+    # Log custody VIEW event
+    try:
+        from app.services.integrity import log_custody_event
+        log_custody_event(
+            db=db,
+            data_source_id=source_id,
+            action="VIEW",
+            user_id=current_user.id if current_user else None,
+        )
+    except Exception:
+        pass
 
     return ResponseEnvelope(
         success=True,
@@ -211,9 +302,11 @@ def get_source(source_id: int, db: Session = Depends(get_db)):
             "row_count": ds.row_count,
             "case_id_ref": ds.case_id_ref,
             "file_size_bytes": ds.file_size_bytes,
+            "content_hash": ds.content_hash,
             "ingested_at": ds.ingested_at.isoformat() if ds.ingested_at else None,
             "error_log": ds.error_log,
             "entities_extracted": entity_count,
+            "authorization_reference": ds.authorization_reference,
         },
     )
 
@@ -230,6 +323,7 @@ def list_entities(
     limit: int = Query(100, le=500),
     offset: int = Query(0),
     db: Session = Depends(get_db),
+    current_user: User = Depends(_any_officer),
 ):
     q = db.query(RawEntity)
     if entity_type:

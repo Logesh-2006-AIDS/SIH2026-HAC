@@ -13,13 +13,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, log_audit_action
+from app.api.deps import get_current_user, log_audit_action, require_role
 from app.db.postgres import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.common import ResponseEnvelope
 from app.services.graph_store import compute_evidentiary_strength
 
 router = APIRouter()
+
+_officer_role = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
+_analyst_role = require_role(UserRole.ANALYST, UserRole.ADMIN)
+_investigator_role = require_role(UserRole.INVESTIGATOR, UserRole.ADMIN)
 
 # Analyst-created intelligence leads (handoff to Investigator)
 INTEL_LEADS_STORE: List[Dict[str, Any]] = []
@@ -130,7 +134,7 @@ def list_pending_leads(
     status_filter: Optional[str] = Query(None, alias="status"),
     lead_kind: Optional[str] = Query(None, description="merge|intelligence|all"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_officer_role),
 ):
     """Retrieve candidate entity links and analyst intelligence leads."""
     items = _all_leads()
@@ -162,6 +166,7 @@ def list_pending_leads(
 @router.get("/intelligence", response_model=ResponseEnvelope, summary="List analyst intelligence leads")
 def list_intelligence_leads(
     status_filter: Optional[str] = Query(None, alias="status"),
+    current_user: User = Depends(_analyst_role),
 ):
     items = INTEL_LEADS_STORE
     if status_filter:
@@ -179,7 +184,10 @@ def list_intelligence_leads(
 
 
 @router.post("/intelligence", response_model=ResponseEnvelope, summary="Create analyst intelligence lead for Investigator")
-def create_intelligence_lead(payload: IntelligenceLeadCreate):
+def create_intelligence_lead(
+    payload: IntelligenceLeadCreate,
+    current_user: User = Depends(_analyst_role),
+):
     """Analyst → Investigator lead handoff with full provenance and evidentiary citations."""
     global _INTEL_SEQ
     lead_id = f"INTEL-{_INTEL_SEQ:03d}"
@@ -215,7 +223,7 @@ def create_intelligence_lead(payload: IntelligenceLeadCreate):
         "confidence_reason": payload.confidence_reason,
         "evidentiary_strength": ev_strength,
         "pattern_type": payload.pattern_type or "Analyst Pattern Lead",
-        "created_by": payload.created_by,
+        "created_by": current_user.full_name or payload.created_by,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "status": "PENDING",
         # Compatibility fields for existing LeadVerification cards
@@ -239,7 +247,7 @@ def verify_lead(
     lead_id: str,
     payload: LeadVerifyRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_investigator_role),
 ):
     """Verify or Reject an AI lead suggestion with mandatory investigator remarks and audit logging."""
     lead = next((l for l in _all_leads() if l.get("id") == lead_id or l.get("lead_id") == lead_id), None)

@@ -29,14 +29,48 @@ export default function SmartCaseBrief({ selectedCase, reportMode = false }) {
       .finally(() => setLoading(false));
   }, [activeCaseId]);
 
-  const handleExportMarkdown = () => {
+  const handleExportMarkdown = async () => {
     if (!activeCaseId) return;
-    window.open(`/api/v1/cases/${activeCaseId}/export?format=markdown`, '_blank');
+    const token = localStorage.getItem('sih_token');
+    try {
+      const res = await fetch(`/api/v1/cases/${activeCaseId}/export?format=markdown`, {
+        headers: token && token !== 'demo-token' ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Status: ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `case_${activeCaseId}_brief.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      window.open(`/api/v1/cases/${activeCaseId}/export?format=markdown`, '_blank');
+    }
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (!activeCaseId) return;
-    window.open(`/api/v1/cases/${activeCaseId}/export?format=pdf`, '_blank');
+    const token = localStorage.getItem('sih_token');
+    try {
+      const res = await fetch(`/api/v1/cases/${activeCaseId}/export?format=pdf`, {
+        headers: token && token !== 'demo-token' ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Status: ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `case_${activeCaseId}_brief.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      window.open(`/api/v1/cases/${activeCaseId}/export?format=pdf`, '_blank');
+    }
   };
 
   return (

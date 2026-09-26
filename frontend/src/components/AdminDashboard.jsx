@@ -29,7 +29,7 @@ const NAV = [
   { id: 'audit', label: 'Audit Log', icon: Fingerprint, group: 'System' },
 ];
 
-const ROLES = ['ADMIN', 'INVESTIGATOR', 'ANALYST', 'VIEWER'];
+const ROLES = ['ADMIN', 'INVESTIGATOR', 'ANALYST'];
 
 const PIPELINE_STEPS = [
   { id: 'UPLOAD', label: 'Upload' },
@@ -716,7 +716,7 @@ function AuditView({ audit }) {
                 return (
                   <tr key={log.id || idx} className="border-b border-white/5 hover:bg-white/[0.02]">
                     <td className="py-2.5 text-muted font-mono text-[11px]">{formatDate(log.timestamp)}</td>
-                    <td className="font-semibold text-parchment">{log.user || 'admin@sih.gov.in'}</td>
+                    <td className="font-semibold text-parchment">{log.user || 'admin@police.gov.in'}</td>
                     <td className="text-gold font-mono text-[11px] font-bold">{log.action}</td>
                     <td className="text-[#e8d9a8] font-mono text-[11px]">{log.resource}</td>
                     <td><Status value={log.status || 'SUCCESS'} /></td>

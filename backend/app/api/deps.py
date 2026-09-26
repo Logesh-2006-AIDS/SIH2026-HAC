@@ -77,20 +77,16 @@ def log_audit_action(
     ip_address: Optional[str] = None,
     user_agent: Optional[str] = None,
 ):
-    """Helper to record tamper-evident audit logs."""
-    try:
-        log = AuditLog(
-            user_id=user_id,
-            action=action,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            details=details,
-        )
-        db.add(log)
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        # Logging failure should not crash main request in dev
-        pass
+    """Helper to record tamper-evident audit logs with SHA-256 hash chain."""
+    from app.services.integrity import log_audit_action_with_chain
+    return log_audit_action_with_chain(
+        db=db,
+        action=action,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        user_id=user_id,
+        details=details,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+

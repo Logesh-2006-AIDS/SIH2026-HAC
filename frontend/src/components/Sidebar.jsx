@@ -134,7 +134,7 @@ export default function Sidebar({ currentRole, activeTab, setActiveTab }) {
       </div>
 
       {/* Security Footer Badge */}
-      <div style={{ padding: '0.85rem 1.15rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8, 10, 9, 0.7)' }}>
+      <div style={{ padding: '0.85rem 1.15rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8, 10, 9, 0.1)', backdropFilter: 'blur(4px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.72rem', color: '#4ADE80', fontWeight: 700 }}>
           <ShieldCheck size={14} />
           <span>Evidence Chain: VERIFIED</span>

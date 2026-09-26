@@ -326,8 +326,8 @@ body {
 /* Sidebar */
 .app-sidebar {
   width: var(--sidebar-width);
-  background: rgba(9, 11, 10, 0.96);
-  backdrop-filter: blur(16px);
+  background: rgba(9, 11, 10, 0.1);
+  backdrop-filter: blur(4px);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -1123,3 +1123,24 @@ input[type="text"]:focus, select:focus, textarea:focus {
   }
 }
 
+/* --- GLOBAL TRANSPARENT THEME & RADAR BACKGROUND OVERRIDES --- */
+body {
+  background-color: #050706 !important;
+  background-image: 
+    linear-gradient(rgba(217,170,61,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,170,61,0.05) 1px, transparent 1px) !important;
+  background-size: 40px 40px !important;
+  background-attachment: fixed !important;
+}
+
+.bg-\[\#080a08\], .bg-\[\#090D0A\], .bg-\[\#101412\], .bg-\[\#0d100e\], .bg-\[\#0e1210\], .bg-\[\#101311\], .bg-\[\#0a0d0b\], .bg-\[\#121614\], .bg-\[\#0f1311\], .bg-\[\#070a08\], .bg-\[\#161b17\], .bg-\[\#111613\] {
+  background-color: rgba(10, 15, 12, 0.1) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+:root {
+  --bg-primary: rgba(8, 10, 9, 0.1) !important;
+  --bg-secondary: rgba(16, 19, 17, 0.1) !important;
+  --bg-tertiary: rgba(20, 23, 21, 0.15) !important;
+  --bg-card: rgba(20, 23, 21, 0.15) !important;
+}

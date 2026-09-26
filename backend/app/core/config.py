@@ -1,6 +1,13 @@
 from typing import List, Union
-from pydantic import AnyHttpUrl, field_validator
+import logging
+import secrets
+from pydantic import AnyHttpUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_config_logger = logging.getLogger("sih-platform.config")
+
+# Sentinel value used to detect when SECRET_KEY was not set by the user
+_DEFAULT_INSECURE_KEY = "sih_2026_super_secret_jwt_key_change_in_production_house_targaryen"
 
 
 class Settings(BaseSettings):
@@ -16,10 +23,22 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
 
-    # Security
-    SECRET_KEY: str = "sih_2026_super_secret_jwt_key_change_in_production_house_targaryen"
+    # Security — if SECRET_KEY is not explicitly set via .env, a random key is
+    # generated per session and a warning is logged.
+    SECRET_KEY: str = _DEFAULT_INSECURE_KEY
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
+
+    @model_validator(mode="after")
+    def _ensure_secret_key(self) -> "Settings":
+        if self.SECRET_KEY == _DEFAULT_INSECURE_KEY:
+            generated = secrets.token_urlsafe(48)
+            _config_logger.warning(
+                "SECRET_KEY not set via .env — using a randomly generated key for this session. "
+                "Set SECRET_KEY in your .env file for stable tokens across restarts."
+            )
+            object.__setattr__(self, "SECRET_KEY", generated)
+        return self
 
     # Operating Modes
     DEMO_MODE: bool = True

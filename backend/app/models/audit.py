@@ -21,3 +21,7 @@ class AuditLog(Base):
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(String(255), nullable=True)
     details = Column(JSON, nullable=True)                    # Payload details / query terms
+
+    # Phase 4: Hash-chain integrity fields
+    previous_hash = Column(String(64), nullable=True)        # SHA-256 hash of the preceding audit log entry
+    entry_hash = Column(String(64), nullable=True, index=True)  # SHA-256(actor|action|target|timestamp|previous_hash)

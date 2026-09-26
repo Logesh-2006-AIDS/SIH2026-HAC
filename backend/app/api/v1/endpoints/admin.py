@@ -214,15 +214,31 @@ def import_history(
     )
 
 
+class TamperSimulateRequest(BaseModel):
+    target: str = Field(default="audit_log", description="'audit_log' or 'evidence'")
+    record_id: Optional[int] = Field(default=None, description="Optional specific record ID to tamper with")
+
+
 @router.post("/imports/file", response_model=ResponseEnvelope, status_code=status.HTTP_201_CREATED, summary="Admin import file")
 async def import_file(
     file: UploadFile = File(...),
     case_id: Optional[str] = Form(None),
     source_type: Optional[DataSourceType] = Form(None),
+    authorization_reference: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
     """Admin-only entry point to the existing ingestion service."""
+    # Enforce authorization_reference for sensitive sources
+    from app.services.ingestion import detect_source_type
+    effective_type = source_type or detect_source_type(file.filename or "upload")
+    if effective_type in {DataSourceType.CDR, DataSourceType.FINANCIAL}:
+        if not authorization_reference or not authorization_reference.strip():
+            raise HTTPException(
+                status_code=422,
+                detail=f"authorization_reference is required for {effective_type.value} data (provide court order/warrant reference).",
+            )
+
     content_bytes = await file.read()
     if file.filename and file.filename.lower().endswith(".pdf"):
         from app.nlp.pdf_parser import extract_text_from_pdf_bytes
@@ -249,6 +265,26 @@ async def import_file(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {exc}") from exc
+
+    if authorization_reference and result.get("data_source_id"):
+        ds = db.query(DataSource).filter(DataSource.id == result["data_source_id"]).first()
+        if ds:
+            ds.authorization_reference = authorization_reference.strip()
+            db.commit()
+
+    try:
+        from app.services.integrity import log_custody_event
+        if result.get("data_source_id"):
+            log_custody_event(
+                db=db,
+                data_source_id=result["data_source_id"],
+                action="UPLOAD",
+                user_id=current_user.id,
+                details={"filename": file.filename, "file_size": len(content_bytes)},
+            )
+    except Exception:
+        pass
+
     log_audit_action(db, "ADMIN_IMPORT_FILE", "DATA_SOURCE", str(result["data_source_id"]), current_user.id, {"filename": result["filename"]})
     return ResponseEnvelope(success=True, message="File imported.", data=result)
 
@@ -271,7 +307,100 @@ def audit_log(
             "resource": f"{log.resource_type}{f' · {log.resource_id}' if log.resource_id else ''}",
             "status": "RECORDED",
             "ip_address": log.ip_address,
+            "entry_hash": log.entry_hash,
+            "previous_hash": log.previous_hash,
         } for log in logs]},
+    )
+
+
+# ── Integrity Ledger & Verification Endpoints ─────────────────────────────────
+
+@router.post("/integrity/anchor", response_model=ResponseEnvelope, summary="Admin trigger local ledger anchoring")
+def trigger_anchor(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    """Batch un-anchored audit-log and evidence hashes into Merkle tree roots."""
+    from app.services.integrity import anchor_all_unanchored
+    result = anchor_all_unanchored(db=db, user_id=current_user.id)
+    log_audit_action(
+        db=db,
+        action="INTEGRITY_ANCHOR_TRIGGER",
+        resource_type="INTEGRITY_ANCHOR",
+        user_id=current_user.id,
+        details=result,
+    )
+    return ResponseEnvelope(
+        success=True,
+        message=f"Created {result['anchors_created']} integrity anchor(s).",
+        data=result,
+    )
+
+
+@router.post("/integrity/verify", response_model=ResponseEnvelope, summary="Cryptographic Integrity Verification")
+def verify_integrity(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    """Walk hash chains, recompute Merkle roots, and verify evidence checksums."""
+    from app.services.integrity import verify_full_system_integrity
+    report = verify_full_system_integrity(db=db)
+    log_audit_action(
+        db=db,
+        action="INTEGRITY_VERIFY_RUN",
+        resource_type="SYSTEM_INTEGRITY",
+        user_id=current_user.id,
+        details={"status": report["status"]},
+    )
+    return ResponseEnvelope(
+        success=True,
+        message=f"System integrity verification complete: {report['status']}.",
+        data=report,
+    )
+
+
+@router.get("/integrity/anchors", response_model=ResponseEnvelope, summary="List local integrity anchors")
+def list_integrity_anchors(
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    """List local Merkle anchors generated by the local cryptographic integrity ledger."""
+    from app.models.integrity import IntegrityAnchor
+    anchors = db.query(IntegrityAnchor).order_by(IntegrityAnchor.created_at.desc()).limit(limit).all()
+    return ResponseEnvelope(
+        success=True,
+        message=f"Found {len(anchors)} integrity anchor(s).",
+        data=[{
+            "id": a.id,
+            "anchor_type": a.anchor_type,
+            "entry_range_start": a.entry_range_start,
+            "entry_range_end": a.entry_range_end,
+            "leaf_count": a.leaf_count,
+            "merkle_root": a.merkle_root,
+            "created_at": _iso(a.created_at),
+            "created_by": a.created_by,
+        } for a in anchors],
+    )
+
+
+@router.post("/integrity/simulate-tamper", response_model=ResponseEnvelope, summary="Demo-only: Simulate database tampering")
+def simulate_tamper(
+    payload: TamperSimulateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    """Demo-only test hook: directly alters a database field to demonstrate cryptographic tamper detection."""
+    from app.services.integrity import simulate_tamper_audit, simulate_tamper_evidence
+    if payload.target == "evidence":
+        res = simulate_tamper_evidence(db=db, record_id=payload.record_id)
+    else:
+        res = simulate_tamper_audit(db=db, record_id=payload.record_id)
+
+    return ResponseEnvelope(
+        success=res.get("success", False),
+        message="Simulated tamper action executed." if res.get("success") else "Tamper simulation failed.",
+        data=res,
     )
 
 
@@ -283,10 +412,9 @@ def role_permissions(current_user: User = Depends(admin_required)):
         data={
             "enforcement": "FastAPI RBAC dependency",
             "roles": [
-                {"role": "ADMIN", "permissions": ["Manage users and roles", "View system health", "View import and audit history", "Upload through admin ingestion"]},
-                {"role": "INVESTIGATOR", "permissions": ["Work assigned cases", "Review leads", "View case graph"]},
-                {"role": "ANALYST", "permissions": ["View strategic analytics", "Create intelligence leads"]},
-                {"role": "VIEWER", "permissions": ["Read-only authorised views"]},
+                {"role": "ADMIN", "permissions": ["Manage users and roles", "View system health", "View import and audit history", "Trigger integrity anchors", "Simulate tamper & verify", "Upload through admin ingestion"]},
+                {"role": "INVESTIGATOR", "permissions": ["Work assigned cases", "Review and verify leads", "View case graph", "Ingest evidence files", "Export court briefs"]},
+                {"role": "ANALYST", "permissions": ["View strategic analytics & heatmaps", "Create intelligence leads", "View graph & search"]},
             ],
         },
     )

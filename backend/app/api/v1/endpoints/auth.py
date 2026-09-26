@@ -66,7 +66,8 @@ def login(
         "admin@police.gov.in": ("HT-ADMIN-001", "Station Administrator", UserRole.ADMIN),
         "analyst@police.gov.in": ("HT-ANALYST-001", "Strategic Analyst", UserRole.ANALYST),
     }
-    if not user and form_data.username in demo_identities:
+    # DEMO_MODE only: auto-seed demo identities on first login attempt
+    if settings.DEMO_MODE and not user and form_data.username in demo_identities:
         badge, full_name, role = demo_identities[form_data.username]
         user = User(
             email=form_data.username,
@@ -82,8 +83,8 @@ def login(
         db.refresh(user)
 
     if not user or not verify_password(form_data.password, user.hashed_password):
-        # Allow default dev password if matching test credentials
-        if not (user and form_data.password in ("investigator123", "password123", "admin123")):
+        # DEMO_MODE only: allow default dev passwords for demo accounts
+        if not (settings.DEMO_MODE and user and form_data.password in ("investigator123", "password123", "admin123", "analyst123")):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect badge number/email or password.",

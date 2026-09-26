@@ -11,6 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_role
+from app.models.user import User, UserRole
 from app.db.postgres import get_db
 from app.db.graph_client import MemgraphClient
 from app.services import graph_analytics
@@ -18,6 +20,8 @@ from app.schemas.common import ResponseEnvelope
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+_officer_role = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
 
 
 class CopilotQueryRequest(BaseModel):
@@ -348,7 +352,10 @@ def query_general(question: str) -> Dict[str, Any]:
 # ── Main Endpoint ────────────────────────────────────────────────────────────
 
 @router.post("/query", response_model=ResponseEnvelope, summary="AI Investigation Copilot Query")
-def copilot_query(payload: CopilotQueryRequest):
+def copilot_query(
+    payload: CopilotQueryRequest,
+    current_user: User = Depends(_officer_role),
+):
     """
     Evidence-backed AI Copilot. Parses question intent, executes Neo4j/PostgreSQL
     queries, returns structured response with entities, sources, and confidence.
@@ -358,7 +365,7 @@ def copilot_query(payload: CopilotQueryRequest):
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
     intent = detect_intent(question)
-    logger.info(f"Copilot query: '{question}' → intent: {intent}")
+    logger.info(f"Copilot query: '{question}' → intent: {intent} by user {current_user.email}")
 
     try:
         if intent == "entity_connections":
@@ -433,7 +440,11 @@ def copilot_query(payload: CopilotQueryRequest):
 
 
 @router.get("/suggestions", response_model=ResponseEnvelope, summary="Get Dynamic Query Suggestions")
-def get_suggestions(case_id: Optional[str] = None, entity_id: Optional[str] = None):
+def get_suggestions(
+    case_id: Optional[str] = None,
+    entity_id: Optional[str] = None,
+    current_user: User = Depends(_officer_role),
+):
     """Return context-aware query suggestions based on current case/entity."""
     base_suggestions = [
         "Which people appear in multiple cases?",

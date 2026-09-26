@@ -48,8 +48,28 @@ export default function LoginScreen({ onAuthenticated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const completeLogin = (userProfile, roleId) => {
-    localStorage.setItem('sih_token', 'demo-token');
+  const completeLogin = async (userProfile, roleId) => {
+    let token = 'demo-token';
+    try {
+      const params = new URLSearchParams();
+      params.append('username', userProfile.email || username);
+      params.append('password', userProfile.password || password || 'investigator123');
+      const authRes = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
+      });
+      if (authRes.ok) {
+        const json = await authRes.json();
+        if (json?.data?.access_token) {
+          token = json.data.access_token;
+        }
+      }
+    } catch {
+      // Keep demo-token fallback
+    }
+
+    localStorage.setItem('sih_token', token);
     localStorage.setItem('sih_user', JSON.stringify(userProfile));
 
     const dest = roleId === 'admin' || userProfile.role === 'ADMIN'

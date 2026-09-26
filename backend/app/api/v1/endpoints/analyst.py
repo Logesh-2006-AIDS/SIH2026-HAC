@@ -12,11 +12,13 @@ from sqlalchemy.orm import Session
 from app.db.postgres import get_db
 from app.models.ingestion import PendingResolution
 from app.services.graph_store import get_graph_store
-from app.api.deps import log_audit_action
+from app.api.deps import log_audit_action, require_role
+from app.models.user import User, UserRole
 from app.schemas.common import ResponseEnvelope
 from app.services import analyst_intelligence as ai
 
 router = APIRouter()
+_analyst_role = require_role(UserRole.ANALYST, UserRole.ADMIN)
 
 
 class AskRequest(BaseModel):
@@ -35,6 +37,7 @@ def analyst_overview(
     end: Optional[str] = Query(None),
     geography: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    current_user: User = Depends(_analyst_role),
 ):
     data = ai.overview(
         crime_type=crime_type,
@@ -55,6 +58,7 @@ def analyst_heatmap(
     geography: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     geography_level: str = Query("city", description="state|district|city"),
+    current_user: User = Depends(_analyst_role),
 ):
     data = ai.build_heatmap(
         mode=mode,
@@ -78,6 +82,7 @@ def analyst_region(
     status: Optional[str] = Query(None),
     mode: str = Query("density"),
     geography_level: str = Query("city", description="state|district|city"),
+    current_user: User = Depends(_analyst_role),
 ):
     data = ai.region_detail(
         region_id,
@@ -101,6 +106,7 @@ def analyst_trends(
     end: Optional[str] = Query(None),
     geography: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    current_user: User = Depends(_analyst_role),
 ):
     data = ai.crime_trends(
         crime_type=crime_type,
@@ -117,13 +123,14 @@ def analyst_compare(
     axis: str = Query("period", description="period|crime_type|region"),
     left: Optional[str] = Query(None),
     right: Optional[str] = Query(None),
+    current_user: User = Depends(_analyst_role),
 ):
     data = ai.compare(axis=axis, left=left, right=right)
     return ResponseEnvelope(success=True, message="Comparison computed.", data=data)
 
 
 @router.get("/cross-case", response_model=ResponseEnvelope, summary="Cross-case intelligence clusters")
-def analyst_cross_case():
+def analyst_cross_case(current_user: User = Depends(_analyst_role)):
     data = ai.cross_case_intelligence()
     return ResponseEnvelope(success=True, message="Cross-case clusters computed.", data=data)
 
@@ -133,19 +140,20 @@ def analyst_network(
     case_id: Optional[str] = Query(None),
     crime_type: Optional[str] = Query(None),
     entity_type: Optional[str] = Query(None),
+    current_user: User = Depends(_analyst_role),
 ):
     data = ai.network_overview(case_id=case_id, crime_type=crime_type, entity_type=entity_type)
     return ResponseEnvelope(success=True, message="Network overview aggregated.", data=data)
 
 
 @router.get("/communities", response_model=ResponseEnvelope, summary="Network communities / clusters")
-def analyst_communities():
+def analyst_communities(current_user: User = Depends(_analyst_role)):
     data = ai.communities()
     return ResponseEnvelope(success=True, message="Communities detected from graph components.", data=data)
 
 
 @router.get("/centrality", response_model=ResponseEnvelope, summary="Key / bridge entities with explanations")
-def analyst_centrality():
+def analyst_centrality(current_user: User = Depends(_analyst_role)):
     data = ai.key_entities()
     return ResponseEnvelope(success=True, message="Key entities ranked with explanations.", data=data)
 
@@ -158,6 +166,7 @@ def analyst_patterns(
     end: Optional[str] = Query(None),
     geography: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    current_user: User = Depends(_analyst_role),
 ):
     data = ai.discover_patterns(
         crime_type=crime_type,
@@ -171,7 +180,7 @@ def analyst_patterns(
 
 
 @router.post("/ask", response_model=ResponseEnvelope, summary="Analyst AI assistant (data-backed)")
-def analyst_ask(payload: AskRequest):
+def analyst_ask(payload: AskRequest, current_user: User = Depends(_analyst_role)):
     data = ai.ask_analyst(payload.question)
     return ResponseEnvelope(success=True, message="Answer grounded in computed analytics.", data=data)
 
@@ -182,6 +191,7 @@ def analyst_ask(payload: AskRequest):
 def list_pending_resolutions(
     status: Optional[str] = Query(None, description="Filter by status (PENDING, APPROVED, REJECTED, SPLIT)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(_analyst_role),
 ):
     store = get_graph_store()
     
@@ -266,6 +276,7 @@ def review_resolution(
     resolution_id: int,
     payload: ResolutionReviewRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(_analyst_role),
 ):
     pr = db.query(PendingResolution).filter(PendingResolution.id == resolution_id).first()
     if not pr:

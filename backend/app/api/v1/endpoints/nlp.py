@@ -1,12 +1,20 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from typing import Dict, Any
-from app.nlp.pipeline import nlp_pipeline
+from typing import Any, Dict
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
+from app.api.deps import require_role
+from app.models.user import User, UserRole
 from app.nlp.pdf_parser import process_pdf_document
+from app.nlp.pipeline import nlp_pipeline
 
 router = APIRouter()
+_officer_role = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
+
 
 @router.post("/process-text", response_model=Dict[str, Any])
-async def process_raw_text_fir(payload: Dict[str, Any]):
+async def process_raw_text_fir(
+    payload: Dict[str, Any],
+    current_user: User = Depends(_officer_role),
+):
     """
     Pass raw police FIR / CDR text to Phase 3 NLP Engine.
     Extracts entities, relationships, aliases & explainable rationales.
@@ -23,8 +31,12 @@ async def process_raw_text_fir(payload: Dict[str, Any]):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"NLP Processing Error: {str(e)}")
 
+
 @router.post("/process-pdf", response_model=Dict[str, Any])
-async def process_pdf_fir(file: UploadFile = File(...)):
+async def process_pdf_fir(
+    file: UploadFile = File(...),
+    current_user: User = Depends(_officer_role),
+):
     """
     Upload a PDF FIR / Police Report document.
     Extracts text from PDF pages and runs Phase 3 NLP model predictions.

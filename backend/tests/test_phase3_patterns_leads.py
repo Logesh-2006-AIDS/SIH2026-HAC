@@ -347,6 +347,43 @@ class TestCrossCaseEscalation:
 class TestLeadVerificationLoop:
     def test_create_and_verify_intelligence_lead(self):
         """Analyst creates intelligence lead -> Investigator verifies with mandatory remarks -> Audit log created."""
+        from app.core.security import create_access_token, get_password_hash
+        from app.db.postgres import SessionLocal
+        from app.models.user import User, UserRole
+        db = SessionLocal()
+        analyst = db.query(User).filter(User.email == "analyst_phase3@police.gov.in").first()
+        if not analyst:
+            analyst = User(
+                email="analyst_phase3@police.gov.in",
+                badge_number="ANL-P3-01",
+                full_name="Analyst Phase3",
+                department="Intelligence",
+                hashed_password=get_password_hash("analystpass123"),
+                role=UserRole.ANALYST,
+                is_active=True,
+            )
+            db.add(analyst)
+            db.commit()
+            db.refresh(analyst)
+        analyst_token = {"Authorization": f"Bearer {create_access_token(subject=str(analyst.id))}"}
+
+        inv = db.query(User).filter(User.email == "inv_phase3@police.gov.in").first()
+        if not inv:
+            inv = User(
+                email="inv_phase3@police.gov.in",
+                badge_number="INV-P3-01",
+                full_name="Investigator Phase3",
+                department="Crime Branch",
+                hashed_password=get_password_hash("invpass123"),
+                role=UserRole.INVESTIGATOR,
+                is_active=True,
+            )
+            db.add(inv)
+            db.commit()
+            db.refresh(inv)
+        inv_token = {"Authorization": f"Bearer {create_access_token(subject=str(inv.id))}"}
+        db.close()
+
         create_payload = {
             "title": "Suspected Structuring Channel in Hawala Network",
             "description": "3 deposits of Rs 48,000 within 24 hours followed by immediate cash withdrawal",
@@ -361,8 +398,8 @@ class TestLeadVerificationLoop:
             "created_by": "ANALYST",
         }
 
-        # 1. Create Lead
-        res_create = client.post("/api/v1/leads/intelligence", json=create_payload)
+        # 1. Create Lead (Analyst role)
+        res_create = client.post("/api/v1/leads/intelligence", json=create_payload, headers=analyst_token)
         assert res_create.status_code == 200
         lead_data = res_create.json()["data"]
         lead_id = lead_data["id"]
@@ -371,16 +408,17 @@ class TestLeadVerificationLoop:
         assert len(lead_data["supporting_records"]) == 1
 
         # 2. Reject if remarks missing (< 3 chars)
-        res_fail = client.post(f"/api/v1/leads/{lead_id}/verify", json={"action": "VERIFIED", "remarks": "ok"})
+        res_fail = client.post(f"/api/v1/leads/{lead_id}/verify", json={"action": "VERIFIED", "remarks": "ok"}, headers=inv_token)
         assert res_fail.status_code in (400, 422)
 
-        # 3. Successful Officer Verification
+        # 3. Successful Officer Verification (Investigator role)
         res_verify = client.post(
             f"/api/v1/leads/{lead_id}/verify",
             json={
                 "action": "VERIFIED",
                 "remarks": "Confirmed matching bank records with ICICI statement dated 02-Mar-2024.",
             },
+            headers=inv_token,
         )
         assert res_verify.status_code == 200
         updated = res_verify.json()["data"]
@@ -394,7 +432,28 @@ class TestLeadVerificationLoop:
 class TestAnalystOverviewDynamicCalculations:
     def test_overview_metrics_are_dynamic_and_bounded(self):
         """Ensure overview metrics are computed dynamically from graph & patterns with zero hardcoding."""
-        res = client.get("/api/v1/analyst/overview")
+        from app.core.security import create_access_token, get_password_hash
+        from app.db.postgres import SessionLocal
+        from app.models.user import User, UserRole
+        db = SessionLocal()
+        analyst = db.query(User).filter(User.email == "analyst_phase3@police.gov.in").first()
+        if not analyst:
+            analyst = User(
+                email="analyst_phase3@police.gov.in",
+                badge_number="ANL-P3-01",
+                full_name="Analyst Phase3",
+                department="Intelligence",
+                hashed_password=get_password_hash("analystpass123"),
+                role=UserRole.ANALYST,
+                is_active=True,
+            )
+            db.add(analyst)
+            db.commit()
+            db.refresh(analyst)
+        analyst_token = {"Authorization": f"Bearer {create_access_token(subject=str(analyst.id))}"}
+        db.close()
+
+        res = client.get("/api/v1/analyst/overview", headers=analyst_token)
         assert res.status_code == 200
         envelope = res.json()
         data = envelope.get("data", {})

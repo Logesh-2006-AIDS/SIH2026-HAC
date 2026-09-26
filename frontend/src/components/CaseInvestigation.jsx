@@ -92,7 +92,7 @@ export default function CaseInvestigation() {
 
   return (
     <div style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', color: '#F1EBDD' }}>
-      <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(16,19,17,0.92)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(16,19,17,0.1)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <FolderOpen size={22} color="#D62828" />
           <div>
@@ -106,7 +106,7 @@ export default function CaseInvestigation() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: 'rgba(8,10,9,0.5)', padding: '0 1rem', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: 'rgba(8,10,9,0.1)', backdropFilter: 'blur(4px)', padding: '0 1rem', overflowX: 'auto' }}>
         {SECTIONS.map((sec) => {
           const Icon = sec.icon;
           const active = section === sec.id;

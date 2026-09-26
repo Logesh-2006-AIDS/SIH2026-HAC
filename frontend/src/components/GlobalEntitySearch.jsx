@@ -32,7 +32,10 @@ export default function GlobalEntitySearch({ isOpen, onClose, onSelectEntity, no
       try {
         setLoading(true);
         const typeParam = selectedType !== 'ALL' ? `&entity_type=${encodeURIComponent(selectedType)}` : '';
-        const res = await fetch(`/api/v1/search/entities?q=${encodeURIComponent(q)}${typeParam}`);
+        const token = localStorage.getItem('sih_token');
+        const res = await fetch(`/api/v1/search/entities?q=${encodeURIComponent(q)}${typeParam}`, {
+          headers: token && token !== 'demo-token' ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {

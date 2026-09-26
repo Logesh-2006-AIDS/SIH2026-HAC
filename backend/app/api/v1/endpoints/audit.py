@@ -6,13 +6,14 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, log_audit_action
+from app.api.deps import get_current_user, log_audit_action, require_role
 from app.db.postgres import get_db
 from app.models.audit import AuditLog
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.common import ResponseEnvelope
 
 router = APIRouter()
+_any_officer = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
 
 
 class AuditLogOut(BaseModel):
@@ -43,7 +44,7 @@ def get_audit_logs(
     limit: int = Query(50, le=200),
     offset: int = Query(0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_any_officer),
 ):
     """Query investigation audit trail with timestamps and user identifiers."""
     q = db.query(AuditLog)
@@ -80,7 +81,7 @@ def get_audit_logs(
 def record_event(
     payload: ClientLogRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_any_officer),
 ):
     """Record an audit trail event triggered by investigator actions (search, zoom, path query)."""
     log_audit_action(

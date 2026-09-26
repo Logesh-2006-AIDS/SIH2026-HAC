@@ -5,11 +5,14 @@ Exposes graph traversal, centrality analytics, shortest-path tracing, and focus 
 """
 import os
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from app.schemas.common import ResponseEnvelope
 from app.services import graph_builder, graph_analytics
+from app.api.deps import require_role
+from app.models.user import User, UserRole
 
 router = APIRouter()
+_any_officer = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
 
 
 @router.post(
@@ -17,7 +20,7 @@ router = APIRouter()
     response_model=ResponseEnvelope,
     summary="Seed the Knowledge Graph from Synthetic Dataset",
 )
-def seed_graph():
+def seed_graph(current_user: User = Depends(_any_officer)):
     """Seed or synchronize the active graph store from data/metadata JSON."""
     try:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -43,6 +46,7 @@ def get_subgraph(
     min_confidence: float = Query(0.0, ge=0.0, le=1.0, description="Minimum confidence threshold"),
     relationship_type: Optional[str] = Query(None, description="Filter by relationship type"),
     entity_type: Optional[str] = Query(None, description="Filter by entity type"),
+    current_user: User = Depends(_any_officer),
 ):
     """Get the graph structure, optionally filtered by Case ID, confidence, rel type, entity type."""
     try:
@@ -70,6 +74,7 @@ def search_entities(
     q: str = Query(..., min_length=1, description="Search query string"),
     entity_type: Optional[str] = Query(None, description="Optional entity type filter"),
     limit: int = Query(30, ge=1, le=100, description="Max results"),
+    current_user: User = Depends(_any_officer),
 ):
     """Search entities by phone number, vehicle plate, bank account, name, or alias."""
     try:
@@ -88,7 +93,7 @@ def search_entities(
     response_model=ResponseEnvelope,
     summary="Get High-Betweenness / Cross-Case Bridge Entities",
 )
-def get_centrality():
+def get_centrality(current_user: User = Depends(_any_officer)):
     """Identify key entities that connect multiple cases."""
     try:
         data = graph_analytics.get_betweenness_centrality()
@@ -108,7 +113,8 @@ def get_centrality():
 )
 def get_shortest_path(
     source_id: str = Query(..., description="ID of the starting entity"),
-    target_id: str = Query(..., description="ID of the target entity")
+    target_id: str = Query(..., description="ID of the target entity"),
+    current_user: User = Depends(_any_officer),
 ):
     """Find the shortest connection chain between two entities with evidence."""
     try:
@@ -140,6 +146,7 @@ def get_focus_subgraph(
     min_confidence: float = Query(0.0, ge=0.0, le=1.0, description="Minimum confidence threshold"),
     relationship_type: Optional[str] = Query(None, description="Filter by relationship type"),
     entity_type: Optional[str] = Query(None, description="Filter by entity type"),
+    current_user: User = Depends(_any_officer),
 ):
     """Return focused subgraph around a selected entity with filters."""
     try:
@@ -165,7 +172,7 @@ def get_focus_subgraph(
     response_model=ResponseEnvelope,
     summary="Full entity investigation profile",
 )
-def get_entity_profile(entity_id: str):
+def get_entity_profile(entity_id: str, current_user: User = Depends(_any_officer)):
     """Entity details, relationships, statistics for investigator UI."""
     profile = graph_analytics.get_entity_profile(entity_id)
     if not profile:
@@ -182,7 +189,7 @@ def get_entity_profile(entity_id: str):
     response_model=ResponseEnvelope,
     summary="Calculate Investigation Priority Score for an Entity",
 )
-def get_entity_priority(entity_id: str):
+def get_entity_priority(entity_id: str, current_user: User = Depends(_any_officer)):
     """Compute investigation priority from graph metrics."""
     data = graph_analytics.get_entity_priority(entity_id)
     if not data:
@@ -199,7 +206,7 @@ def get_entity_priority(entity_id: str):
     response_model=ResponseEnvelope,
     summary="Get All Connections for an Entity",
 )
-def get_entity_connections(entity_id: str):
+def get_entity_connections(entity_id: str, current_user: User = Depends(_any_officer)):
     """Return all entities connected to a given entity with relationship details."""
     try:
         data = graph_analytics.get_entity_connections(entity_id)
@@ -219,7 +226,7 @@ def get_entity_connections(entity_id: str):
     response_model=ResponseEnvelope,
     summary="Detect Communities / Clusters in the Graph",
 )
-def get_communities():
+def get_communities(current_user: User = Depends(_any_officer)):
     """Identify connected clusters of entities in the knowledge graph."""
     try:
         results = graph_analytics.get_communities()

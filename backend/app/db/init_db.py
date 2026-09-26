@@ -2,15 +2,33 @@ import logging
 from app.db.postgres import Base, engine
 from app.db.graph_client import MemgraphClient
 from app.models import User, Case, AuditLog, DataSource, DataSourceType, IngestStatus, RawEntity, PendingResolution  # noqa: F401
+from app.models.integrity import IntegrityAnchor, CustodyEvent  # noqa: F401
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+from sqlalchemy import text
+
+
 def init_postgres():
-    """Create all relational tables in SQLite or PostgreSQL."""
+    """Create all relational tables and ensure newly added columns exist in SQLite or PostgreSQL."""
     logger.info("Initializing relational schema...")
     Base.metadata.create_all(bind=engine)
+
+    # Safe migration for newly added columns in existing local SQLite databases
+    with engine.connect() as conn:
+        for table, col, col_type in [
+            ("audit_logs", "previous_hash", "VARCHAR(64)"),
+            ("audit_logs", "entry_hash", "VARCHAR(64)"),
+            ("data_sources", "authorization_reference", "VARCHAR(500)"),
+        ]:
+            try:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}"))
+                conn.commit()
+                logger.info(f"Added missing column {table}.{col}")
+            except Exception:
+                pass  # Column already exists
     logger.info("Relational schema initialization complete.")
 
 

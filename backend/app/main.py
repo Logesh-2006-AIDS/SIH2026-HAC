@@ -23,6 +23,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Database schema initialization: %s", e)
 
+    # Phase 4: Backfill hash chain for any existing audit log entries missing hashes
+    try:
+        from app.db.postgres import SessionLocal
+        from app.services.integrity import backfill_audit_chain
+        db = SessionLocal()
+        updated = backfill_audit_chain(db)
+        if updated:
+            logger.info("Audit hash chain backfill: %d entries updated.", updated)
+        db.close()
+    except Exception as e:
+        logger.warning("Audit hash chain backfill skipped: %s", e)
+
     store = get_graph_store()
     stats = store.get_stats()
     logger.info("Knowledge Graph Store active: %s (%d nodes, %d edges)", stats.get("store"), stats.get("node_count", 0), stats.get("edge_count", 0))

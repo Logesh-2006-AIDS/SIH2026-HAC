@@ -38,9 +38,9 @@ def reset_database():
     try:
         # Seed standard role accounts with both .gov.in domains
         users = [
-            # Standard SIH login credentials
+            # Primary Police.gov.in credentials
             User(
-                email="admin@sih.gov.in",
+                email="admin@police.gov.in",
                 hashed_password=get_password_hash("admin123"),
                 full_name="Admin Director Sharma",
                 badge_number="DL-ADM-001",
@@ -49,7 +49,7 @@ def reset_database():
                 is_active=True,
             ),
             User(
-                email="investigator@sih.gov.in",
+                email="investigator@police.gov.in",
                 hashed_password=get_password_hash("investigator123"),
                 full_name="Inspector Rajesh Verma",
                 badge_number="DL-INV-001",
@@ -58,7 +58,7 @@ def reset_database():
                 is_active=True,
             ),
             User(
-                email="analyst@sih.gov.in",
+                email="analyst@police.gov.in",
                 hashed_password=get_password_hash("analyst123"),
                 full_name="Analyst Priya Sen",
                 badge_number="DL-ANL-101",
@@ -66,10 +66,10 @@ def reset_database():
                 department="Crime Intelligence Unit",
                 is_active=True,
             ),
-            # Police.gov.in aliases
+            # sih.gov.in aliases
             User(
-                email="admin@police.gov.in",
-                hashed_password=get_password_hash("Admin@123"),
+                email="admin@sih.gov.in",
+                hashed_password=get_password_hash("admin123"),
                 full_name="Admin Director Sharma",
                 badge_number="DL-ADM-002",
                 role=UserRole.ADMIN,
@@ -77,8 +77,8 @@ def reset_database():
                 is_active=True,
             ),
             User(
-                email="investigator@police.gov.in",
-                hashed_password=get_password_hash("Invest@123"),
+                email="investigator@sih.gov.in",
+                hashed_password=get_password_hash("investigator123"),
                 full_name="Inspector Rajesh Verma",
                 badge_number="DL-INV-002",
                 role=UserRole.INVESTIGATOR,
@@ -86,8 +86,8 @@ def reset_database():
                 is_active=True,
             ),
             User(
-                email="analyst@police.gov.in",
-                hashed_password=get_password_hash("Analyst@123"),
+                email="analyst@sih.gov.in",
+                hashed_password=get_password_hash("analyst123"),
                 full_name="Analyst Priya Sen",
                 badge_number="DL-ANL-102",
                 role=UserRole.ANALYST,

@@ -5,13 +5,18 @@ Delegates to analyst_intelligence for real density / trend calculations.
 Keeps legacy paths used by the Vite map for compatibility.
 """
 import logging
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from typing import Optional
+
+from app.api.deps import require_role
+from app.models.user import User, UserRole
 from app.schemas.common import ResponseEnvelope
 from app.services import analyst_intelligence as ai
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+_officer_role = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
 
 
 @router.get("/crime-summary", response_model=ResponseEnvelope, summary="Geographic Crime Intelligence Summary")
@@ -20,6 +25,7 @@ def get_crime_summary(
     crime_type: Optional[str] = None,
     start: Optional[str] = None,
     end: Optional[str] = None,
+    current_user: User = Depends(_officer_role),
 ):
     try:
         heat = ai.build_heatmap(mode=mode, crime_type=crime_type, start=start, end=end)
@@ -83,7 +89,10 @@ def get_crime_summary(
 
 
 @router.get("/location/{location_id}", response_model=ResponseEnvelope, summary="Location Detail Intelligence")
-def get_location_detail(location_id: str):
+def get_location_detail(
+    location_id: str,
+    current_user: User = Depends(_officer_role),
+):
     try:
         data = ai.region_detail(location_id)
         if not data.get("found"):

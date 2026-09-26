@@ -8,14 +8,19 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, log_audit_action
+from app.api.deps import get_current_user, log_audit_action, require_role
 from app.db.postgres import get_db
 from app.models.case import Case, CasePriority, CaseStatus
-from app.models.user import User
+from app.models.ingestion import DataSource
+from app.models.integrity import IntegrityAnchor
+from app.models.user import User, UserRole
 from app.schemas.common import ResponseEnvelope
 from app.services import graph_analytics
 
 router = APIRouter()
+
+_officer_role = require_role(UserRole.INVESTIGATOR, UserRole.ANALYST, UserRole.ADMIN)
+_investigator_role = require_role(UserRole.INVESTIGATOR, UserRole.ADMIN)
 
 CASE_METADATA = [
     {
@@ -84,7 +89,7 @@ CASE_METADATA = [
 @router.get("/", response_model=ResponseEnvelope, summary="List All Master Case Dossiers")
 def list_cases(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_officer_role),
 ):
     """Retrieve all active criminal investigation case files."""
     log_audit_action(
@@ -104,7 +109,7 @@ def list_cases(
 def get_case(
     case_number: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_officer_role),
 ):
     """Retrieve detailed case dossier with connected graph entities."""
     case = next((c for c in CASE_METADATA if c["case_number"] == case_number), None)
@@ -132,7 +137,16 @@ def get_case(
     )
 
 
-def _generate_court_brief_pdf(case: dict, subgraph: dict, now_str: str, officer_name: str, badge_number: str, audit_token: str) -> bytes:
+def _generate_court_brief_pdf(
+    case: dict,
+    subgraph: dict,
+    now_str: str,
+    officer_name: str,
+    badge_number: str,
+    audit_token: str,
+    evidence_sources: list = None,
+    latest_anchor_root: str = None,
+) -> bytes:
     import io
     from reportlab.lib.pagesizes import letter
     from reportlab.lib import colors
@@ -316,12 +330,40 @@ def _generate_court_brief_pdf(case: dict, subgraph: dict, now_str: str, officer_
         story.append(Paragraph("No direct relationship chains mapped for this case.", body_style))
     story.append(Spacer(1, 10))
 
-    # Chain of custody notice
+    # Evidence Integrity & Chain of Custody
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#cbd5e1"), spaceAfter=6))
-    story.append(Paragraph("5. Chain of Custody &amp; Audit Logging", section_heading))
+    story.append(Paragraph("5. Evidence Integrity &amp; Chain of Custody", section_heading))
+
+    if evidence_sources:
+        src_rows = [[
+            Paragraph("File / Source", table_cell_bold),
+            Paragraph("Type", table_cell_bold),
+            Paragraph("SHA-256 Content Hash", table_cell_bold),
+            Paragraph("Legal Authorization Ref", table_cell_bold),
+        ]]
+        for s in evidence_sources:
+            src_rows.append([
+                Paragraph(s.get("filename", "Evidence File"), table_cell),
+                Paragraph(s.get("source_type", "DATA_SOURCE"), table_cell),
+                Paragraph((s.get("content_hash") or "UNAVAILABLE")[:24] + "...", table_cell),
+                Paragraph(s.get("authorization_reference") or "Section 91 CrPC Standard Filing", table_cell),
+            ])
+        t_src = Table(src_rows, colWidths=[120, 70, 170, 170])
+        t_src.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e2e8f0")),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+            ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#f1f5f9")),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story.append(t_src)
+        story.append(Spacer(1, 6))
+
+    anchor_info = f"<b>Latest Ledger Merkle Root:</b> {latest_anchor_root}<br/>" if latest_anchor_root else ""
     story.append(Paragraph(
         f"<b>Integrity Reference:</b> {audit_token}<br/>"
-        "<b>Notice:</b> This intelligence report is generated for investigative support. All AI-extracted entities and evidentiary links require officer verification prior to judicial filing.",
+        f"{anchor_info}"
+        "<b>Notice:</b> This intelligence report is generated for investigative support. All AI-extracted entities and evidentiary links require officer verification prior to judicial filing under Section 65B of Indian Evidence Act / BSA 2023.",
         ParagraphStyle("Notice", parent=body_style, fontSize=8, leading=11, textColor=colors.HexColor("#64748b")),
     ))
 
@@ -335,7 +377,7 @@ def export_court_brief(
     case_number: str,
     format: str = Query("markdown", enum=["markdown", "text", "pdf"]),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_investigator_role),
 ):
     """Export a case evidence brief with timestamped audit signature in Markdown, Text, or PDF format."""
     case = next((c for c in CASE_METADATA if c["case_number"] == case_number), None)
@@ -348,13 +390,45 @@ def export_court_brief(
     badge_number = current_user.badge_number if current_user and current_user.badge_number else "DL-CB-9021"
     audit_token = f"SIH-AUDIT-{case_number}-{int(datetime.now().timestamp())}"
 
+    # Query relevant evidence records
+    data_sources = db.query(DataSource).filter(
+        (DataSource.case_id_ref == case_number) | (DataSource.filename.ilike(f"%{case_number}%"))
+    ).all()
+
+    evidence_sources = [{
+        "id": ds.id,
+        "filename": ds.filename,
+        "source_type": ds.source_type.value if ds.source_type else "UNKNOWN",
+        "content_hash": ds.content_hash or "NOT_HASHED",
+        "authorization_reference": ds.authorization_reference,
+    } for ds in data_sources]
+
+    # Query latest integrity anchor root
+    latest_anchor = db.query(IntegrityAnchor).order_by(IntegrityAnchor.created_at.desc()).first()
+    latest_anchor_root = latest_anchor.merkle_root if latest_anchor else None
+
+    # Log custody export events
+    try:
+        from app.services.integrity import log_custody_event
+        for ds in data_sources:
+            log_custody_event(
+                db=db,
+                data_source_id=ds.id,
+                action="EXPORT",
+                user_id=current_user.id,
+                content_hash=ds.content_hash,
+                details={"case_number": case_number, "export_format": format},
+            )
+    except Exception:
+        pass
+
     log_audit_action(
         db=db,
         action="EXPORT_COURT_BRIEF",
         resource_type="CASE",
         resource_id=case_number,
         user_id=current_user.id if current_user else None,
-        details={"format": format, "node_count": len(subgraph.get("nodes", []))},
+        details={"format": format, "node_count": len(subgraph.get("nodes", [])), "evidence_file_count": len(evidence_sources)},
     )
 
     if format == "pdf":
@@ -366,6 +440,8 @@ def export_court_brief(
                 officer_name=officer_name,
                 badge_number=badge_number,
                 audit_token=audit_token,
+                evidence_sources=evidence_sources,
+                latest_anchor_root=latest_anchor_root,
             )
             return Response(
                 content=pdf_bytes,
@@ -374,6 +450,16 @@ def export_court_brief(
             )
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+    # Markdown / Plaintext doc
+    evidence_md_rows = "\n".join([
+        f"- **File:** `{s['filename']}` ({s['source_type']})\n"
+        f"  - **SHA-256 Hash:** `{s['content_hash']}`\n"
+        f"  - **Legal Authorization Reference:** {s['authorization_reference'] or 'Section 91 CrPC Standard Inquest'}"
+        for s in evidence_sources
+    ]) or "No primary raw data source records directly linked to this case number in SQLite evidence store."
+
+    anchor_md = f"- **Local Ledger Merkle Root:** `{latest_anchor_root}`\n" if latest_anchor_root else ""
 
     doc = f"""# LAW ENFORCEMENT INTELLIGENCE PLATFORM — CASE BRIEF
 **CONFIDENTIAL // LAW ENFORCEMENT SENSITIVE // SIH 2026**
@@ -410,9 +496,15 @@ def export_court_brief(
 
 ---
 
+### EVIDENCE INTEGRITY & CRYPTOGRAPHIC PROVENANCE
+{evidence_md_rows}
+
+---
+
 ### CHAIN OF CUSTODY & AUDIT VERIFICATION
-*This document was generated for investigative intelligence support. Officer verification required prior to judicial filing.*
-- **Audit Reference:** {audit_token}
+*This document was generated for investigative intelligence support. Officer verification required prior to judicial filing under Section 65B Indian Evidence Act / BSA 2023.*
+- **Audit Reference:** `{audit_token}`
+{anchor_md}
 """
 
     return Response(
@@ -426,7 +518,7 @@ def export_court_brief(
 def get_case_timeline(
     case_number: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_officer_role),
 ):
     """Return chronological investigation events for a case from graph relationship data."""
     case = next((c for c in CASE_METADATA if c["case_number"] == case_number), None)
@@ -446,7 +538,7 @@ def get_case_timeline(
 def generate_case_brief(
     case_number: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_officer_role),
 ):
     """Dynamically generate a structured case brief from Neo4j + PostgreSQL data."""
     case = next((c for c in CASE_METADATA if c["case_number"] == case_number), None)
@@ -541,7 +633,7 @@ def generate_case_brief(
 def get_cross_case_links(
     case_number: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_officer_role),
 ):
     """Find entities that connect this case to other cases."""
     links = graph_analytics.get_cross_case_links(case_number)

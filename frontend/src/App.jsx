@@ -62,7 +62,7 @@ function RoleSwitcherBar({ currentRole, setCurrentRole, onSignOut }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 40,
-      background: 'rgba(10,13,10,0.98)', borderBottom: '1px solid rgba(217,170,61,0.25)', zIndex: 40,
+      background: 'rgba(10,13,10,0.1)', backdropFilter: 'blur(4px)', borderBottom: '1px solid rgba(217,170,61,0.25)', zIndex: 40,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{
@@ -320,7 +320,7 @@ function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, ca
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 48,
-      background: 'rgba(10,13,10,0.98)', borderBottom: '1px solid rgba(217,170,61,0.3)', zIndex: 30,
+      background: 'rgba(10,13,10,0.1)', backdropFilter: 'blur(4px)', borderBottom: '1px solid rgba(217,170,61,0.3)', zIndex: 30,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {isInvestigator && (
@@ -449,6 +449,14 @@ function AuthenticatedApp() {
   };
 
   useEffect(() => {
+    const interceptor = axios.interceptors.request.use((config) => {
+      const token = localStorage.getItem('sih_token');
+      if (token && token !== 'demo-token') {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
     const token = localStorage.getItem('sih_token');
     const raw = localStorage.getItem('sih_user');
     if (token && raw) {
@@ -464,6 +472,10 @@ function AuthenticatedApp() {
       }
     }
     setChecking(false);
+
+    return () => {
+      axios.interceptors.request.eject(interceptor);
+    };
   }, []);
 
   if (checking) {

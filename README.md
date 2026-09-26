@@ -119,9 +119,9 @@ Open your browser at **`http://localhost:5173`** (Interactive API Docs at `http:
 
 | Role | Email | Password | Features Accessible |
 | :--- | :--- | :--- | :--- |
-| **Investigator** | `investigator@sih.gov.in` *(or `investigator@police.gov.in`)* | `investigator123` *(or `Invest@123`)* | Knowledge Graph, Red-String Path Finder, Multi-Source Ingestion, Actionable Leads, Crime Map, Case Briefs |
-| **Analyst** | `analyst@sih.gov.in` *(or `analyst@police.gov.in`)* | `analyst123` *(or `Analyst@123`)* | KPI Overview, Cross-Case Matrix, Community Detection, Key Influencers, Entity Resolution Review (Approve/Reject/Split) |
-| **Admin** | `admin@sih.gov.in` *(or `admin@police.gov.in`)* | `admin123` *(or `Admin@123`)* | RBAC User Management, 8-Step Ingestion Pipeline Monitor, System Health & Diagnostics, Audit Log |
+| **Investigator** | `investigator@police.gov.in` *(or `investigator@sih.gov.in`)* | `investigator123` | Knowledge Graph, Red-String Path Finder, Multi-Source Ingestion, Actionable Leads, Crime Map, Case Briefs |
+| **Analyst** | `analyst@police.gov.in` *(or `analyst@sih.gov.in`)* | `analyst123` | KPI Overview, Cross-Case Matrix, Community Detection, Key Influencers, Entity Resolution Review (Approve/Reject/Split) |
+| **Admin** | `admin@police.gov.in` *(or `admin@sih.gov.in`)* | `admin123` | RBAC User Management, 8-Step Ingestion Pipeline Monitor, System Health & Diagnostics, Audit Log |
 
 ---
 

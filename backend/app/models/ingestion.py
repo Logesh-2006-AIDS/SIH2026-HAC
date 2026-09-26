@@ -62,6 +62,9 @@ class DataSource(Base):
     ingested_at         = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     ingested_by         = Column(Integer, ForeignKey("users.id"), nullable=True)
 
+    # Phase 4: Legal authorization tracking for CDR / FINANCIAL data
+    authorization_reference = Column(String(500), nullable=True)  # Court order number, authority, date
+
 
 class RawEntity(Base):
     """Raw entity mentions extracted during ingestion (pre NLP / resolution)."""
