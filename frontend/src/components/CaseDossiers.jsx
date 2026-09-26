@@ -118,9 +118,9 @@ export default function CaseDossiers() {
   }, [cases]);
 
   return (
-    <div className="flex-1 flex flex-col h-full w-full bg-[#080a08] text-[#f1ebdd] overflow-hidden">
+    <div className="flex-1 flex flex-col h-full w-full bg-transparent text-[#f1ebdd] overflow-hidden">
       {/* ── CLEAN TOP HEADER & SEARCH ────────────────────────────────────────── */}
-      <header className="shrink-0 border-b border-white/5 bg-[#0d100e] px-6 py-4 space-y-3">
+      <header className="shrink-0 border-b border-white/5 bg-black/40 backdrop-blur-md px-6 py-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
@@ -189,10 +189,10 @@ export default function CaseDossiers() {
                 <div
                   key={c.case_number}
                   className={clsx(
-                    'relative rounded-2xl border p-5 flex flex-col justify-between transition-all duration-200 space-y-4 group',
+                    'relative rounded-2xl border p-5 flex flex-col justify-between transition-all duration-200 space-y-4 group backdrop-blur-md',
                     isSelected
-                      ? 'border-[#d9aa3d] bg-[#121614] shadow-lg shadow-[#d9aa3d]/5 ring-1 ring-[#d9aa3d]/40'
-                      : 'border-white/5 bg-[#0e1210] hover:border-white/15 hover:bg-[#111613]'
+                      ? 'border-[#d9aa3d] bg-black/30 shadow-lg shadow-[#d9aa3d]/5 ring-1 ring-[#d9aa3d]/40'
+                      : 'border-white/5 bg-black/10 hover:border-white/15 hover:bg-black/20'
                   )}
                 >
                   {/* Top Bar: Case ID & Status */}

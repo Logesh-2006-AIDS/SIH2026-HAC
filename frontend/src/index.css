@@ -599,7 +599,7 @@ input[type="text"]:focus, select:focus, textarea:focus {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: radial-gradient(circle at 50% 20%, #171a17 0%, #080a08 85%);
+  background: transparent; /* Allow global backgroundimage.jpeg to show through */
   display: flex;
   flex-direction: column;
 }
@@ -1133,14 +1133,126 @@ body {
   background-attachment: fixed !important;
 }
 
-.bg-\[\#080a08\], .bg-\[\#090D0A\], .bg-\[\#101412\], .bg-\[\#0d100e\], .bg-\[\#0e1210\], .bg-\[\#101311\], .bg-\[\#0a0d0b\], .bg-\[\#121614\], .bg-\[\#0f1311\], .bg-\[\#070a08\], .bg-\[\#161b17\], .bg-\[\#111613\] {
-  background-color: rgba(10, 15, 12, 0.1) !important;
-  backdrop-filter: blur(4px) !important;
+:root {
+  /* TARGARYEN WEB THEME SYSTEM - Cinematic Adjustments */
+  --ink: transparent; 
+  --panel: rgba(0, 0, 0, 0.15); /* More transparent so background image is visible */
+  --panel-elevated: rgba(0, 0, 0, 0.25); /* Slightly darker for elevated panels */
+  --line: rgba(217, 170, 61, 0.15); /* More subtle borders */
 }
 
-:root {
-  --bg-primary: rgba(8, 10, 9, 0.1) !important;
-  --bg-secondary: rgba(16, 19, 17, 0.1) !important;
-  --bg-tertiary: rgba(20, 23, 21, 0.15) !important;
-  --bg-card: rgba(20, 23, 21, 0.15) !important;
+/* --- CINEMATIC AMBIENT GLOW FOR PANELS --- */
+.bg-ink {
+  background-color: transparent !important;
 }
+
+/* Normal Panel: mostly dark, very faint gold ambient shadow */
+.bg-panel {
+  background-color: var(--panel) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.6), 
+    0 0 12px rgba(217, 170, 61, 0.03), 
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 0 20px rgba(217, 170, 61, 0.02);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.bg-panel:hover {
+  border-color: rgba(217, 170, 61, 0.2) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.7), 
+    0 0 20px rgba(217, 170, 61, 0.1), 
+    inset 0 0 0 1px rgba(217, 170, 61, 0.15),
+    inset 0 0 25px rgba(217, 170, 61, 0.04);
+  transform: translateY(-1px);
+}
+
+.bg-panel-elevated {
+  background-color: var(--panel-elevated) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.7), 
+    0 0 16px rgba(217, 170, 61, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 0 25px rgba(217, 170, 61, 0.03);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.bg-panel-elevated:hover {
+  border-color: rgba(217, 170, 61, 0.3) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.8), 
+    0 0 30px rgba(217, 170, 61, 0.15),
+    inset 0 0 0 1px rgba(217, 170, 61, 0.25),
+    inset 0 0 35px rgba(217, 170, 61, 0.06);
+  transform: translateY(-2px);
+}
+
+/* Specific Glow State Utilities */
+
+/* Active / Selected Panel: Gold accent */
+.glow-panel-active {
+  border-color: rgba(217, 170, 61, 0.4) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.7), 
+    0 0 24px rgba(217, 170, 61, 0.18),
+    inset 0 0 0 1px rgba(217, 170, 61, 0.3),
+    inset 0 0 30px rgba(217, 170, 61, 0.08) !important;
+}
+
+/* Critical / Threat Panel: Red accent */
+.glow-panel-critical {
+  border-color: rgba(214, 40, 40, 0.3) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.7), 
+    0 0 24px rgba(214, 40, 40, 0.15),
+    inset 0 0 0 1px rgba(214, 40, 40, 0.25),
+    inset 0 0 30px rgba(214, 40, 40, 0.08) !important;
+}
+.glow-panel-critical:hover {
+  border-color: rgba(214, 40, 40, 0.5) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.8), 
+    0 0 35px rgba(214, 40, 40, 0.25),
+    inset 0 0 0 1px rgba(214, 40, 40, 0.4),
+    inset 0 0 40px rgba(214, 40, 40, 0.12) !important;
+}
+
+/* Healthy / Verified Panel: Green accent */
+.glow-panel-healthy {
+  border-color: rgba(94, 159, 104, 0.3) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.7), 
+    0 0 24px rgba(94, 159, 104, 0.15),
+    inset 0 0 0 1px rgba(94, 159, 104, 0.25),
+    inset 0 0 30px rgba(94, 159, 104, 0.08) !important;
+}
+.glow-panel-healthy:hover {
+  border-color: rgba(94, 159, 104, 0.5) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.8), 
+    0 0 35px rgba(94, 159, 104, 0.25),
+    inset 0 0 0 1px rgba(94, 159, 104, 0.4),
+    inset 0 0 40px rgba(94, 159, 104, 0.12) !important;
+}
+
+/* General cleanups to match Landing Page */
+.app-container {
+  /* Subtle dark overlay over the background image, keeping the image bright enough */
+  background-image: 
+    linear-gradient(rgba(5, 7, 6, 0.15), rgba(5, 7, 6, 0.3)),
+    url('/backgroundimage.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.border-\[var\(--line\)\] {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+

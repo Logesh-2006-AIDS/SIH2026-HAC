@@ -20,7 +20,7 @@ export default function BackgroundNetwork() {
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0"
       style={{
-        background: 'radial-gradient(ellipse at 50% 50%, rgba(18, 23, 20, 0.95) 0%, rgba(8, 10, 8, 1) 100%)',
+        background: 'transparent',
       }}
     >
       {/* 1. Tactical Grid Texture Overlay */}

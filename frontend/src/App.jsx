@@ -60,36 +60,27 @@ const PAGE_META = {
 
 function RoleSwitcherBar({ currentRole, setCurrentRole, onSignOut }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 40,
-      background: 'rgba(10,13,10,0.1)', backdropFilter: 'blur(4px)', borderBottom: '1px solid rgba(217,170,61,0.25)', zIndex: 40,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 22, height: 22, borderRadius: 5, background: 'linear-gradient(135deg,#d9aa3d,#8a6515)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000'
-        }}>
-          <Shield size={13} />
+    <div className="flex items-center justify-between px-6 h-12 bg-black/60 backdrop-blur-md border-b border-white/5 z-40 shrink-0 transition-all">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center w-6 h-6 rounded bg-gradient-to-br from-[#d9aa3d] to-[#8a6515] text-[#050706] shadow-[0_0_10px_rgba(217,170,61,0.3)]">
+          <Shield size={14} />
         </div>
-        <span style={{ color: '#D9AA3D', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          HOUSE TARGARYEN
+        <span className="text-[#d9aa3d] font-bold text-xs tracking-[0.1em] uppercase">
+          RiskLink
         </span>
-        <span style={{
-          fontSize: '0.65rem', fontWeight: 800, padding: '0.12rem 0.45rem', borderRadius: 10,
-          background: currentRole === 'ADMIN' ? 'rgba(214,40,40,0.2)' : 'rgba(217,170,61,0.18)',
-          border: currentRole === 'ADMIN' ? '1px solid rgba(214,40,40,0.45)' : '1px solid rgba(217,170,61,0.35)',
-          color: currentRole === 'ADMIN' ? '#fca5a5' : '#D9AA3D'
-        }}>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+          currentRole === 'ADMIN' ? 'bg-[#d62828]/10 border-[#d62828]/30 text-[#d62828]' : 'bg-[#d9aa3d]/10 border-[#d9aa3d]/30 text-[#d9aa3d]'
+        }`}>
           {currentRole} CONSOLE
         </span>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span style={{ fontSize: '0.7rem', color: '#8a948c' }}>Switch Role:</span>
+      <div className="flex items-center gap-4">
+        <span className="text-xs text-[#8a948c] hidden md:inline">Switch Role:</span>
         <select
           value={currentRole}
           onChange={(e) => setCurrentRole(e.target.value)}
-          style={{ ...barSelect, color: '#D9AA3D', cursor: 'pointer' }}
+          className="bg-black/40 border border-white/10 text-[#d9aa3d] text-xs rounded px-2 py-1 outline-none focus:border-[#d9aa3d]/50 cursor-pointer transition-colors"
         >
           <option value="ADMIN">Admin Console</option>
           <option value="ANALYST">Analyst Console</option>
@@ -98,9 +89,9 @@ function RoleSwitcherBar({ currentRole, setCurrentRole, onSignOut }) {
         <button
           type="button"
           onClick={onSignOut}
-          style={{ ...barSelect, cursor: 'pointer', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: 4 }}
+          className="flex items-center gap-1.5 text-xs text-[#d62828] hover:text-[#fca5a5] hover:bg-[#d62828]/10 px-2 py-1 rounded transition-colors"
         >
-          <LogOut size={12} /> Sign out
+          <LogOut size={14} /> Sign out
         </button>
       </div>
     </div>
@@ -318,63 +309,66 @@ function AppInner({ onSignOut }) {
 
 function InvestigatorBar({ pageMeta, PageIcon, selectedCase, setSelectedCase, casesList, currentRole, setCurrentRole, onBack, isInvestigator, onOpenSearch, onSignOut }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', height: 48,
-      background: 'rgba(10,13,10,0.1)', backdropFilter: 'blur(4px)', borderBottom: '1px solid rgba(217,170,61,0.3)', zIndex: 30,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className="flex items-center justify-between px-6 h-14 bg-black/60 backdrop-blur-md border-b border-white/5 z-30 shrink-0">
+      <div className="flex items-center gap-4">
         {isInvestigator && (
-          <button type="button" onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', padding: '0.3rem 0.7rem', cursor: 'pointer' }}>
+          <button 
+            type="button" 
+            onClick={onBack} 
+            className="flex items-center gap-2 text-xs font-bold bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#d9aa3d]/30 text-[#f1ebdd] hover:text-[#d9aa3d] px-3 py-1.5 rounded-lg transition-all"
+          >
             <ArrowLeft size={14} /> Pinboard
           </button>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <PageIcon size={16} color="#D9AA3D" />
-          <span style={{ color: '#F1EBDD', fontWeight: 800, fontSize: '0.86rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        <div className="flex items-center gap-3">
+          <PageIcon size={18} className="text-[#d9aa3d]" />
+          <span className="text-[#f1ebdd] font-bold text-sm tracking-wide uppercase">
             {pageMeta.label}
           </span>
-          <span style={{
-            fontSize: '0.66rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 4,
-            background: 'rgba(217,170,61,0.15)', color: '#D9AA3D', border: '1px solid rgba(217,170,61,0.35)'
-          }}>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#d9aa3d]/10 text-[#d9aa3d] border border-[#d9aa3d]/30">
             Case {selectedCase}
           </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div className="flex items-center gap-3">
         {/* Global Entity Search Trigger */}
         <button
           type="button"
           onClick={onOpenSearch}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(217,170,61,0.35)',
-            color: '#D9AA3D', padding: '0.3rem 0.75rem', borderRadius: 6,
-            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
-          }}
+          className="flex items-center gap-2 bg-black/40 border border-white/10 hover:border-[#d9aa3d]/40 text-[#d9aa3d] px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all hover:shadow-[0_0_15px_rgba(217,170,61,0.15)] group"
         >
-          <Search size={13} />
+          <Search size={14} className="group-hover:scale-110 transition-transform" />
           <span>Global Search</span>
-          <span style={{ background: 'rgba(255,255,255,0.08)', padding: '0.05rem 0.35rem', borderRadius: 4, fontSize: '0.65rem', color: '#8a948c' }}>
+          <span className="bg-white/10 px-1.5 py-0.5 rounded text-[9px] text-[#8a948c] ml-1">
             Ctrl+K
           </span>
         </button>
 
-        <select value={selectedCase} onChange={(e) => setSelectedCase(e.target.value)} style={barSelect}>
+        <select 
+          value={selectedCase} 
+          onChange={(e) => setSelectedCase(e.target.value)} 
+          className="bg-black/40 border border-white/10 text-white text-xs rounded px-2 py-1.5 outline-none focus:border-[#d9aa3d]/50 cursor-pointer transition-colors h-[28px]"
+        >
           {(casesList.length ? casesList : [{ case_number: '101' }, { case_number: '102' }, { case_number: '103' }]).map((c) => (
             <option key={c.case_number} value={c.case_number}>Case {c.case_number}</option>
           ))}
         </select>
-        <select value={currentRole} onChange={(e) => setCurrentRole(e.target.value)} style={{ ...barSelect, color: '#D9AA3D' }}>
+        
+        <select 
+          value={currentRole} 
+          onChange={(e) => setCurrentRole(e.target.value)} 
+          className="bg-black/40 border border-white/10 text-[#d9aa3d] text-xs rounded px-2 py-1.5 outline-none focus:border-[#d9aa3d]/50 cursor-pointer transition-colors h-[28px]"
+        >
           <option value="INVESTIGATOR">Investigator</option>
           <option value="ANALYST">Analyst</option>
           <option value="ADMIN">Admin</option>
         </select>
+        
         <button
           type="button"
           onClick={onSignOut}
-          style={{ ...barSelect, cursor: 'pointer', color: '#fca5a5' }}
+          className="bg-black/40 border border-[#d62828]/30 hover:bg-[#d62828]/10 hover:border-[#d62828]/50 text-[#d62828] text-xs rounded px-3 py-1.5 cursor-pointer transition-all h-[28px] font-bold"
         >
           Logout
         </button>
