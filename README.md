@@ -2,6 +2,9 @@
 **Smart India Hackathon 2026 (PS 26189)**  
 *Ministry of Home Affairs | NCRB Women Safety Division | Theme: Blockchain & Cybersecurity*
 
+> 🌐 **Live Vercel Deployment:** [https://sih-2926.vercel.app](https://sih-2926.vercel.app)  
+> 🔗 **Alternative Link:** [https://sih-2926-dharshan1120s-projects.vercel.app](https://sih-2926-dharshan1120s-projects.vercel.app)
+
 ---
 
 ## 📌 1. Background & Problem Statement
